@@ -1,0 +1,15 @@
+﻿@page "/"
+@using Excubo.Blazor.Canvas
+
+<PageTitle>Minecraft Layout Editor</PageTitle>
+
+<h1>Minecraft Layout Editor</h1>
+
+Welcome to your new app.
+
+<div style="width: fit-content; height: fit-content;"
+     @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true>
+    <Canvas @ref="@Canvas"
+            width="1000"
+            height="1000" />
+</div>

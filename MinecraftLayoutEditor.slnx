@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="MinecraftLayoutEditor.Logic/MinecraftLayoutEditor.Logic.csproj" />
+  <Project Path="MinecraftLayoutEditor.WebApp/MinecraftLayoutEditor.WebApp.csproj" />
+</Solution>
