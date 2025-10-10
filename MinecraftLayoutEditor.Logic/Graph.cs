@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace MinecraftLayoutEditor.Logic;
@@ -32,6 +33,14 @@ public class Graph
 
     public void DeleteNode(Node node)
     {
+        if (node.MirrorRef != null)
+        {
+            var mirrorRef = node.MirrorRef;
+            node.MirrorRef.MirrorRef = null;
+            node.MirrorRef = null;
+            DeleteNode(mirrorRef);
+        }            
+        
         foreach (var e in node.Edges)
         {
             if (e.Node1 == node)
@@ -53,10 +62,16 @@ public class Graph
         edge.Node2.Edges.Remove(edge);
     }
 
-    public void AddOrRemoveEdge(Node node1, Node node2)
+    public void AddOrRemoveEdge(Node node1, Node node2, bool isMirror = false)
     {
         if (node1 == node2)
             throw new InvalidOperationException();
+
+        if (node1.MirrorRef != null && node2.MirrorRef != null && !isMirror
+            && node1.MirrorRef != node2)
+        {
+            AddOrRemoveEdge(node1.MirrorRef, node2.MirrorRef, true);
+        }
 
         var edge1 = node1.EdgeTo(node2);
         var edge2 = node2.EdgeTo(node1);

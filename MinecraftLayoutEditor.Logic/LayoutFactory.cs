@@ -5,6 +5,22 @@ namespace MinecraftLayoutEditor.Logic
 {
     public static class LayoutFactory
     {
+        public static Layout Empty(int width, int height)
+        {
+            var layout = new Layout
+            {
+                Width = width,
+                Height = height,
+                Symmetry = new SymmetryAxis()
+                {
+                    IsHorizontal = true,
+                    RotationDeg = 180
+                }
+            };
+
+            return layout;
+        }
+        
         public static Layout OneTeamDemo()
         {
             var layout = new Layout
@@ -12,7 +28,8 @@ namespace MinecraftLayoutEditor.Logic
                 Name = "One-Team Demo",
                 Width = 300,
                 Height = 160,
-                Geometry = Layout.MirrorMode.None
+                Geometry = Layout.MirrorMode.None,
+                Symmetry = new SymmetryAxis()
             };
 
             // --- Team (Blue as example) ---

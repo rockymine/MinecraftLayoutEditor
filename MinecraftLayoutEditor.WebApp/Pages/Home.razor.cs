@@ -5,13 +5,14 @@ using System.Numerics;
 using MinecraftLayoutEditor.WebApp.Rendering;
 using Microsoft.AspNetCore.Components.Web;
 using System.Threading.Tasks;
+using static MinecraftLayoutEditor.Logic.Layout;
 
 namespace MinecraftLayoutEditor.WebApp.Pages;
 
 public partial class Home
 {
     private Canvas Canvas;
-    private readonly Logic.Layout _layout = LayoutFactory.OneTeamDemo();
+    private readonly Logic.Layout _layout = LayoutFactory.Empty(30, 20);
     private readonly LayoutRenderer _renderer = new();
     private readonly LayoutRenderOptions _options = new();
     private Node? HoveredNode;
@@ -27,11 +28,12 @@ public partial class Home
 
     private async Task OnMouseUp(MouseEventArgs e)
     {
-        Vector2 clickedAt = new Vector2((float)e.OffsetX, (float)e.OffsetY);
+        Vector2 clickedAt = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, 
+            (float)e.OffsetY));
 
-        if (e.Button == 0 && HoveredNode == null)
+        if (e.Button == 0 && HoveredNode == null && _layout.Contains(clickedAt))
         {
-            _layout.Graph.Nodes.Add(new Node(clickedAt));
+            _layout.AddNode(clickedAt);
             await Render();
         }
         else if (e.Button == 0 && HoveredNode != null)
@@ -58,13 +60,13 @@ public partial class Home
 
     private async Task OnMouseMove(MouseEventArgs e)
     {
-        Vector2 cursorPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
+        Vector2 cursorPosition = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
         Node? closestNode = _layout.Graph.GetClosestNode(cursorPosition);
 
         if (closestNode == null)
             return;
 
-        var threshhold = 10;
+        var threshhold = 0.4f;
         var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
 
         var prevHovered = HoveredNode;

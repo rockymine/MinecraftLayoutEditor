@@ -1,0 +1,13 @@
+﻿@using MinecraftLayoutEditor.Logic
+@using static MinecraftLayoutEditor.Logic.Layout
+
+<h3>Layout Settings</h3>
+<div class="form-group">
+    <label for="selectedMirrorMode">Mirror Mode</label>
+    <select class="form-control" id="selectedMirrorMode" @bind="SelectedMirrorMode">
+        <option value="@MirrorMode.None">None</option>
+        <option value="@MirrorMode.Rotate180">Rotate 180°</option>
+        <option value="@MirrorMode.MirrorHorizontal">Mirror Horizontal</option>
+        <option value="@MirrorMode.MirrorVertical">Mirror Vertical</option>
+    </select>
+</div>

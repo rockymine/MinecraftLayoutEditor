@@ -1,11 +1,14 @@
 ﻿@page "/"
 @using Excubo.Blazor.Canvas
+@using MinecraftLayoutEditor.WebApp.Components
 
 <PageTitle>Minecraft Layout Editor</PageTitle>
 
 <h1>Minecraft Layout Editor</h1>
 
 Welcome to your new app.
+
+<LayoutSettings @bind-MirrorMode="_layout.Geometry" />
 
 <div style="width: fit-content; height: fit-content;"
      @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true>
