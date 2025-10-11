@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="MinecraftLayoutEditor.Logic/MinecraftLayoutEditor.Logic.csproj" />
+  <Project Path="MinecraftLayoutEditor.Schematics/MinecraftLayoutEditor.Schematics.csproj" Id="c58c0c12-e3ed-456e-8764-6c7b1eef8aad" />
   <Project Path="MinecraftLayoutEditor.WebApp/MinecraftLayoutEditor.WebApp.csproj" />
 </Solution>

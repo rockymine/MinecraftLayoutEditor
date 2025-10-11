@@ -44,7 +44,7 @@ public static class Context2DExtensions
     }
 
     public static async Task DrawCircle(this Context2D ctx, Vector2 pos, float radiusX, 
-        float radiusY, float lineWidth, string fillStyle, string StrokeStyle, FillRule fillRule)
+        float radiusY, float lineWidth, string fillStyle, string strokeStyle, FillRule fillRule)
     {
         await ctx.SaveAsync();
 
@@ -57,7 +57,7 @@ public static class Context2DExtensions
 
         //Stroke
         await ctx.LineWidthAsync(lineWidth);
-        await ctx.StrokeStyleAsync("black");
+        await ctx.StrokeStyleAsync(strokeStyle);
         await ctx.StrokeAsync();
 
         await ctx.RestoreAsync();

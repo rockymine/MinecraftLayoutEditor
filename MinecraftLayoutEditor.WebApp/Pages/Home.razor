@@ -10,6 +10,8 @@ Welcome to your new app.
 
 <LayoutSettings @bind-MirrorMode="_layout.Geometry" />
 
+<button type="button" @onclick="OnSchematicCreate">Generate Schematic</button>
+
 <div style="width: fit-content; height: fit-content;"
      @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true>
     <Canvas @ref="@Canvas"

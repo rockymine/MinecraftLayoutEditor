@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BlazorDownloadFile" Version="2.4.0.2" />
     <PackageReference Include="Excubo.Blazor.Canvas" Version="3.2.92" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0-rc.1.25451.107" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0-rc.1.25451.107" PrivateAssets="all" />
@@ -15,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MinecraftLayoutEditor.Logic\MinecraftLayoutEditor.Logic.csproj" />
+    <ProjectReference Include="..\MinecraftLayoutEditor.Schematics\MinecraftLayoutEditor.Schematics.csproj" />
   </ItemGroup>
 
 </Project>

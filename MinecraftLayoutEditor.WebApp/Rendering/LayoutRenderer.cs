@@ -49,10 +49,11 @@ public class LayoutRenderer
     {
         foreach (var n in nodes)
         {
-            var fill = GetNodeFillColor(n, selectedNode, hoveredNode, opt);
+            //var fill = GetNodeFillColor(n, selectedNode, hoveredNode, opt);
+            var stroke = GetNodeStrokeColor(n, selectedNode, hoveredNode, opt);
 
             await ctx.DrawCircle(WorldToScreenPos(n.Position), opt.DefaultRadius, opt.DefaultRadius, 
-                opt.EdgeWidth, fill, opt.DefaultStroke, FillRule.NonZero);
+                opt.EdgeWidth, opt.DefaultFill, stroke, FillRule.NonZero);
         }
     }
 
@@ -81,6 +82,20 @@ public class LayoutRenderer
             return opt.HoveredNodeFill;
 
         return opt.DefaultFill;
+    }
+
+    private string GetNodeStrokeColor(Node node, Node? selectedNode, Node? hoveredNode, LayoutRenderOptions opt)
+    {
+        if (selectedNode == null && hoveredNode == null)
+            return opt.DefaultStroke;
+
+        if (node == selectedNode)
+            return opt.SelectedNodeStroke;
+
+        if (node == hoveredNode)
+            return opt.HoveredNodeStroke;
+
+        return opt.DefaultStroke;
     }
 
     public Vector2 WorldToScreenPos(Vector2 worldPos)
@@ -122,4 +137,6 @@ public class LayoutRenderOptions
     public double[] DefaultDash { get; init; } = [];
     public string HoveredNodeFill { get; init; } = "purple";
     public string SelectedNodeFill { get; init; } = "yellow";
+    public string HoveredNodeStroke { get; set; } = "purple";
+    public string SelectedNodeStroke { get; set; } = "cyan";
 }

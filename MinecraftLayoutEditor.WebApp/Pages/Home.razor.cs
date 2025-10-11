@@ -1,9 +1,12 @@
+using BlazorDownloadFile;
 using Excubo.Blazor.Canvas;
-using MinecraftLayoutEditor.WebApp.Extensions;
-using MinecraftLayoutEditor.Logic;
-using System.Numerics;
-using MinecraftLayoutEditor.WebApp.Rendering;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using MinecraftLayoutEditor.Logic;
+using MinecraftLayoutEditor.Schematics;
+using MinecraftLayoutEditor.WebApp.Extensions;
+using MinecraftLayoutEditor.WebApp.Rendering;
+using System.Numerics;
 using System.Threading.Tasks;
 using static MinecraftLayoutEditor.Logic.Layout;
 
@@ -18,12 +21,23 @@ public partial class Home
     private Node? HoveredNode;
     private Node? SelectedNode;
 
+    [Inject] public required IBlazorDownloadFileService BlazorDownloadFileService { get; set; }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) 
             return;
 
         await Render();
+    }
+
+    private async Task OnSchematicCreate()
+    {
+        var schematic = SchematicMaker.FromLayout(_layout);
+        var fileName = $"{schematic.Name}.schematic";
+
+        await BlazorDownloadFileService.DownloadFile(fileName, schematic.Save(),
+            "application/octet-stream");
     }
 
     private async Task OnMouseUp(MouseEventArgs e)
