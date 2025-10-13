@@ -29,7 +29,6 @@ namespace MinecraftLayoutEditor.Logic
                 Name = "One-Team Demo",
                 Width = 300,
                 Height = 160,
-                Geometry = Layout.MirrorMode.None,
                 Symmetry = new SymmetryAxis()
             };
 

@@ -14,18 +14,9 @@ public class Layout
     public int Height { get; set; }
     public List<Team> Teams { get; set; } = [];
     public string Author { get; set; } = "";
-    public MirrorMode Geometry { get; set; }
     public SymmetryAxis? Symmetry { get; set; }
     public bool MirrorEnabled { get; set; }
     public bool ShowBlocksEnabled { get; set; }
-
-    public enum MirrorMode
-    {
-        None,
-        Rotate180,
-        MirrorHorizontal,
-        MirrorVertical
-    }
 
     public Vector2 MirrorPosition(Vector2 pos, SymmetryAxis axis)
     {

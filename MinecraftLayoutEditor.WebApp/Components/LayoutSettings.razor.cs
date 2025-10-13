@@ -8,25 +8,6 @@ public partial class LayoutSettings
     [Parameter]
     public EventCallback SettingsChanged { get; set; }
 
-    [Parameter]
-    public MirrorMode MirrorMode { get; set; }
-
-    [Parameter]
-    public EventCallback<MirrorMode> MirrorModeChanged { get; set; }
-
-    private MirrorMode SelectedMirrorMode
-    {
-        get => MirrorMode;
-        set
-        {
-            if (MirrorMode == value) return;
-
-            MirrorMode = value;
-            MirrorModeChanged.InvokeAsync(value);
-            SettingsChanged.InvokeAsync();
-        }
-    }
-
     private int width;
     [Parameter]
     public int Width
