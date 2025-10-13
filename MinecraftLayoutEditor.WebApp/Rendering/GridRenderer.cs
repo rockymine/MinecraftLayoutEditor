@@ -36,4 +36,34 @@ public class GridRenderer
                 gridLineWidth, gridStroke, []);
         }
     }
+
+    public static IEnumerable<(int x, int z)> BresenhamLine(int x0, int z0, int x1, int z1)
+    {
+        int dx = Math.Abs(x1 - x0);
+        int dz = Math.Abs(z1 - z0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sz = z0 < z1 ? 1 : -1;
+        int err = dx - dz;
+
+        while (true)
+        {
+            yield return (x0, z0);
+
+            if (x0 == x1 && z0 == z1)
+                break;
+
+            int e2 = 2 * err;
+
+            if (e2 > -dz)
+            {
+                err -= dz;
+                x0 += sx;
+            }
+            if (e2 < dx)
+            {
+                err += dx;
+                z0 += sz;
+            }
+        }
+    }
 }

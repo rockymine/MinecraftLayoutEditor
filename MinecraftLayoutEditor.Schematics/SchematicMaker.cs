@@ -12,7 +12,6 @@ public class SchematicMaker
     {
         var schematic = new Schematic(layout.Name, (short)layout.Width, (short)layout.Height);
 
-        // Draw edges first, then nodes (so nodes appear on top)
         AddEdgesToSchematic(schematic, layout);
         AddNodesToSchematic(schematic, layout);
 
@@ -35,10 +34,10 @@ public class SchematicMaker
         // Draw each unique edge
         foreach (var edge in uniqueEdges)
         {
-            var startPos = GetSchematicPosition(edge.Node1.Position, layout.Width, layout.Height);
+            var (x, z) = GetSchematicPosition(edge.Node1.Position, layout.Width, layout.Height);
             var endPos = GetSchematicPosition(edge.Node2.Position, layout.Width, layout.Height);
 
-            DrawLine(schematic, startPos.x, startPos.z, endPos.x, endPos.z, blockId: 41);
+            DrawLine(schematic, x, z, endPos.x, endPos.z, blockId: 41);
         }
     }
 
@@ -46,8 +45,8 @@ public class SchematicMaker
     {
         foreach (var node in layout.Graph.Nodes)
         {
-            var pos = GetSchematicPosition(node.Position, layout.Width, layout.Height);
-            schematic.SetBlock(pos.x, 0, pos.z, 7);
+            var (x, z) = GetSchematicPosition(node.Position, layout.Width, layout.Height);
+            schematic.SetBlock(x, 0, z, 7);
         }
     }
 

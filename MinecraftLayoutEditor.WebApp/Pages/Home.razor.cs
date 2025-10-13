@@ -31,6 +31,21 @@ public partial class Home
         await Render();
     }
 
+    private async Task OnSettingsChanged()
+    {
+        await Render(); 
+    }
+
+    private async Task OnClearLayout()
+    {
+        SelectedNode = null;
+        HoveredNode = null;
+
+        _layout.Graph.Nodes.Clear();
+
+        await Render();
+    }
+
     private async Task OnSchematicCreate()
     {
         var schematic = SchematicMaker.FromLayout(_layout);

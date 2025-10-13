@@ -8,9 +8,21 @@
 
 Welcome to your new app.
 
-<LayoutSettings @bind-MirrorMode="_layout.Geometry" />
+<LayoutSettings @bind-MirrorMode="_layout.Geometry" 
+@bind-Width="_layout.Width" 
+@bind-Height="_layout.Height"
+@bind-MirrorEnabled="_layout.MirrorEnabled"
+@bind-RotationDeg="_layout.Symmetry.RotationDeg"
+@bind-IsHorizontal="_layout.Symmetry.IsHorizontal"
+@bind-ShowBlocksEnabled="_layout.ShowBlocksEnabled"
+SettingsChanged="OnSettingsChanged"/>
 
 <button type="button" @onclick="OnSchematicCreate">Generate Schematic</button>
+
+<button type="button" @onclick="OnClearLayout"
+        disabled="@(!_layout.Graph.Nodes.Any())">
+    Clear layout
+</button>
 
 <div style="width: fit-content; height: fit-content;"
      @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true>

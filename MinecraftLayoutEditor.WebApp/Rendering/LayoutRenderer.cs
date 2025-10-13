@@ -38,9 +38,14 @@ public class LayoutRenderer
         {
             await ctx.DrawLine(WorldToScreenPos(layout.Symmetry.GetStartPointWorld(layout)),
                 WorldToScreenPos(layout.Symmetry.GetEndPointWorld(layout)), 2f, "red", [5]);
+
+            if (layout.Symmetry.RotationDeg == 180)
+            {
+                await ctx.DrawCircle(WorldToScreenPos(Vector2.Zero), 6f, 6f, 2f, "red", "red", FillRule.NonZero);
+            }
         }
 
-        await RenderEdges(ctx, edges, opt);
+        await RenderEdges(ctx, edges, opt, layout);
         await RenderNodes(ctx, nodes, opt, hoveredNode, selectedNode);
     }
 
@@ -57,14 +62,21 @@ public class LayoutRenderer
         }
     }
 
-    private async Task RenderEdges(Context2D ctx, List<Edge> edges, LayoutRenderOptions opt)
+    private async Task RenderEdges(Context2D ctx, List<Edge> edges, LayoutRenderOptions opt, Logic.Layout layout)
     {
         foreach (var e in edges)
         {
             var dash = opt.DefaultDash;
             if (e.Type == Edge.EdgeType.Bridgeable)
                 dash = [5];
+
             
+            if (layout.ShowBlocksEnabled == true)
+            {
+                await ctx.FillCellsAlongBresenhamLine(WorldToScreenPos(e.Node1.Position), WorldToScreenPos(e.Node2.Position),
+                    WorldToScreenPos(new Vector2(-layout.Width / 2, -layout.Height / 2)), Scale, "pink");
+            }
+
             await ctx.DrawLine(WorldToScreenPos(e.Node1.Position), WorldToScreenPos(e.Node2.Position), 
                 opt.EdgeWidth, opt.DefaultStroke, dash);
         }

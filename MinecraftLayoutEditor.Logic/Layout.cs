@@ -16,6 +16,8 @@ public class Layout
     public string Author { get; set; } = "";
     public MirrorMode Geometry { get; set; }
     public SymmetryAxis? Symmetry { get; set; }
+    public bool MirrorEnabled { get; set; }
+    public bool ShowBlocksEnabled { get; set; }
 
     public enum MirrorMode
     {
@@ -72,15 +74,18 @@ public class Layout
         if (Symmetry == null)
             return;
 
-        var mirroredPos = MirrorPosition(node.Position, Symmetry);
-
-        var mirrored = new Node(mirroredPos)
+        if (MirrorEnabled)
         {
-            MirrorRef = node
-        };
+            var mirroredPos = MirrorPosition(node.Position, Symmetry);
 
-        node.MirrorRef = mirrored;
-        Graph.Nodes.Add(mirrored);
+            var mirrored = new Node(mirroredPos)
+            {
+                MirrorRef = node
+            };
+
+            node.MirrorRef = mirrored;
+            Graph.Nodes.Add(mirrored);
+        }        
     }
 
     // TODO: move to utility class

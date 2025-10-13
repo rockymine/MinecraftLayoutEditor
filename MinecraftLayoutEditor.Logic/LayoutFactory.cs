@@ -11,10 +11,11 @@ namespace MinecraftLayoutEditor.Logic
             {
                 Width = width,
                 Height = height,
+                MirrorEnabled = true,
                 Symmetry = new SymmetryAxis()
                 {
                     IsHorizontal = true,
-                    RotationDeg = 180
+                    RotationDeg = 0
                 }
             };
 

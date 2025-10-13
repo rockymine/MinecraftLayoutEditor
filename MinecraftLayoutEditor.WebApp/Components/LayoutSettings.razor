@@ -2,12 +2,53 @@
 @using static MinecraftLayoutEditor.Logic.Layout
 
 <h3>Layout Settings</h3>
+<!-- Mirror -->
+<div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" id="mirrorEnabled"
+           @bind="MirrorEnabled" />
+    <label class="form-check-label" for="mirrorEnabled">
+        Enable mirroring
+    </label>
+</div>
+
+<!-- MirrorAxis -->
 <div class="form-group">
-    <label for="selectedMirrorMode">Mirror Mode</label>
-    <select class="form-control" id="selectedMirrorMode" @bind="SelectedMirrorMode">
-        <option value="@MirrorMode.None">None</option>
-        <option value="@MirrorMode.Rotate180">Rotate 180°</option>
-        <option value="@MirrorMode.MirrorHorizontal">Mirror Horizontal</option>
-        <option value="@MirrorMode.MirrorVertical">Mirror Vertical</option>
+    <label for="axisSelect">Mirror axis</label>
+    <select id="axisSelect" class="form-control"
+            @bind="AxisText" disabled="@(!MirrorEnabled)">
+        <option value="Vertical">Vertical</option>
+        <option value="Horizontal">Horizontal</option>
     </select>
+</div>
+
+<!-- RotationDeg -->
+<div class="form-group">
+    <label for="rotation">Rotation (deg)</label>
+    <select id="rotation" class="form-control"
+            @bind="RotationDeg"
+            disabled="@(!MirrorEnabled)">
+        <option value="0">0°</option>
+        <option value="180">180°</option>
+    </select>
+</div>
+
+<!-- Width -->
+<div class="form-group">
+    <label for="width">Width</label>
+    <input type="number" id="width" class="form-control" @bind="Width">
+</div>
+
+<!-- Height -->
+<div class="form-group">
+    <label for="height">Height</label>
+    <input type="number" id="height" class="form-control" @bind="Height">
+</div>
+
+<!-- Blocks -->
+<div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" id="showBlocksEnabled"
+           @bind="ShowBlocksEnabled" />
+    <label class="form-check-label" for="showBlocksEnabled">
+        Show blocks
+    </label>
 </div>
