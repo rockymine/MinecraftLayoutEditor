@@ -39,7 +39,7 @@ public class LayoutRenderer
             options.GridLineStroke, []);
 
         // Render the mirror line and mirror point
-        if (layout.Symmetry != null)
+        if (layout.Symmetry != null && layout.MirrorEnabled)
         {
             await ctx.DrawLine(WorldToScreenPos(layout.Symmetry.GetStartPointWorld(layout)),
                 WorldToScreenPos(layout.Symmetry.GetEndPointWorld(layout)), options.MirrorLineWidth, 
@@ -75,8 +75,25 @@ public class LayoutRenderer
                 finalStroke = options.SelectedNodeStroke;
             }
 
-            await ctx.DrawCircle(WorldToScreenPos(n.Position), baseStyle.Radius, baseStyle.Radius,
-                baseStyle.LineWidth, baseStyle.FillStyle, finalStroke, FillRule.NonZero);
+            if (baseStyle.Shape == "circle")
+            {
+                await ctx.DrawCircle(WorldToScreenPos(n.Position), baseStyle.Radius, baseStyle.Radius,
+                    baseStyle.LineWidth, baseStyle.FillStyle, finalStroke, FillRule.NonZero);
+            } 
+            else if (baseStyle.Shape == "square")
+            {
+                var size = baseStyle.Radius * (float)Math.Sqrt(Math.PI / 4);
+                var topLeft = WorldToScreenPos(n.Position) - new Vector2(size, size);
+                
+                await ctx.DrawRect(topLeft, size * 2, size * 2, 
+                    baseStyle.LineWidth, finalStroke, baseStyle.LineDash, baseStyle.FillStyle);
+            } else if (baseStyle.Shape == "diamond")
+            {
+                var size = baseStyle.Radius * (float)Math.Sqrt(Math.PI / 2);
+
+                await ctx.DrawDiamond(WorldToScreenPos(n.Position), size, size,
+                    baseStyle.LineWidth, finalStroke, baseStyle.LineDash, baseStyle.FillStyle);
+            }
         }
     }
 

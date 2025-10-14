@@ -15,7 +15,7 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 public partial class Home
 {
     private Canvas Canvas;
-    private readonly Logic.Layout _layout = LayoutFactory.Empty(30, 20);
+    private readonly Logic.Layout _layout = LayoutFactory.Empty(40, 40);
     private readonly LayoutRenderer _renderer = new();
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;

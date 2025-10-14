@@ -14,9 +14,12 @@ public class Layout
     public int Height { get; set; }
     public List<Team> Teams { get; set; } = [];
     public string Author { get; set; } = "";
+
+    // TODO: move, does not belong here!!!
     public SymmetryAxis? Symmetry { get; set; }
     public bool MirrorEnabled { get; set; }
     public bool ShowBlocksEnabled { get; set; }
+    public Node.NodeType SelectedNodeType { get; set; } = Node.NodeType.Undefined;
 
     public Vector2 MirrorPosition(Vector2 pos, SymmetryAxis axis)
     {
@@ -59,7 +62,10 @@ public class Layout
         if (closestNode != null && Vector2.DistanceSquared(closestNode.Position, pos) < 1)
             return;
 
-        var node = new Node(pos);
+        var node = new Node(pos)
+        {
+            Type = SelectedNodeType
+        };
         Graph.Nodes.Add(node);
 
         if (Symmetry == null)
@@ -71,7 +77,8 @@ public class Layout
 
             var mirrored = new Node(mirroredPos)
             {
-                MirrorRef = node
+                MirrorRef = node,
+                Type = node.Type
             };
 
             node.MirrorRef = mirrored;

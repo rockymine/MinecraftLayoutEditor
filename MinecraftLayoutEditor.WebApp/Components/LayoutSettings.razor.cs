@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using MinecraftLayoutEditor.Logic;
 using static MinecraftLayoutEditor.Logic.Layout;
 
 namespace MinecraftLayoutEditor.WebApp.Components;
@@ -122,4 +123,21 @@ public partial class LayoutSettings
     }
     [Parameter]
     public EventCallback<bool> ShowBlocksEnabledChanged { get; set; }
+
+    private Node.NodeType selectedNodeType;
+    [Parameter]
+    public Node.NodeType SelectedNodeType
+    {
+        get => selectedNodeType;
+        set
+        {
+            if (selectedNodeType == value) return;
+
+            selectedNodeType = value;
+            SelectedNodeTypeChanged.InvokeAsync(selectedNodeType);
+            SettingsChanged.InvokeAsync();
+        }
+    }
+    [Parameter]
+    public EventCallback<Node.NodeType> SelectedNodeTypeChanged { get; set; }
 }

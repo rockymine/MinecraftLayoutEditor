@@ -38,9 +38,29 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
                 LineWidth = 2
             };
 
+            var woolNodeStyle = new NodeRenderStyle
+            {
+                FillStyle = "green",
+                StrokeStyle = "#666",
+                Radius = 6,
+                Shape = "square",
+                LineWidth = 2
+            };
+
+            var spawnNodeStyle = new NodeRenderStyle
+            {
+                FillStyle = "blue",
+                StrokeStyle = "#666",
+                Radius = 6,
+                Shape = "diamond",
+                LineWidth = 2
+            };
+
             NodeStyles = new Dictionary<Node.NodeType, NodeRenderStyle>
             {
                 { Node.NodeType.Undefined, defaultNodeStyle },
+                { Node.NodeType.Wool, woolNodeStyle },
+                { Node.NodeType.Spawn, spawnNodeStyle },
             };
 
             var walkableEdgeStyle = new EdgeRenderStyle

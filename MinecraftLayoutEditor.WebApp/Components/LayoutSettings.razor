@@ -52,3 +52,14 @@
         Show blocks
     </label>
 </div>
+
+<!-- Selected Node Type -->
+<div class="form-group">
+    <label for="selectedNodeType">Node type</label>
+    <InputSelect id="selectedNodeType" class="form-control"
+                 @bind-Value="SelectedNodeType">
+        <option value="@Node.NodeType.Undefined">Undefined</option>
+        <option value="@Node.NodeType.Wool">Wool</option>
+        <option value="@Node.NodeType.Spawn">Spawn</option>
+    </InputSelect>
+</div>
