@@ -56,7 +56,7 @@ public static class Context2DExtensions
         await ctx.FillStyleAsync(fillStyle);
         await ctx.FillAsync(fillRule);
 
-        //Stroke
+        // Stroke
         await ctx.LineWidthAsync(lineWidth);
         await ctx.StrokeStyleAsync(strokeStyle);
         await ctx.StrokeAsync();
@@ -76,19 +76,19 @@ public static class Context2DExtensions
         await ctx.SaveAsync();
         await ctx.FillStyleAsync(fillStyle);
 
-        // 1) Map endpoints from pixels -> grid cell indices
+        // Map from pixels to grid cell indices
         var (gx0, gz0) = ToGridCell(screenPos1, originPx, cellSizePx);
         var (gx1, gz1) = ToGridCell(screenPos2, originPx, cellSizePx);
 
-        // 2) Run Bresenham on CELL coordinates (not pixels!)
+        // Run Bresenham on cell coordinates
         foreach (var (gx, gz) in GridRenderer.BresenhamLine(gx0, gz0, gx1, gz1))
         {
-            // 3) Map cell -> pixel rect and fill
+            // Map cell -> pixel rect and fill
             double px = originPx.X + gx * cellSizePx;
             double py = originPx.Y + gz * cellSizePx;
             await ctx.FillRectAsync(px, py, cellSizePx, cellSizePx);
         }
 
-        await ctx.RestoreAsync(); // you were missing this
+        await ctx.RestoreAsync();
     }
 }

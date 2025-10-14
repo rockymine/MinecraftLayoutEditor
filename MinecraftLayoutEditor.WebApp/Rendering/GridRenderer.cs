@@ -6,11 +6,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering;
 
 public class GridRenderer
 {
-    public async Task RenderAsync(Context2D ctx, int gridSpacing, Logic.Layout layout, LayoutRenderer renderer)
+    public async Task RenderAsync(Context2D ctx, int gridSpacing, float gridLineWidth, string gridStrokeStyle, Logic.Layout layout, LayoutRenderer renderer)
     {
-        var gridStroke = "black";
-        var gridLineWidth = 0.5f;
-        
         await ctx.SaveAsync();
         await ctx.BeginPathAsync();
 
@@ -23,7 +20,7 @@ public class GridRenderer
             var pos2 = new Vector2(x, layout.Height / 2);
 
             await ctx.DrawLine(renderer.WorldToScreenPos(pos1), renderer.WorldToScreenPos(pos2), 
-                gridLineWidth, gridStroke, []);
+                gridLineWidth, gridStrokeStyle, []);
         }
 
         // horizontal lines
@@ -33,7 +30,7 @@ public class GridRenderer
             var pos2 = new Vector2(layout.Width / 2, y);
 
             await ctx.DrawLine(renderer.WorldToScreenPos(pos1), renderer.WorldToScreenPos(pos2), 
-                gridLineWidth, gridStroke, []);
+                gridLineWidth, gridStrokeStyle, []);
         }
     }
 

@@ -17,7 +17,7 @@ public partial class Home
     private Canvas Canvas;
     private readonly Logic.Layout _layout = LayoutFactory.Empty(30, 20);
     private readonly LayoutRenderer _renderer = new();
-    private readonly LayoutRenderOptions _options = new();
+    private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
     private Node? SelectedNode;
 
@@ -60,11 +60,13 @@ public partial class Home
         Vector2 clickedAt = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, 
             (float)e.OffsetY));
 
+        // Add nodes when the user left clicks the canvas and no node is selected
         if (e.Button == 0 && HoveredNode == null && _layout.Contains(clickedAt))
         {
             _layout.AddNode(clickedAt);
             await Render();
         }
+        // Select nodes with right click
         else if (e.Button == 0 && HoveredNode != null)
         {
             if (SelectedNode == null)
@@ -73,12 +75,14 @@ public partial class Home
             } 
             else
             {
+                // Add or delete edge when second node is clicked
                 _layout.Graph.AddOrRemoveEdge(HoveredNode, SelectedNode);
                 SelectedNode = null;
             }
 
             await Render();
         }
+        // Delete node when the user right clicks on it
         else if (e.Button == 2 && HoveredNode != null)
         {
             _layout.Graph.DeleteNode(HoveredNode);
@@ -109,7 +113,7 @@ public partial class Home
     {
         await using (var ctx = await Canvas.GetContext2DAsync())
         {
-            await _renderer.RenderAsync(ctx, _layout, _options, HoveredNode, SelectedNode);
+            await _renderer.RenderAsync(ctx, _layout, HoveredNode, SelectedNode, _renderingOptions);
         }
     }
 }

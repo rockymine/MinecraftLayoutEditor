@@ -10,11 +10,11 @@ namespace MinecraftLayoutEditor.WebApp.Rendering;
 public class LayoutRenderer
 {
     private readonly GridRenderer _gridRenderer = new();
-    private Vector2 Translation = new Vector2(25, 25);
+    private Vector2 Translation = new(25, 25);
     private float Scale = 20f;
 
-    public async Task RenderAsync(Context2D ctx, Logic.Layout layout, LayoutRenderOptions opt,
-        Node? hoveredNode, Node? selectedNode)
+    public async Task RenderAsync(Context2D ctx, Logic.Layout layout,
+        Node? hoveredNode, Node? selectedNode, RenderingOptions options)
     {
         var edges = new List<Edge>();
         var nodes = layout.Graph.Nodes;
@@ -30,84 +30,73 @@ public class LayoutRenderer
 
         await ctx.ClearRectAsync(0, 0, 1000, 1000);
 
-        await _gridRenderer.RenderAsync(ctx, 1, layout, this);
-        await ctx.DrawRect(WorldToScreenPos(new Vector2(-layout.Width / 2, -layout.Height / 2)), 
-            WorldToScreenScale(layout.Width), WorldToScreenScale(layout.Height), 1, "black", []);
+        // Render the grid cells
+        await _gridRenderer.RenderAsync(ctx, options.GridSpacing, options.GridLineWidth, options.GridLineStroke, layout, this);
 
+        // Render a box around the grid
+        await ctx.DrawRect(WorldToScreenPos(new Vector2(-layout.Width / 2, -layout.Height / 2)), 
+            WorldToScreenScale(layout.Width), WorldToScreenScale(layout.Height), options.GridBorderLineWidth, 
+            options.GridLineStroke, []);
+
+        // Render the mirror line and mirror point
         if (layout.Symmetry != null)
         {
             await ctx.DrawLine(WorldToScreenPos(layout.Symmetry.GetStartPointWorld(layout)),
-                WorldToScreenPos(layout.Symmetry.GetEndPointWorld(layout)), 2f, "red", [5]);
+                WorldToScreenPos(layout.Symmetry.GetEndPointWorld(layout)), options.MirrorLineWidth, 
+                options.MirrorLineStroke, options.MirrorLineDash);
 
             if (layout.Symmetry.RotationDeg == 180)
             {
-                await ctx.DrawCircle(WorldToScreenPos(Vector2.Zero), 6f, 6f, 2f, "red", "red", FillRule.NonZero);
+                await ctx.DrawCircle(WorldToScreenPos(Vector2.Zero), options.MirrorPointRadius, 
+                    options.MirrorPointRadius, options.MirrorPointLineWidth, options.MirrorPointFill, 
+                    options.MirrorPointLineStroke, FillRule.NonZero);
             }
         }
 
-        await RenderEdges(ctx, edges, opt, layout);
-        await RenderNodes(ctx, nodes, opt, hoveredNode, selectedNode);
+        // Render the graph
+        await RenderEdges(ctx, edges, layout, options);
+        await RenderNodes(ctx, nodes, hoveredNode, selectedNode, options);
     }
 
-    private async Task RenderNodes(Context2D ctx, List<Node> nodes, LayoutRenderOptions opt, 
-        Node? hoveredNode, Node? selectedNode)
+    private async Task RenderNodes(Context2D ctx, List<Node> nodes, 
+        Node? hoveredNode, Node? selectedNode, RenderingOptions options)
     {
         foreach (var n in nodes)
         {
-            //var fill = GetNodeFillColor(n, selectedNode, hoveredNode, opt);
-            var stroke = GetNodeStrokeColor(n, selectedNode, hoveredNode, opt);
+            var baseStyle = options.GetStyle(n.Type);
+            var finalStroke = baseStyle.StrokeStyle;
 
-            await ctx.DrawCircle(WorldToScreenPos(n.Position), opt.DefaultRadius, opt.DefaultRadius, 
-                opt.EdgeWidth, opt.DefaultFill, stroke, FillRule.NonZero);
+            if (n == hoveredNode)
+            {
+                finalStroke = options.HoveredNodeStroke;
+            }
+            else if (n == selectedNode)
+            {
+                finalStroke = options.SelectedNodeStroke;
+            }
+
+            await ctx.DrawCircle(WorldToScreenPos(n.Position), baseStyle.Radius, baseStyle.Radius,
+                baseStyle.LineWidth, baseStyle.FillStyle, finalStroke, FillRule.NonZero);
         }
     }
 
-    private async Task RenderEdges(Context2D ctx, List<Edge> edges, LayoutRenderOptions opt, Logic.Layout layout)
+    private async Task RenderEdges(Context2D ctx, List<Edge> edges, Logic.Layout layout, RenderingOptions options)
     {
         foreach (var e in edges)
         {
-            var dash = opt.DefaultDash;
-            if (e.Type == Edge.EdgeType.Bridgeable)
-                dash = [5];
-
-            
             if (layout.ShowBlocksEnabled == true)
             {
-                await ctx.FillCellsAlongBresenhamLine(WorldToScreenPos(e.Node1.Position), WorldToScreenPos(e.Node2.Position),
-                    WorldToScreenPos(new Vector2(-layout.Width / 2, -layout.Height / 2)), Scale, "pink");
+                await ctx.FillCellsAlongBresenhamLine(WorldToScreenPos(e.Node1.Position), 
+                    WorldToScreenPos(e.Node2.Position), 
+                    WorldToScreenPos(new Vector2(-layout.Width / 2, -layout.Height / 2)), 
+                    Scale, options.CellFillStyle);
             }
 
+            var baseStyle = options.GetStyle(e.Type);
+
             await ctx.DrawLine(WorldToScreenPos(e.Node1.Position), WorldToScreenPos(e.Node2.Position), 
-                opt.EdgeWidth, opt.DefaultStroke, dash);
+                baseStyle.LineWidth, baseStyle.StrokeStyle, baseStyle.LineDash);
         }
-    }
-
-    private string GetNodeFillColor(Node node, Node? selectedNode, Node? hoveredNode, LayoutRenderOptions opt)
-    {
-        if (selectedNode == null && hoveredNode == null)
-            return opt.DefaultFill;
-
-        if (node == selectedNode)
-            return opt.SelectedNodeFill;
-
-        if (node == hoveredNode)
-            return opt.HoveredNodeFill;
-
-        return opt.DefaultFill;
-    }
-
-    private string GetNodeStrokeColor(Node node, Node? selectedNode, Node? hoveredNode, LayoutRenderOptions opt)
-    {
-        if (selectedNode == null && hoveredNode == null)
-            return opt.DefaultStroke;
-
-        if (node == selectedNode)
-            return opt.SelectedNodeStroke;
-
-        if (node == hoveredNode)
-            return opt.HoveredNodeStroke;
-
-        return opt.DefaultStroke;
     }
 
     public Vector2 WorldToScreenPos(Vector2 worldPos)
@@ -128,27 +117,4 @@ public class LayoutRenderer
     {
         return worldLength * Scale;
     }
-}
-
-public class LayoutRenderOptions
-{
-    public float EdgeWidth { get; init; } = 2;
-    public string EdgeColor { get; init; } = "#333";
-    public float SpawnRadius { get; init; } = 10;
-    public float WoolRadius { get; init; } = 9;
-    public float DefaultRadius { get; init; } = 6;
-    public string SpawnFill { get; init; } = "limegreen";
-    public string SpawnStroke { get; init; } = "#0a3";
-    public string WoolFill { get; init; } = "gold";
-    public string WoolStroke { get; init; } = "#b98c00";
-    public string DefaultFill { get; init; } = "lightgray";
-    public string DefaultStroke { get; init; } = "#666";
-    public bool ShowLabels { get; init; } = false;
-    public string LabelFont { get; init; } = "12px system-ui, sans-serif";
-    public string LabelColor { get; init; } = "#111";
-    public double[] DefaultDash { get; init; } = [];
-    public string HoveredNodeFill { get; init; } = "purple";
-    public string SelectedNodeFill { get; init; } = "yellow";
-    public string HoveredNodeStroke { get; set; } = "purple";
-    public string SelectedNodeStroke { get; set; } = "cyan";
 }
