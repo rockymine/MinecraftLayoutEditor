@@ -8,14 +8,15 @@ public class Schematic
     public string Name { get; }
     public short Width { get; }
     public short Length { get; }
-    public short Height { get; } = 1;
+    public short Height { get; }
     public byte[,,] Blocks { get; }
     public string Materials { get; } = "Alpha";
 
-    public Schematic(string name, short width, short length)
+    public Schematic(string name, short width, short height, short length)
     {
         Name = name;
         Width = width;
+        Height = height;
         Length = length;
         Blocks = new byte[Width, Height, Length];
     }
