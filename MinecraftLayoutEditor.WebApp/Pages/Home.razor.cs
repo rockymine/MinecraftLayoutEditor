@@ -48,7 +48,7 @@ public partial class Home
 
     private async Task OnSchematicCreate()
     {
-        var schematic = SchematicMaker.FromLayout(_layout, height: 5, scale: 2);
+        var schematic = SchematicMaker.FromLayout(_layout, height: 5, scale: 4);
         var fileName = $"{schematic.Name}.schematic";
 
         await BlazorDownloadFileService.DownloadFile(fileName, schematic.Save(),

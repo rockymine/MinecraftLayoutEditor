@@ -38,7 +38,11 @@ public class SchematicMaker
             var (x, z) = GetSchematicPosition(edge.Node1.Position, layout.Width, layout.Height, scale);
             var endPos = GetSchematicPosition(edge.Node2.Position, layout.Width, layout.Height, scale);
 
-            DrawLine(schematic, x, z, endPos.x, endPos.z, blockId: 41, height);
+            for (var i = 0; i < height; i++)
+            {
+                DrawLine(schematic, x, i, z, endPos.x, endPos.z, blockId: 1);
+                DrawAxisAlignedThickLine(schematic, x, i, z, endPos.x, endPos.z, 8, blockId: 1);
+            }
         }
     }
 
@@ -61,7 +65,7 @@ public class SchematicMaker
         return (x, z);
     }
 
-    private static void DrawLine(Schematic schematic, int x0, int z0, int x1, int z1, short blockId, int height)
+    private static void DrawLine(Schematic schematic, int x0, int y, int z0, int x1, int z1, short blockId)
     {
         int dx = Math.Abs(x1 - x0);
         int dz = Math.Abs(z1 - z0);
@@ -74,10 +78,7 @@ public class SchematicMaker
             // Set block at current position (check bounds)
             if (x0 >= 0 && x0 < schematic.Width && z0 >= 0 && z0 < schematic.Length)
             {
-                for (int i = 0; i < height; i++)
-                {
-                    schematic.SetBlock(x0, i, z0, 1);
-                }
+                schematic.SetBlock(x0, y, z0, (byte)blockId);
             }
 
             if (x0 == x1 && z0 == z1) break;
@@ -92,6 +93,46 @@ public class SchematicMaker
             {
                 err += dx;
                 z0 += sz;
+            }
+        }
+    }
+
+    private static void DrawAxisAlignedThickLine(Schematic schematic, int x0, int y, int z0, int x1, int z1, int width, int blockId)
+    {
+        int halfWidth = width / 2;
+
+        if (x0 == x1)
+        {
+            // Vertical line (aligned on X axis) - thickness in X direction
+            int minZ = Math.Min(z0, z1);
+            int maxZ = Math.Max(z0, z1);
+            int minX = x0 - halfWidth;
+            int maxX = x0 + halfWidth;
+
+            FillRect(schematic, minX, maxX, minZ, maxZ, y, (byte)blockId);
+        }
+        else if (z0 == z1)
+        {
+            // Horizontal line (aligned on Z axis) - thickness in Z direction
+            int minX = Math.Min(x0, x1);
+            int maxX = Math.Max(x0, x1);
+            int minZ = z0 - halfWidth;
+            int maxZ = z0 + halfWidth;
+
+            FillRect(schematic, minX, maxX, minZ, maxZ, y, (byte)blockId);
+        }
+    }
+
+    private static void FillRect(Schematic schematic, int minX, int maxX, int minZ, int maxZ, int y, short blockId)
+    {
+        for (int z = minZ; z <= maxZ; z++)
+        {
+            for (int x = minX; x <= maxX; x++)
+            {
+                if (x >= 0 && x < schematic.Width && z >= 0 && z < schematic.Length)
+                {
+                    schematic.SetBlock(x, y, z, (byte)blockId);
+                }
             }
         }
     }
