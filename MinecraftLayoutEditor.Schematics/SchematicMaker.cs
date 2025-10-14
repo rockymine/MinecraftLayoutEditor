@@ -2,23 +2,24 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace MinecraftLayoutEditor.Schematics;
 
 public class SchematicMaker
 {
-    public static Schematic FromLayout(Layout layout)
+    public static Schematic FromLayout(Layout layout, int scale = 1)
     {
-        var schematic = new Schematic(layout.Name, (short)layout.Width, (short)layout.Height);
+        var schematic = new Schematic(layout.Name, (short)(layout.Width * scale), (short)(layout.Height * scale));
 
-        AddEdgesToSchematic(schematic, layout);
-        AddNodesToSchematic(schematic, layout);
+        AddEdgesToSchematic(schematic, layout, scale);
+        AddNodesToSchematic(schematic, layout, scale);
 
         return schematic;
     }
 
-    private static void AddEdgesToSchematic(Schematic schematic, Layout layout)
+    private static void AddEdgesToSchematic(Schematic schematic, Layout layout, int scale)
     {
         // Collect unique edges to avoid drawing each edge twice
         var uniqueEdges = new HashSet<Edge>();
@@ -34,26 +35,29 @@ public class SchematicMaker
         // Draw each unique edge
         foreach (var edge in uniqueEdges)
         {
-            var (x, z) = GetSchematicPosition(edge.Node1.Position, layout.Width, layout.Height);
-            var endPos = GetSchematicPosition(edge.Node2.Position, layout.Width, layout.Height);
+            var (x, z) = GetSchematicPosition(edge.Node1.Position, layout.Width, layout.Height, scale);
+            var endPos = GetSchematicPosition(edge.Node2.Position, layout.Width, layout.Height, scale);
 
             DrawLine(schematic, x, z, endPos.x, endPos.z, blockId: 41);
         }
     }
 
-    private static void AddNodesToSchematic(Schematic schematic, Layout layout)
+    private static void AddNodesToSchematic(Schematic schematic, Layout layout, int scale)
     {
         foreach (var node in layout.Graph.Nodes)
         {
-            var (x, z) = GetSchematicPosition(node.Position, layout.Width, layout.Height);
+            var (x, z) = GetSchematicPosition(node.Position, layout.Width, layout.Height, scale);
             schematic.SetBlock(x, 0, z, 7);
         }
     }
 
-    private static (int x, int z) GetSchematicPosition(Vector2 position, int width, int height)
+    private static (int x, int z) GetSchematicPosition(Vector2 position, int width, int height, int scale)
     {
-        var x = (int)Math.Floor(position.X + width / 2);
-        var z = (int)Math.Floor(position.Y + height / 2);
+        var scaledX = position.X * scale;
+        var scaledZ = position.Y * scale;
+        
+        var x = (int)Math.Floor(scaledX + (width * scale) / 2);
+        var z = (int)Math.Floor(scaledZ + (height * scale) / 2);
         return (x, z);
     }
 
