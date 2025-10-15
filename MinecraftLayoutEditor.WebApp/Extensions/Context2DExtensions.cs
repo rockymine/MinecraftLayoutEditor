@@ -3,6 +3,7 @@ using Excubo.Blazor.Canvas;
 using System.Numerics;
 using MinecraftLayoutEditor.WebApp.Rendering;
 using System.Xml.Linq;
+using MinecraftLayoutEditor.Logic.Geometry;
 
 namespace MinecraftLayoutEditor.WebApp.Extensions;
 
@@ -90,34 +91,6 @@ public static class Context2DExtensions
         await ctx.LineWidthAsync(lineWidth);
         await ctx.StrokeStyleAsync(strokeStyle);
         await ctx.StrokeAsync();
-
-        await ctx.RestoreAsync();
-    }
-
-    private static (int gx, int gz) ToGridCell(Vector2 screenPos, Vector2 originPx, float cellSizePx)
-    {
-        var gx = (int)Math.Floor((screenPos.X - originPx.X) / cellSizePx);
-        var gz = (int)Math.Floor((screenPos.Y - originPx.Y) / cellSizePx);
-        return (gx, gz);
-    }
-
-    public static async Task FillCellsAlongBresenhamLine(this Context2D ctx, Vector2 screenPos1, Vector2 screenPos2, Vector2 originPx, float cellSizePx, string fillStyle)
-    {
-        await ctx.SaveAsync();
-        await ctx.FillStyleAsync(fillStyle);
-
-        // Map from pixels to grid cell indices
-        var (gx0, gz0) = ToGridCell(screenPos1, originPx, cellSizePx);
-        var (gx1, gz1) = ToGridCell(screenPos2, originPx, cellSizePx);
-
-        // Run Bresenham on cell coordinates
-        foreach (var (gx, gz) in GridRenderer.BresenhamLine(gx0, gz0, gx1, gz1))
-        {
-            // Map cell -> pixel rect and fill
-            double px = originPx.X + gx * cellSizePx;
-            double py = originPx.Y + gz * cellSizePx;
-            await ctx.FillRectAsync(px, py, cellSizePx, cellSizePx);
-        }
 
         await ctx.RestoreAsync();
     }

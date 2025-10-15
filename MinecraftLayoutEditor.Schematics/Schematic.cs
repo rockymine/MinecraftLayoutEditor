@@ -23,6 +23,9 @@ public class Schematic
 
     public void SetBlock(int x, int y, int z, byte blockID)
     {
+        if (x < 0 || y < 0 || z < 0 || x >= Blocks.GetLength(0) || y >= Blocks.GetLength(1) || z >= Blocks.GetLength(2))
+            throw new IndexOutOfRangeException($"Block outside of schematic: {x}, {y}, {z}");
+
         Blocks[x, y, z] = blockID;
     }
 

@@ -29,6 +29,12 @@ public class Node
         return null;
     }
 
+    public bool AxisAligned(Node other)
+    {
+        return Position.X == other.Position.X ||
+           Position.Y == other.Position.Y;
+    }
+
     public enum NodeType
     {
         Undefined,

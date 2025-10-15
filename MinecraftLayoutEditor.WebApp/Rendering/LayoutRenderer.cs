@@ -4,6 +4,7 @@ using MinecraftLayoutEditor.WebApp.Extensions;
 using Excubo.Blazor.Canvas;
 using System.Xml.Linq;
 using System.Numerics;
+using MinecraftLayoutEditor.Logic.Geometry;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering;
 
@@ -101,18 +102,24 @@ public class LayoutRenderer
     {
         foreach (var e in edges)
         {
-            if (layout.ShowBlocksEnabled == true)
-            {
-                await ctx.FillCellsAlongBresenhamLine(WorldToScreenPos(e.Node1.Position), 
-                    WorldToScreenPos(e.Node2.Position), 
-                    WorldToScreenPos(new Vector2(-layout.Width / 2, -layout.Height / 2)), 
-                    Scale, options.CellFillStyle);
-            }
+            await RenderBlockEdges(ctx, e.Node1.Position, e.Node2.Position, layout);
 
             var baseStyle = options.GetStyle(e.Type);
 
             await ctx.DrawLine(WorldToScreenPos(e.Node1.Position), WorldToScreenPos(e.Node2.Position), 
                 baseStyle.LineWidth, baseStyle.StrokeStyle, baseStyle.LineDash);
+        }
+    }
+
+    public async Task RenderBlockEdges(Context2D ctx, Vector2 pos1, Vector2 pos2, Logic.Layout layout)
+    {
+        if (!layout.ShowBlocksEnabled)
+            return;
+
+        foreach (var block in Rectangle.DiscretePointsInsideRect(pos1, pos2, 4))
+        {
+            await ctx.DrawRect(WorldToScreenPos(block), WorldToScreenScale(1), WorldToScreenScale(1), 
+                1, "black", [], "gray");
         }
     }
 
