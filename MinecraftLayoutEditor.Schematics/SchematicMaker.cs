@@ -32,15 +32,14 @@ public class SchematicMaker
         // Draw each unique edge
         foreach (var edge in uniqueEdges)
         {
-            var startPos = GetSchematicPosition(edge.Node1.Position, layout.Width, layout.Height, scale);
-            var endPos = GetSchematicPosition(edge.Node2.Position, layout.Width, layout.Height, scale);
-
-            var blocksInside = Rectangle.DiscretePointsInsideRect(new Vector2(startPos.x, startPos.z),
-                new Vector2(endPos.x, endPos.z), 4);
+            // Use original world coordinates for rectangle calculation
+            var blocksInside = Rectangle.DiscretePointsInsideRect(edge.Node1.Position, edge.Node2.Position, 4);
 
             foreach (var block in blocksInside)
             {
-                schematic.SetBlock((int)block.X, 0, (int)block.Y, 2);
+                // Transform each resulting block position to schematic coordinates
+                var (x, z) = GetSchematicPosition(block, layout.Width, layout.Height, scale);
+                schematic.SetBlock(x, 0, z, 2);
             }
         }
 
