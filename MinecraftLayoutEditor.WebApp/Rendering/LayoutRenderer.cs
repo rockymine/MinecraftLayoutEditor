@@ -57,7 +57,7 @@ public class LayoutRenderer
         await RenderNodes(ctx, nodes, hoveredNode, selectedNode, options);
     }
 
-    private async Task RenderNodes(Context2D ctx, List<Node> nodes, 
+    private async Task RenderNodes(Context2D ctx, IReadOnlyList<Node> nodes, 
         Node? hoveredNode, Node? selectedNode, RenderingOptions options)
     {
         foreach (var n in nodes)

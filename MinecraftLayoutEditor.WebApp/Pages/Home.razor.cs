@@ -3,13 +3,14 @@ using Excubo.Blazor.Canvas;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MinecraftLayoutEditor.Logic;
+using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
 using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Pages;
 
-public partial class Home
+public partial class Home : ComponentBase
 {
     private Canvas Canvas;
     private readonly Logic.Layout _layout = LayoutFactory.Empty(40, 40);
@@ -17,6 +18,7 @@ public partial class Home
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
     private Node? SelectedNode;
+    private HistoryStack? _historyStack;
 
     [Inject] public required IBlazorDownloadFileService BlazorDownloadFileService { get; set; }
 
@@ -28,6 +30,11 @@ public partial class Home
         await Render();
     }
 
+    protected override void OnInitialized()
+    {
+        _historyStack = new HistoryStack(_layout.Graph);
+    }
+    
     private async Task OnSettingsChanged()
     {
         await Render(); 
@@ -38,8 +45,14 @@ public partial class Home
         SelectedNode = null;
         HoveredNode = null;
 
-        _layout.Graph.Nodes.Clear();
+        _layout.Graph.Clear();
 
+        await Render();
+    }
+
+    private async Task OnUndo()
+    {
+        _historyStack?.Undo();
         await Render();
     }
 
@@ -60,7 +73,11 @@ public partial class Home
         // Add nodes when the user left clicks the canvas and no node is selected
         if (e.Button == 0 && HoveredNode == null && _layout.Contains(clickedAt))
         {
-            _layout.AddNode(clickedAt);
+            var node = _layout.AddNode(clickedAt);
+
+            if (node != null)
+                _historyStack?.Add(HistoryAction.AddNode(node));
+
             await Render();
         }
         // Select nodes with right click
@@ -73,7 +90,11 @@ public partial class Home
             else
             {
                 // Add or delete edge when second node is clicked
-                _layout.Graph.AddOrRemoveEdge(HoveredNode, SelectedNode);
+                var edge = _layout.Graph.AddOrRemoveEdge(HoveredNode, SelectedNode);
+
+                if (edge != null)
+                    _historyStack?.Add(HistoryAction.AddOrRemoveEdge(edge.Node1, edge.Node2));
+
                 SelectedNode = null;
             }
 
@@ -83,6 +104,8 @@ public partial class Home
         else if (e.Button == 2 && HoveredNode != null)
         {
             _layout.Graph.DeleteNode(HoveredNode);
+            _historyStack?.Add(HistoryAction.RemoveNode(HoveredNode));
+
             HoveredNode = null;
             await Render();
         }            

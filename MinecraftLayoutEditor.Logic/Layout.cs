@@ -48,7 +48,7 @@ public class Layout
             && pos.Y >= -Height / 2 && pos.Y <= Height / 2;
     }
 
-    public void AddNode(Vector2 pos)
+    public Node? AddNode(Vector2 pos)
     {
         pos = new Vector2(float.Floor(pos.X) + 0.5f, float.Floor(pos.Y) + 0.5f);
 
@@ -56,16 +56,16 @@ public class Layout
 
         // node already exists
         if (closestNode != null && Vector2.DistanceSquared(closestNode.Position, pos) < 1)
-            return;
+            return null;
 
         var node = new Node(pos)
         {
             Type = SelectedNodeType
         };
-        Graph.Nodes.Add(node);
+        Graph.AddNode(node);
 
         if (Symmetry == null)
-            return;
+            return node;
 
         if (MirrorEnabled)
         {
@@ -78,8 +78,10 @@ public class Layout
             };
 
             node.MirrorRef = mirrored;
-            Graph.Nodes.Add(mirrored);
-        }        
+            Graph.AddNode(mirrored);
+        }
+        
+        return node;
     }
 
     // TODO: move to utility class

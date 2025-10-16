@@ -51,10 +51,14 @@ namespace MinecraftLayoutEditor.Logic
             var wool2 = new Node(new Vector2(240, 120)) { Type = Node.NodeType.Wool, Team = blue };
 
             // Add to graph
-            layout.Graph.Nodes.AddRange(new[]
-            {
-                spawn, nA, nB, nTop, nMid, nBot, wool1, wool2
-            });
+            layout.Graph.AddNode(spawn);
+            layout.Graph.AddNode(nA);
+            layout.Graph.AddNode(nB);
+            layout.Graph.AddNode(nTop);
+            layout.Graph.AddNode(nMid);
+            layout.Graph.AddNode(nBot);
+            layout.Graph.AddNode(wool1);
+            layout.Graph.AddNode(wool2);
 
             // --- Goals (for the team) ---
             blue.Goals.Add(new Goal(wool1)

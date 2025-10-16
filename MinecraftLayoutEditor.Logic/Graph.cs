@@ -4,17 +4,18 @@ namespace MinecraftLayoutEditor.Logic;
 
 public class Graph
 {
-    public List<Node> Nodes { get; set; } = [];
+    private List<Node> _nodes = [];
+    public IReadOnlyList<Node> Nodes => _nodes;
 
     public Node? GetClosestNode(Vector2 pos)
     {
-        if (Nodes.Count == 0)
+        if (_nodes.Count == 0)
             return null;
 
         Node? closestNode = null;
         var closestDistance = double.MaxValue;
 
-        foreach (var n in Nodes)
+        foreach (var n in _nodes)
         {
             var distance = Vector2.Distance(pos, n.Position);
             if (distance < closestDistance)
@@ -27,6 +28,16 @@ public class Graph
         return closestNode;
     }
 
+    public void Clear()
+    {
+        _nodes.Clear(); 
+    }
+
+    public void AddNode(Node node)
+    {
+        _nodes.Add(node); 
+    }
+    
     public void DeleteNode(Node node)
     {
         if (node.MirrorRef != null)
@@ -49,7 +60,7 @@ public class Graph
             }
         }
 
-        Nodes.Remove(node); 
+        _nodes.Remove(node); 
     }
 
     public void DeleteEdge(Edge edge)
@@ -58,7 +69,7 @@ public class Graph
         edge.Node2.Edges.Remove(edge);
     }
 
-    public void AddOrRemoveEdge(Node node1, Node node2, bool isMirror = false)
+    public Edge? AddOrRemoveEdge(Node node1, Node node2, bool isMirror = false)
     {
         if (node1 == node2)
             throw new InvalidOperationException();
@@ -95,10 +106,12 @@ public class Graph
         }
 
         if (anyRemoved)
-            return;
+            return null;
 
         var edge = new Edge(node1, node2);
         node1.Edges.Add(edge);
         node2.Edges.Add(edge);
+
+        return edge;
     }
 }
