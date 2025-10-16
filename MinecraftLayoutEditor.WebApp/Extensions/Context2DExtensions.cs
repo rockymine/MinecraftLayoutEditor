@@ -1,9 +1,6 @@
 ﻿using Excubo.Blazor.Canvas.Contexts;
 using Excubo.Blazor.Canvas;
 using System.Numerics;
-using MinecraftLayoutEditor.WebApp.Rendering;
-using System.Xml.Linq;
-using MinecraftLayoutEditor.Logic.Geometry;
 
 namespace MinecraftLayoutEditor.WebApp.Extensions;
 
@@ -45,6 +42,19 @@ public static class Context2DExtensions
             await ctx.FillStyleAsync(fillStyle);
             await ctx.FillRectAsync(origin.X, origin.Y, width, height);
         }
+
+        await ctx.RestoreAsync();
+    }
+
+    public static async Task DrawRect(this Context2D ctx, Vector2 pos1, Vector2 pos2, Vector2 pos3, Vector2 pos4,
+        float lineWidth, string strokeStyle, double[] lineDash)
+    {
+        await ctx.SaveAsync();
+
+        await ctx.DrawLine(pos1, pos2, lineWidth, strokeStyle, lineDash);
+        await ctx.DrawLine(pos2, pos3, lineWidth, strokeStyle, lineDash);
+        await ctx.DrawLine(pos3, pos4, lineWidth, strokeStyle, lineDash);
+        await ctx.DrawLine(pos4, pos1, lineWidth, strokeStyle, lineDash);
 
         await ctx.RestoreAsync();
     }

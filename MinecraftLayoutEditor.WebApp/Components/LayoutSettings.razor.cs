@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
 using MinecraftLayoutEditor.Logic;
-using static MinecraftLayoutEditor.Logic.Layout;
 
 namespace MinecraftLayoutEditor.WebApp.Components;
 

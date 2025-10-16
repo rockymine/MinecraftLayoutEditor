@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 
 namespace MinecraftLayoutEditor.Schematics;
 

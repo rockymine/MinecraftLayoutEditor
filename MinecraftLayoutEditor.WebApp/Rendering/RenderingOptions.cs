@@ -1,5 +1,4 @@
 ﻿using MinecraftLayoutEditor.Logic;
-using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering
 {

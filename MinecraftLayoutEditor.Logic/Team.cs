@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MinecraftLayoutEditor.Logic;
+﻿namespace MinecraftLayoutEditor.Logic;
 
 public class Team
 {

@@ -4,11 +4,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Schematics;
-using MinecraftLayoutEditor.WebApp.Extensions;
 using MinecraftLayoutEditor.WebApp.Rendering;
 using System.Numerics;
-using System.Threading.Tasks;
-using static MinecraftLayoutEditor.Logic.Layout;
 
 namespace MinecraftLayoutEditor.WebApp.Pages;
 

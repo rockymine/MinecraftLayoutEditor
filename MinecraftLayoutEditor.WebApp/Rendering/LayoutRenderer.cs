@@ -2,7 +2,6 @@
 using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.WebApp.Extensions;
 using Excubo.Blazor.Canvas;
-using System.Xml.Linq;
 using System.Numerics;
 using MinecraftLayoutEditor.Logic.Geometry;
 
@@ -17,15 +16,14 @@ public class LayoutRenderer
     public async Task RenderAsync(Context2D ctx, Logic.Layout layout,
         Node? hoveredNode, Node? selectedNode, RenderingOptions options)
     {
-        var edges = new List<Edge>();
+        var uniqueEdges = new HashSet<Edge>();
         var nodes = layout.Graph.Nodes;
 
         foreach (var n in nodes)
         {
             foreach (var e in n.Edges)
             {
-                if (!edges.Contains(e))
-                    edges.Add(e); 
+                uniqueEdges.Add(e); 
             }
         }
 
@@ -55,7 +53,7 @@ public class LayoutRenderer
         }
 
         // Render the graph
-        await RenderEdges(ctx, edges, layout, options);
+        await RenderEdges(ctx, uniqueEdges, layout, options);
         await RenderNodes(ctx, nodes, hoveredNode, selectedNode, options);
     }
 
@@ -98,7 +96,7 @@ public class LayoutRenderer
         }
     }
 
-    private async Task RenderEdges(Context2D ctx, List<Edge> edges, Logic.Layout layout, RenderingOptions options)
+    private async Task RenderEdges(Context2D ctx, HashSet<Edge> edges, Logic.Layout layout, RenderingOptions options)
     {
         foreach (var e in edges)
         {
@@ -113,9 +111,15 @@ public class LayoutRenderer
 
     public async Task RenderBlockEdges(Context2D ctx, Vector2 pos1, Vector2 pos2, Logic.Layout layout)
     {
+        // Draw bounding box
+        var corners = Rectangle.FindRectCorners(pos1, pos2, 4);
+        await ctx.DrawRect(WorldToScreenPos(corners[0]), WorldToScreenPos(corners[2]),
+            WorldToScreenPos(corners[3]), WorldToScreenPos(corners[1]), 0.5f, "purple", []);
+
         if (!layout.ShowBlocksEnabled)
             return;
 
+        // Draw blocks
         foreach (var block in Rectangle.DiscretePointsInsideRect(pos1, pos2, 4))
         {
             await ctx.DrawRect(WorldToScreenPos(block), WorldToScreenScale(1), WorldToScreenScale(1), 
