@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace MinecraftLayoutEditor.Logic
+namespace MinecraftLayoutEditor.Logic.Geometry
 {
     public struct Rect
     {
