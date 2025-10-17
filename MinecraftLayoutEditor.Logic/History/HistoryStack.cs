@@ -25,8 +25,8 @@ public class HistoryStack
         var action = Actions.Pop();
 
         if (action is AddNodeAction addNodeAction)
-        {
-             Graph.DeleteNode(addNodeAction.Node);
+        {            
+            Graph.DeleteNode(addNodeAction.Node);
         }
         else if (action is AddEdgeAction addEdgeAction)
         {
@@ -39,21 +39,32 @@ public class HistoryStack
         else if (action is RemoveNodeAction removeNodeAction)
         {
             var node = removeNodeAction.Node;
+            var mirrorRef = node.MirrorRef;
             var edges = node.Edges;
 
-            Graph.AddNode(removeNodeAction.Node);
-
-            // Fix node edges. In node.edges.othernode add edges. (inverted deletenode)
-            foreach (var edge in edges)
+            Graph.AddNode(node);
+            if (mirrorRef != null)
             {
-                if (edge.Node1 != node)
-                {
-                    edge.Node1.Edges.Add(edge);
-                }
-                else if (edge.Node2 != node)
-                {
-                    edge.Node2.Edges.Add(edge);
-                }
+                Graph.AddNode(mirrorRef);
+                FixEdges(mirrorRef);
+            }
+            
+            FixEdges(node);            
+        }
+    }
+
+    // Fix node edges. In node.edges.othernode add edges. (inverted deletenode)
+    private void FixEdges(Node node)
+    {        
+        foreach (var edge in node.Edges)
+        {
+            if (edge.Node1 != node)
+            {
+                edge.Node1.Edges.Add(edge);
+            }
+            else if (edge.Node2 != node)
+            {
+                edge.Node2.Edges.Add(edge);
             }
         }
     }

@@ -46,6 +46,7 @@ public partial class Home : ComponentBase
         HoveredNode = null;
 
         _layout.Graph.Clear();
+        _historyStack = null;
 
         await Render();
     }

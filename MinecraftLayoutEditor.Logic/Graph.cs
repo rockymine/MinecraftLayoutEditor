@@ -38,14 +38,12 @@ public class Graph
         _nodes.Add(node); 
     }
     
-    public void DeleteNode(Node node)
+    public void DeleteNode(Node node, bool isMirror = false)
     {
-        if (node.MirrorRef != null)
+        if (node.MirrorRef != null && !isMirror)
         {
             var mirrorRef = node.MirrorRef;
-            node.MirrorRef.MirrorRef = null;
-            node.MirrorRef = null;
-            DeleteNode(mirrorRef);
+            DeleteNode(mirrorRef, true);
         }            
         
         foreach (var e in node.Edges)
