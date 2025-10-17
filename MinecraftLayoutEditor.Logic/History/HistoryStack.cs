@@ -28,10 +28,6 @@ public class HistoryStack
         {            
             Graph.DeleteNode(addNodeAction.Node);
         }
-        else if (action is AddEdgeAction addEdgeAction)
-        {
-            Graph.AddOrRemoveEdge(addEdgeAction.Node1, addEdgeAction.Node2);
-        }
         else if (action is AddOrRemoveEdgeAction removeEdgeAction)
         {
             Graph.AddOrRemoveEdge(removeEdgeAction.Node1, removeEdgeAction.Node2);
@@ -40,7 +36,6 @@ public class HistoryStack
         {
             var node = removeNodeAction.Node;
             var mirrorRef = node.MirrorRef;
-            var edges = node.Edges;
 
             Graph.AddNode(node);
             if (mirrorRef != null)
