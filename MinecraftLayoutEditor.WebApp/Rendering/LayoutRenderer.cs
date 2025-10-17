@@ -33,7 +33,7 @@ public class LayoutRenderer
         await _gridRenderer.RenderAsync(ctx, options.GridSpacing, options.GridLineWidth, options.GridLineStroke, layout, this);
 
         // Render a box around the grid
-        await ctx.DrawRect(WorldToScreenPos(new Vector2(-layout.Width / 2, -layout.Height / 2)), 
+        await ctx.DrawRect(WorldToScreenPos(new Vector2(-layout.Width / 2f, -layout.Height / 2f)), 
             WorldToScreenScale(layout.Width), WorldToScreenScale(layout.Height), options.GridBorderLineWidth, 
             options.GridLineStroke, []);
 

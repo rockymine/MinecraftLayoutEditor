@@ -11,23 +11,23 @@ public class GridRenderer
         await ctx.SaveAsync();
         await ctx.BeginPathAsync();
 
-        var gridOrigin = new Vector2(-layout.Width / 2, -layout.Height / 2);
+        var gridOrigin = new Vector2(-layout.Width / 2f, -layout.Height / 2f);
 
         // vertical lines
-        for (float x = gridOrigin.X + gridSpacing; x < layout.Width / 2; x += gridSpacing)
+        for (float x = gridOrigin.X + gridSpacing; x < layout.Width / 2f; x += gridSpacing)
         {
-            var pos1 = new Vector2(x, -layout.Height / 2);
-            var pos2 = new Vector2(x, layout.Height / 2);
+            var pos1 = new Vector2(x, -layout.Height / 2f);
+            var pos2 = new Vector2(x, layout.Height / 2f);
 
             await ctx.DrawLine(renderer.WorldToScreenPos(pos1), renderer.WorldToScreenPos(pos2), 
                 gridLineWidth, gridStrokeStyle, []);
         }
 
         // horizontal lines
-        for (float y = gridOrigin.Y; y < layout.Height / 2; y += gridSpacing)
+        for (float y = gridOrigin.Y; y < layout.Height / 2f; y += gridSpacing)
         {
-            var pos1 = new Vector2(-layout.Width / 2, y);
-            var pos2 = new Vector2(layout.Width / 2, y);
+            var pos1 = new Vector2(-layout.Width / 2f, y);
+            var pos2 = new Vector2(layout.Width / 2f, y);
 
             await ctx.DrawLine(renderer.WorldToScreenPos(pos1), renderer.WorldToScreenPos(pos2), 
                 gridLineWidth, gridStrokeStyle, []);

@@ -5,7 +5,7 @@
 <!-- Mirror -->
 <div class="form-group form-check">
     <input type="checkbox" class="form-check-input" id="mirrorEnabled"
-           @bind="MirrorEnabled" />
+           @bind="MirrorEnabled" @bind:after="OnMirrorEnabledChanged"/>
     <label class="form-check-label" for="mirrorEnabled">
         Enable mirroring
     </label>
@@ -13,19 +13,18 @@
 
 <!-- MirrorAxis -->
 <div class="form-group">
-    <label for="axisSelect">Mirror axis</label>
-    <select id="axisSelect" class="form-control"
-            @bind="AxisText" disabled="@(!MirrorEnabled)">
-        <option value="Vertical">Vertical</option>
-        <option value="Horizontal">Horizontal</option>
-    </select>
+    <input type="checkbox" class="form-check-input" id="isHorizontal"
+           @bind="IsHorizontal" @bind:after="OnIsHorizontalChanged" disabled="@(!MirrorEnabled)"/>
+    <label class="form-check-label" for="isHorizontal">
+        Horizontal mirroring
+    </label>
 </div>
 
 <!-- RotationDeg -->
 <div class="form-group">
     <label for="rotation">Rotation (deg)</label>
     <select id="rotation" class="form-control"
-            @bind="RotationDeg"
+            @bind="RotationDeg" @bind:after="OnRotationDegChanged"
             disabled="@(!MirrorEnabled)">
         <option value="0">0°</option>
         <option value="180">180°</option>
@@ -35,19 +34,19 @@
 <!-- Width -->
 <div class="form-group">
     <label for="width">Width</label>
-    <input type="number" id="width" class="form-control" @bind="Width">
+    <input type="number" id="width" class="form-control" @bind="Width" @bind:after="OnWidthChanged">
 </div>
 
 <!-- Height -->
 <div class="form-group">
     <label for="height">Height</label>
-    <input type="number" id="height" class="form-control" @bind="Height">
+    <input type="number" id="height" class="form-control" @bind="Height" @bind:after="OnHeightChanged">
 </div>
 
 <!-- Blocks -->
 <div class="form-group form-check">
     <input type="checkbox" class="form-check-input" id="showBlocksEnabled"
-           @bind="ShowBlocksEnabled" />
+           @bind="ShowBlocksEnabled" @bind:after="OnShowBlocksEnabledChanged"/>
     <label class="form-check-label" for="showBlocksEnabled">
         Show blocks
     </label>
@@ -56,10 +55,10 @@
 <!-- Selected Node Type -->
 <div class="form-group">
     <label for="selectedNodeType">Node type</label>
-    <InputSelect id="selectedNodeType" class="form-control"
-                 @bind-Value="SelectedNodeType">
+    <select id="selectedNodeType" class="form-control"
+                 @bind="SelectedNodeType" @bind:after="OnSelectedNodeTypeChanged">
         <option value="@Node.NodeType.Undefined">Undefined</option>
         <option value="@Node.NodeType.Wool">Wool</option>
         <option value="@Node.NodeType.Spawn">Spawn</option>
-    </InputSelect>
+    </select>
 </div>
