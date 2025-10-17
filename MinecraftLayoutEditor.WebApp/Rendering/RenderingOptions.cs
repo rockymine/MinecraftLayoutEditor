@@ -21,7 +21,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         public string HoveredNodeStroke { get; init; } = "purple";
         public string SelectedNodeStroke { get; init; } = "cyan";
 
-        public string CellFillStyle { get; init; } = "pink";
+        public string CellFillStyle { get; init; } = "gray";
+        public string BoundingBoxLineStroke { get; init; } = "purple";
 
         public Dictionary<Node.NodeType, NodeRenderStyle> NodeStyles { get; set; }
         public Dictionary<Edge.EdgeType, EdgeRenderStyle> EdgeStyles { get; set; }
@@ -32,7 +33,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             {
                 FillStyle = "lightgray",
                 StrokeStyle = "#666",
-                Radius = 6,
+                Radius = 6f,
                 Shape = "circle",
                 LineWidth = 2
             };
@@ -41,18 +42,18 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             {
                 FillStyle = "green",
                 StrokeStyle = "#666",
-                Radius = 6,
+                Radius = 6f,
                 Shape = "square",
-                LineWidth = 2
+                LineWidth = 2f
             };
 
             var spawnNodeStyle = new NodeRenderStyle
             {
                 FillStyle = "blue",
                 StrokeStyle = "#666",
-                Radius = 6,
+                Radius = 6f,
                 Shape = "diamond",
-                LineWidth = 2
+                LineWidth = 2f
             };
 
             NodeStyles = new Dictionary<Node.NodeType, NodeRenderStyle>
@@ -66,14 +67,14 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             {
                 StrokeStyle = "#666",
                 LineDash = [],
-                LineWidth = 2
+                LineWidth = 2f
             };
 
             var bridgeableEdgeStyle = new EdgeRenderStyle
             {
                 StrokeStyle = "#666",
                 LineDash = [5],
-                LineWidth = 2
+                LineWidth = 2f
             };
 
             EdgeStyles = new Dictionary<Edge.EdgeType, EdgeRenderStyle>

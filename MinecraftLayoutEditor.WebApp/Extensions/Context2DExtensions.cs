@@ -105,7 +105,8 @@ public static class Context2DExtensions
         await ctx.RestoreAsync();
     }
 
-    public static async Task FillPolygonAsync(this Context2D ctx, IEnumerable<Vector2> points, string fillStyle, FillRule fillRule = FillRule.NonZero)
+    public static async Task FillPolygonAsync(this Context2D ctx, IEnumerable<Vector2> points, 
+        string fillStyle, FillRule fillRule = FillRule.NonZero)
     {
         var pts = points as IList<Vector2> ?? points.ToList();
         if (pts.Count < 3) return; // not a polygon

@@ -8,7 +8,8 @@ public class SchematicMaker
 {
     public static Schematic FromLayout(Layout layout, int height = 1, int scale = 1)
     {
-        var schematic = new Schematic(layout.Name, (short)(layout.Width * scale), (short)height, (short)(layout.Height * scale));
+        var schematic = new Schematic(layout.Name, (short)(layout.Width * scale), (short)height, 
+            (short)(layout.Height * scale));
 
         AddEdgesToSchematic(schematic, layout, scale, schematic.Height);
         AddNodesToSchematic(schematic, layout, scale, schematic.Height);

@@ -100,7 +100,7 @@ public class LayoutRenderer
     {
         foreach (var e in edges)
         {
-            await RenderBlockEdges(ctx, e.Node1.Position, e.Node2.Position, layout);
+            await RenderBlockEdges(ctx, e.Node1.Position, e.Node2.Position, layout, options);
 
             var baseStyle = options.GetStyle(e.Type);
 
@@ -109,21 +109,21 @@ public class LayoutRenderer
         }
     }
 
-    public async Task RenderBlockEdges(Context2D ctx, Vector2 pos1, Vector2 pos2, Logic.Layout layout)
+    public async Task RenderBlockEdges(Context2D ctx, Vector2 pos1, Vector2 pos2, Logic.Layout layout, RenderingOptions options)
     {
         // Draw bounding box
-        var corners = Rectangle.FindRectCorners(pos1, pos2, 4);
+        var corners = Rectangle.FindRectCorners(pos1, pos2, 4f);
         await ctx.DrawRect(WorldToScreenPos(corners[0]), WorldToScreenPos(corners[2]),
-            WorldToScreenPos(corners[3]), WorldToScreenPos(corners[1]), 0.5f, "purple", []);
+            WorldToScreenPos(corners[3]), WorldToScreenPos(corners[1]), 0.5f, options.BoundingBoxLineStroke, []);
 
         if (!layout.ShowBlocksEnabled)
             return;
 
         // Draw blocks
-        foreach (var block in Rectangle.DiscretePointsInsideRect(pos1, pos2, 4))
+        foreach (var block in Rectangle.DiscretePointsInsideRect(pos1, pos2, 4f))
         {
             await ctx.DrawRect(WorldToScreenPos(block), WorldToScreenScale(1), WorldToScreenScale(1), 
-                1, "black", [], "gray");
+                1, "black", [], options.CellFillStyle);
         }
     }
 

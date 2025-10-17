@@ -12,11 +12,11 @@ public class SymmetryAxis
     {
         if (IsHorizontal)
         {
-            return new Vector2(-layout.Width / 2, 0);
+            return new Vector2(-layout.Width / 2f, 0);
         }
         else
         {
-            return new Vector2(0, -layout.Height / 2);
+            return new Vector2(0, -layout.Height / 2f);
         }
     }
 
@@ -24,11 +24,11 @@ public class SymmetryAxis
     {
         if (IsHorizontal)
         {
-            return new Vector2(layout.Width / 2, 0);
+            return new Vector2(layout.Width / 2f, 0);
         }
         else
         {
-            return new Vector2(0, layout.Height / 2);
+            return new Vector2(0, layout.Height / 2f);
         }
     }
 }
