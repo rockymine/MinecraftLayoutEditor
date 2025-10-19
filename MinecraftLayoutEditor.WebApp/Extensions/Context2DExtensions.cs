@@ -14,6 +14,7 @@ public static class Context2DExtensions
         await ctx.BeginPathAsync();
         await ctx.MoveToAsync(pos1.X, pos1.Y);
         await ctx.LineToAsync(pos2.X, pos2.Y);
+        await ctx.ClosePathAsync();
 
         await ctx.SetLineDashAsync(defaultDash);
         await ctx.LineWidthAsync(lineWidth);
@@ -32,17 +33,24 @@ public static class Context2DExtensions
         var bottomRight = new Vector2(origin.X + width, origin.Y + height);
         var topRight = new Vector2(origin.X + width, origin.Y);
 
-        await ctx.DrawLine(origin, bottomLeft, lineWidth, strokeStyle, lineDash);
-        await ctx.DrawLine(bottomLeft, bottomRight, lineWidth, strokeStyle, lineDash);
-        await ctx.DrawLine(bottomRight, topRight, lineWidth, strokeStyle, lineDash);
-        await ctx.DrawLine(topRight, origin, lineWidth, strokeStyle, lineDash);
+        await ctx.BeginPathAsync();
+        await ctx.MoveToAsync(origin.X, origin.Y);
+        await ctx.LineToAsync(bottomLeft.X, bottomLeft.Y);
+        await ctx.LineToAsync(bottomRight.X, bottomRight.Y);
+        await ctx.LineToAsync(topRight.X, topRight.Y);
+        await ctx.ClosePathAsync();
+
+        await ctx.SetLineDashAsync(lineDash);
+        await ctx.LineWidthAsync(lineWidth);
+        await ctx.StrokeStyleAsync(strokeStyle);
 
         if (fillStyle != null)
         {
             await ctx.FillStyleAsync(fillStyle);
-            await ctx.FillRectAsync(origin.X, origin.Y, width, height);
+            await ctx.FillAsync(FillRule.NonZero);
         }
 
+        await ctx.StrokeAsync();
         await ctx.RestoreAsync();
     }
 
@@ -50,12 +58,19 @@ public static class Context2DExtensions
         float lineWidth, string strokeStyle, double[] lineDash)
     {
         await ctx.SaveAsync();
+        await ctx.BeginPathAsync();
 
-        await ctx.DrawLine(pos1, pos2, lineWidth, strokeStyle, lineDash);
-        await ctx.DrawLine(pos2, pos3, lineWidth, strokeStyle, lineDash);
-        await ctx.DrawLine(pos3, pos4, lineWidth, strokeStyle, lineDash);
-        await ctx.DrawLine(pos4, pos1, lineWidth, strokeStyle, lineDash);
+        await ctx.MoveToAsync(pos1.X, pos1.Y);
+        await ctx.LineToAsync(pos2.X, pos2.Y);
+        await ctx.LineToAsync(pos3.X, pos3.Y);
+        await ctx.LineToAsync(pos4.X, pos4.Y);
+        await ctx.ClosePathAsync();
 
+        await ctx.SetLineDashAsync(lineDash);
+        await ctx.LineWidthAsync(lineWidth);
+        await ctx.StrokeStyleAsync(strokeStyle);
+
+        await ctx.StrokeAsync();
         await ctx.RestoreAsync();
     }
 
@@ -69,19 +84,24 @@ public static class Context2DExtensions
         var right = new Vector2(origin.X + width, origin.Y);
         var bottom = new Vector2(origin.X, origin.Y + height);
 
-        await ctx.DrawLine(left, top, lineWidth, strokeStyle, lineDash);
-        await ctx.DrawLine(top, right, lineWidth, strokeStyle, lineDash);
-        await ctx.DrawLine(right, bottom, lineWidth, strokeStyle, lineDash);
-        await ctx.DrawLine(bottom, left, lineWidth, strokeStyle, lineDash);
+        await ctx.BeginPathAsync();
+        await ctx.MoveToAsync(left.X, left.Y);
+        await ctx.LineToAsync(top.X, top.Y);
+        await ctx.LineToAsync(right.X, right.Y);
+        await ctx.LineToAsync(bottom.X, bottom.Y);
+        await ctx.ClosePathAsync();
 
-        List<Vector2> points = [ left, top, right, bottom ];
+        await ctx.SetLineDashAsync(lineDash);
+        await ctx.LineWidthAsync(lineWidth);
+        await ctx.StrokeStyleAsync(strokeStyle);
 
         if (fillStyle != null)
         {
             await ctx.FillStyleAsync(fillStyle);
-            await ctx.FillPolygonAsync(points, fillStyle);
+            await ctx.FillAsync(FillRule.NonZero);
         }
 
+        await ctx.StrokeAsync();
         await ctx.RestoreAsync();
     }
 

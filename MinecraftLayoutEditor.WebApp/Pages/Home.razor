@@ -6,8 +6,6 @@
 
 <h1>Minecraft Layout Editor</h1>
 
-Welcome to your new app.
-
 <LayoutSettings @bind-Width="_layout.Width" 
 @bind-Height="_layout.Height"
 @bind-MirrorEnabled="_layout.MirrorEnabled"
@@ -19,16 +17,13 @@ SettingsChanged="OnSettingsChanged"/>
 
 <button type="button" @onclick="OnSchematicCreate">Generate Schematic</button>
 
-<button type="button" @onclick="OnClearLayout"
-        disabled="@(!_layout.Graph.Nodes.Any())">
+<button type="button" @onclick="OnClearLayout" disabled="@(!_layout.Graph.Nodes.Any())">
     Clear layout
 </button>
 
+<button type="button" @onclick="OnUndo">Undo</button>
+
 <div style="width: fit-content; height: fit-content;"
      @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true>
-    <Canvas @ref="@Canvas"
-            width="1000"
-            height="1000" />
+    <Canvas @ref="@Canvas" width="1000" height="1000" />
 </div>
-
-<button type="button" @onclick="OnUndo">Undo</button>
