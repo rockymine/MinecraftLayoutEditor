@@ -84,6 +84,22 @@ public class Layout
         return node;
     }
 
+    public void MoveNode(Node node, Vector2 offset)
+    {
+        Vector2 newPosition = node.Position + offset;
+
+        if (!Contains(newPosition))
+            return;
+
+        node.Position = newPosition;
+        
+        if (MirrorEnabled && node.MirrorRef != null && Symmetry != null)
+        {
+            var mirrorRefPosition = MirrorPosition(node.Position, Symmetry);
+            node.MirrorRef.Position = mirrorRefPosition;
+        }
+    }
+
     // TODO: move to utility class
     public Vector2 RotateAboutOrigin(Vector2 point, Vector2 origin, float rotation)
     {

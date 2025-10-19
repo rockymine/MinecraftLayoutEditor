@@ -23,7 +23,7 @@ SettingsChanged="OnSettingsChanged"/>
 
 <button type="button" @onclick="OnUndo">Undo</button>
 
-<div style="width: fit-content; height: fit-content;"
-     @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true>
+<div style="width: fit-content; height: fit-content; outline: none"
+     @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0">
     <Canvas @ref="@Canvas" width="1000" height="1000" />
 </div>

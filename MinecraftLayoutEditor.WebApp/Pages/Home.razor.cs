@@ -54,6 +54,7 @@ public partial class Home : ComponentBase
     private async Task OnUndo()
     {
         _historyStack?.Undo();
+        SelectedNode = null;
         await Render();
     }
 
@@ -69,7 +70,7 @@ public partial class Home : ComponentBase
     private async Task OnMouseUp(MouseEventArgs e)
     {
         Vector2 clickedAt = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, 
-            (float)e.OffsetY));
+            (float)e.OffsetY));        
 
         // Add nodes when the user left clicks the canvas and no node is selected
         if (e.Button == 0 && HoveredNode == null && _layout.Contains(clickedAt))
@@ -81,13 +82,18 @@ public partial class Home : ComponentBase
 
             await Render();
         }
-        // Select nodes with right click
+        // Select nodes with left click
         else if (e.Button == 0 && HoveredNode != null)
         {
             if (SelectedNode == null)
             {
                 SelectedNode = HoveredNode;
-            } 
+            }
+            // Deselect SelectedNode with left click
+            else if (SelectedNode == HoveredNode)
+            {
+                SelectedNode = null;
+            }
             else
             {
                 // Add or delete edge when second node is clicked
@@ -101,15 +107,32 @@ public partial class Home : ComponentBase
 
             await Render();
         }
-        // Delete node when the user right clicks on it
-        else if (e.Button == 2 && HoveredNode != null)
+        // Handle right click
+        else if (e.Button == 2)
         {
-            _layout.Graph.DeleteNode(HoveredNode);
-            _historyStack?.Add(HistoryAction.RemoveNode(HoveredNode));
+            Vector2 cursorPosition = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
+            Node? closestNode = _layout.Graph.GetClosestNode(cursorPosition);
+            var threshhold = 2f;
 
-            HoveredNode = null;
-            await Render();
-        }            
+            // Delete node when the user right clicks on it
+            if (HoveredNode != null)
+            {
+                _layout.Graph.DeleteNode(HoveredNode);
+                _historyStack?.Add(HistoryAction.RemoveNode(HoveredNode));
+
+                if (SelectedNode == HoveredNode)
+                    SelectedNode = null;
+
+                HoveredNode = null;
+                await Render();
+            }
+            // Unselect Node
+            else if (SelectedNode != null && closestNode != null && Vector2.Distance(cursorPosition, closestNode.Position) >= threshhold)
+            {
+                SelectedNode = null;
+                await Render();
+            }
+        }
     }
 
     private async Task OnMouseMove(MouseEventArgs e)
@@ -136,5 +159,30 @@ public partial class Home : ComponentBase
         {
             await _renderer.RenderAsync(ctx, _layout, HoveredNode, SelectedNode, _renderingOptions);
         }
+    }
+
+    public async Task OnKeyUp(KeyboardEventArgs e)
+    {
+        if (SelectedNode == null)
+            return;
+        
+        if (e.Key == "ArrowUp")
+        {
+            _layout.MoveNode(SelectedNode, new Vector2(0, -1));
+        }
+        else if (e.Key == "ArrowDown")
+        {
+            _layout.MoveNode(SelectedNode, new Vector2(0, 1));
+        }
+        else if (e.Key == "ArrowLeft")
+        {
+            _layout.MoveNode(SelectedNode, new Vector2(-1, 0));
+        }
+        else if (e.Key == "ArrowRight")
+        {
+            _layout.MoveNode(SelectedNode, new Vector2(1, 0));
+        }
+
+        await Render();
     }
 }
