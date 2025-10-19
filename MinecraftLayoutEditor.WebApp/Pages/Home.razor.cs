@@ -69,34 +69,45 @@ public partial class Home : ComponentBase
 
     private async Task OnMouseUp(MouseEventArgs e)
     {
-        Vector2 clickedAt = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, 
-            (float)e.OffsetY));        
+        Vector2 clickedAt = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX,
+            (float)e.OffsetY));
 
-        // Add nodes when the user left clicks the canvas and no node is selected
-        if (e.Button == 0 && HoveredNode == null && _layout.Contains(clickedAt))
+        if (e.Button == 0)
         {
-            var node = _layout.AddNode(clickedAt);
+            await HandleLeftClick(clickedAt);
+        } else if (e.Button == 2)
+        {
+            await HandleRightClick(clickedAt);
+        }
+    }
+
+    private async Task HandleLeftClick(Vector2 worldPos)
+    {
+        // Add node
+        if (HoveredNode == null && _layout.Contains(worldPos))
+        {
+            var node = _layout.AddNode(worldPos);
 
             if (node != null)
                 _historyStack?.Add(HistoryAction.AddNode(node));
 
             await Render();
         }
-        // Select nodes with left click
-        else if (e.Button == 0 && HoveredNode != null)
+        // Select node
+        else if (HoveredNode != null)
         {
             if (SelectedNode == null)
             {
                 SelectedNode = HoveredNode;
             }
-            // Deselect SelectedNode with left click
+            // Deselect node
             else if (SelectedNode == HoveredNode)
             {
                 SelectedNode = null;
             }
             else
             {
-                // Add or delete edge when second node is clicked
+                // Add or delete edge
                 var edge = _layout.Graph.AddOrRemoveEdge(HoveredNode, SelectedNode);
 
                 if (edge != null)
@@ -107,31 +118,31 @@ public partial class Home : ComponentBase
 
             await Render();
         }
-        // Handle right click
-        else if (e.Button == 2)
+    }
+
+    private async Task HandleRightClick(Vector2 worldPos)
+    {
+        Node? closestNode = _layout.Graph.GetClosestNode(worldPos);
+        var threshhold = 2f;
+
+        // Delete node
+        if (HoveredNode != null)
         {
-            Vector2 cursorPosition = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
-            Node? closestNode = _layout.Graph.GetClosestNode(cursorPosition);
-            var threshhold = 2f;
+            _layout.Graph.DeleteNode(HoveredNode);
+            _historyStack?.Add(HistoryAction.RemoveNode(HoveredNode));
 
-            // Delete node when the user right clicks on it
-            if (HoveredNode != null)
-            {
-                _layout.Graph.DeleteNode(HoveredNode);
-                _historyStack?.Add(HistoryAction.RemoveNode(HoveredNode));
-
-                if (SelectedNode == HoveredNode)
-                    SelectedNode = null;
-
-                HoveredNode = null;
-                await Render();
-            }
-            // Unselect Node
-            else if (SelectedNode != null && closestNode != null && Vector2.Distance(cursorPosition, closestNode.Position) >= threshhold)
-            {
+            if (SelectedNode == HoveredNode)
                 SelectedNode = null;
-                await Render();
-            }
+
+            HoveredNode = null;
+            await Render();
+        }
+        // Deselect node
+        else if (SelectedNode != null && closestNode != null 
+            && Vector2.Distance(worldPos, closestNode.Position) >= threshhold)
+        {
+            SelectedNode = null;
+            await Render();
         }
     }
 
@@ -165,24 +176,31 @@ public partial class Home : ComponentBase
     {
         if (SelectedNode == null)
             return;
+
+        bool nodeMoved = false;
         
         if (e.Key == "ArrowUp")
         {
             _layout.MoveNode(SelectedNode, new Vector2(0, -1));
+            nodeMoved = true;
         }
         else if (e.Key == "ArrowDown")
         {
             _layout.MoveNode(SelectedNode, new Vector2(0, 1));
+            nodeMoved = true;
         }
         else if (e.Key == "ArrowLeft")
         {
             _layout.MoveNode(SelectedNode, new Vector2(-1, 0));
+            nodeMoved = true;
         }
         else if (e.Key == "ArrowRight")
         {
             _layout.MoveNode(SelectedNode, new Vector2(1, 0));
+            nodeMoved = true;
         }
 
-        await Render();
+        if (nodeMoved)
+            await Render();
     }
 }
