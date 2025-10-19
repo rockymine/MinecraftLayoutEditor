@@ -15,13 +15,17 @@
 @bind-SelectedNodeType="_layout.SelectedNodeType"
 SettingsChanged="OnSettingsChanged"/>
 
-<button type="button" @onclick="OnSchematicCreate">Generate Schematic</button>
+<button type="button" @onclick="OnSchematicCreate" disabled="@(!_layout.Graph.Nodes.Any())">
+    Generate Schematic
+</button>
 
 <button type="button" @onclick="OnClearLayout" disabled="@(!_layout.Graph.Nodes.Any())">
     Clear layout
 </button>
 
-<button type="button" @onclick="OnUndo">Undo</button>
+<button type="button" @onclick="OnUndo" disabled="@(!_layout.Graph.Nodes.Any())">
+    Undo
+</button>
 
 <div style="width: fit-content; height: fit-content; outline: none"
      @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0">

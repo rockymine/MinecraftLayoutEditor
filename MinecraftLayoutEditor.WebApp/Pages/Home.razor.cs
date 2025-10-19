@@ -75,7 +75,8 @@ public partial class Home : ComponentBase
         if (e.Button == 0)
         {
             await HandleLeftClick(clickedAt);
-        } else if (e.Button == 2)
+        } 
+        else if (e.Button == 2)
         {
             await HandleRightClick(clickedAt);
         }
