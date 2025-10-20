@@ -18,7 +18,7 @@ public partial class Home : ComponentBase
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
     private Node? SelectedNode;
-    private HistoryStack? _historyStack;
+    private HistoryStack _historyStack;
 
     [Inject] public required IBlazorDownloadFileService BlazorDownloadFileService { get; set; }
 
@@ -32,7 +32,7 @@ public partial class Home : ComponentBase
 
     protected override void OnInitialized()
     {
-        _historyStack = new HistoryStack(_layout.Graph);
+        _historyStack = new HistoryStack();
     }
     
     private async Task OnSettingsChanged()
@@ -46,14 +46,14 @@ public partial class Home : ComponentBase
         HoveredNode = null;
 
         _layout.Graph.Clear();
-        _historyStack = new HistoryStack(_layout.Graph);
+        _historyStack = new HistoryStack();
 
         await Render();
     }
 
     private async Task OnUndo()
     {
-        _historyStack?.Undo();
+        _historyStack.Undo();
         SelectedNode = null;
         await Render();
     }
@@ -87,11 +87,15 @@ public partial class Home : ComponentBase
         // Add node
         if (HoveredNode == null && _layout.Contains(worldPos))
         {
-            var node = _layout.AddNode(worldPos);
+            var action = new AddNodeAction(
+                _layout.Graph,
+                worldPos,
+                _layout.SelectedNodeType,
+                _layout.Symmetry,
+                _layout.MirrorEnabled
+                );
 
-            if (node != null)
-                _historyStack?.Add(HistoryAction.AddNode(node));
-
+            _historyStack.ExecuteAction(action);
             await Render();
         }
         // Select node
@@ -109,11 +113,13 @@ public partial class Home : ComponentBase
             else
             {
                 // Add or delete edge
-                var edge = _layout.Graph.AddOrRemoveEdge(HoveredNode, SelectedNode);
+                var action = new AddOrRemoveEdgeAction(
+                    _layout.Graph,
+                    HoveredNode,
+                    SelectedNode
+                    );
 
-                if (edge != null)
-                    _historyStack?.Add(HistoryAction.AddOrRemoveEdge(edge.Node1, edge.Node2));
-
+                _historyStack.ExecuteAction(action);
                 SelectedNode = null;
             }
 
@@ -129,8 +135,12 @@ public partial class Home : ComponentBase
         // Delete node
         if (HoveredNode != null)
         {
-            _layout.Graph.DeleteNode(HoveredNode);
-            _historyStack?.Add(HistoryAction.RemoveNode(HoveredNode));
+            var action = new RemoveNodeAction(
+                _layout.Graph,
+                HoveredNode
+                );
+
+            _historyStack.ExecuteAction(action);
 
             if (SelectedNode == HoveredNode)
                 SelectedNode = null;

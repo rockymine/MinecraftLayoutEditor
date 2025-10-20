@@ -4,65 +4,38 @@ namespace MinecraftLayoutEditor.Logic.History;
 
 public class HistoryStack
 {
-    private Stack<HistoryAction> Actions = [];
-    private Graph Graph;
+    private readonly Stack<IHistoryAction> _undoStack = [];
+    private readonly Stack<IHistoryAction> _redoStack = [];
 
-    public HistoryStack(Graph graph)
+    public HistoryStack()
     {
-        Graph = graph;
+
     }
 
-    public void Add(HistoryAction action)
+    public void ExecuteAction(IHistoryAction action)
     {
-        Actions.Push(action);
+        action.Execute();
+        _undoStack.Push(action);
+        _redoStack.Clear();
     }
 
     public void Undo()
     {
-        if (Actions.Count == 0)
+        if (_undoStack.Count == 0)
             return;
 
-        var action = Actions.Pop();
-
-        if (action is AddNodeAction addNodeAction)
-        {            
-            Graph.DeleteNode(addNodeAction.Node);
-        }
-        else if (action is AddOrRemoveEdgeAction removeEdgeAction)
-        {
-            Graph.AddOrRemoveEdge(removeEdgeAction.Node1, removeEdgeAction.Node2);
-        }
-        else if (action is RemoveNodeAction removeNodeAction)
-        {
-            var node = removeNodeAction.Node;
-            var mirrorRef = node.MirrorRef;
-
-            Graph.AddNode(node);
-            if (mirrorRef != null)
-            {
-                Graph.AddNode(mirrorRef);
-                FixEdges(mirrorRef);
-            }
-            
-            FixEdges(node);            
-        }
+        var action = _undoStack.Pop();
+        action.Undo();
+        _redoStack.Push(action);
     }
 
-    // Fix node edges. In node.edges.othernode add edges. (inverted deletenode)
-    private void FixEdges(Node node)
-    {        
-        foreach (var edge in node.Edges)
-        {
-            if (edge.Node1 != node)
-            {
-                edge.Node1.Edges.Add(edge);
-            }
-            else if (edge.Node2 != node)
-            {
-                edge.Node2.Edges.Add(edge);
-            }
-        }
-    }
+    public void Redo()
+    {
+        if (_redoStack.Count == 0)
+            return;
 
-    //TODO: redo
+        var action = _redoStack.Pop();
+        action.Execute();
+        _undoStack.Push(action);
+    }
 }

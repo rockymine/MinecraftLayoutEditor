@@ -1,11 +1,57 @@
-﻿namespace MinecraftLayoutEditor.Logic.History;
+﻿using MinecraftLayoutEditor.Logic.Geometry;
+using System.Numerics;
 
-public class AddNodeAction : HistoryAction
+namespace MinecraftLayoutEditor.Logic.History;
+
+public class AddNodeAction : IHistoryAction
 {
-    public Node Node { get; set; }
+    private readonly Graph _graph;
+    private readonly Vector2 _position;
+    private readonly Node.NodeType _nodeType;
+    private readonly SymmetryAxis? _symmetry;
+    private readonly bool _mirrorEnabled;
 
-    public AddNodeAction(Node node)
+    private Node? _primaryNode;
+    private Node? _mirroredNode;
+
+    public AddNodeAction(Graph graph, Vector2 position, Node.NodeType nodeType, SymmetryAxis symmetry, bool mirrorEnabled)
     {
-        Node = node;
+        _graph = graph;
+        _position = position;
+        _nodeType = nodeType;
+        _symmetry = symmetry;
+        _mirrorEnabled = mirrorEnabled;
+    }
+
+    public void Execute()
+    {
+        var pos = new Vector2(float.Floor(_position.X) + 0.5f, float.Floor(_position.Y) + 0.5f);
+        var closestNode = _graph.GetClosestNode(pos);
+
+        // Check if a node already exists at the given position
+        if (closestNode != null && Vector2.DistanceSquared(closestNode.Position, pos) < 1)
+            return;
+
+        _primaryNode = new Node(pos) { Type = _nodeType };
+        _graph.AddNode(_primaryNode);
+
+        if (_symmetry != null && _mirrorEnabled)
+        {
+            var mirroredPos = Rotation.MirrorPosition(_primaryNode.Position, _symmetry);
+            _mirroredNode = new Node(mirroredPos) 
+            { 
+                Type = _primaryNode.Type,
+                MirrorRef = _primaryNode
+            };
+
+            _primaryNode.MirrorRef = _mirroredNode;
+            _graph.AddNode(_mirroredNode);
+        }
+    }
+
+    public void Undo()
+    {
+        if (_primaryNode != null)
+            _graph.DeleteNode(_primaryNode);
     }
 }
