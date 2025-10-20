@@ -116,7 +116,7 @@ public class LayoutRenderer
         await ctx.DrawRect(WorldToScreenPos(corners[0]), WorldToScreenPos(corners[2]),
             WorldToScreenPos(corners[3]), WorldToScreenPos(corners[1]), 0.5f, options.BoundingBoxLineStroke, []);
 
-        if (!layout.ShowBlocksEnabled)
+        if (!options.ShowBlocksEnabled)
             return;
 
         // Draw blocks

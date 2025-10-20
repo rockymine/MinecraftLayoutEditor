@@ -4,6 +4,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
 {
     public class RenderingOptions
     {
+        public bool ShowBlocksEnabled { get; set; }
+
         public float GridLineWidth { get; init; } = 0.5f;
         public float GridBorderLineWidth { get; init; } = 1f;
         public string GridLineStroke { get; init; } = "black";

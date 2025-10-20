@@ -5,16 +5,15 @@ namespace MinecraftLayoutEditor.Logic;
 public class Layout
 {
     public Graph Graph { get; set; } = new Graph();
-    public string Name { get; set; } = "New Layout";
+    public string Name { get; set; } = "layout";
     public int Width { get; set; }
     public int Height { get; set; }
     public List<Team> Teams { get; set; } = [];
     public string Author { get; set; } = "";
 
-    // TODO: move, does not belong here!!!
+    // TODO: find a more suitable place for the properties
     public SymmetryAxis? Symmetry { get; set; }
     public bool MirrorEnabled { get; set; }
-    public bool ShowBlocksEnabled { get; set; }
     public Node.NodeType SelectedNodeType { get; set; } = Node.NodeType.Undefined;
 
     public Vector2 MirrorPosition(Vector2 pos, SymmetryAxis axis)
