@@ -63,7 +63,7 @@ public class LayoutRenderer
             {
                 await ctx.DrawCircle(WorldToScreenPos(Vector2.Zero), options.MirrorPointRadius, 
                     options.MirrorPointRadius, options.MirrorPointLineWidth, options.MirrorPointFill, 
-                    options.MirrorPointLineStroke, FillRule.NonZero);
+                    options.MirrorPointLineStroke, FillRule.NonZero, Scale);
             }
         }
 
@@ -92,7 +92,7 @@ public class LayoutRenderer
             if (baseStyle.Shape == "circle")
             {
                 await ctx.DrawCircle(WorldToScreenPos(n.Position), baseStyle.Radius, baseStyle.Radius,
-                    baseStyle.LineWidth, baseStyle.FillStyle, finalStroke, FillRule.NonZero);
+                    baseStyle.LineWidth, baseStyle.FillStyle, finalStroke, FillRule.NonZero, Scale);
             } 
             else if (baseStyle.Shape == "square")
             {

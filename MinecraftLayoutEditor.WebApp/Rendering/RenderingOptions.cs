@@ -35,7 +35,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             {
                 FillStyle = "lightgray",
                 StrokeStyle = "#666",
-                Radius = 6f,
+                Radius = 0.4f,
                 Shape = "circle",
                 LineWidth = 2
             };

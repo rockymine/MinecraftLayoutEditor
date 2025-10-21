@@ -27,8 +27,8 @@ SettingsChanged="OnSettingsChanged"/>
     Undo
 </button>
 
-<div style="width: fit-content; height: fit-content; outline: none"
-     @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0"
-@onwheel="OnWheel" @onwheel:preventDefault=true>
+<div id="canvasContainer" style="width: fit-content; height: fit-content; outline: none"
+    @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0"
+    @onwheel="OnWheel" @onwheel:preventDefault=true @onmousedown="OnMouseDown">
     <Canvas @ref="@Canvas" width="1000" height="1000" />
 </div>

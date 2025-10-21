@@ -2,6 +2,7 @@ using BlazorDownloadFile;
 using Excubo.Blazor.Canvas;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
@@ -19,13 +20,19 @@ public partial class Home : ComponentBase
     private Node? HoveredNode;
     private Node? SelectedNode;
     private HistoryStack? _historyStack;
+    private Vector2? PanStartPosition;
 
-    [Inject] public required IBlazorDownloadFileService BlazorDownloadFileService { get; set; }
+    [Inject] 
+    public required IBlazorDownloadFileService BlazorDownloadFileService { get; init; }
+    [Inject]
+    public required IJSRuntime JSRuntime { get; init; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) 
+        if (!firstRender)
             return;
+
+        await JSRuntime.InvokeAsync<object>("init", DotNetObjectReference.Create(this));
 
         await Render();
     }
@@ -68,18 +75,28 @@ public partial class Home : ComponentBase
     }
 
     private async Task OnMouseUp(MouseEventArgs e)
-    {
+    {     
         Vector2 clickedAt = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX,
             (float)e.OffsetY));
 
         if (e.Button == 0)
         {
             await HandleLeftClick(clickedAt);
-        } 
+        }
+        else if (e.Button == 1)
+        {
+            PanStartPosition = null;
+        }
         else if (e.Button == 2)
         {
             await HandleRightClick(clickedAt);
         }
+    }
+
+    private async Task OnMouseDown(MouseEventArgs e)
+    {
+        if (e.Button == 1)
+            PanStartPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
     }
 
     private async Task HandleLeftClick(Vector2 worldPos)
@@ -152,17 +169,32 @@ public partial class Home : ComponentBase
         Vector2 cursorPosition = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
         Node? closestNode = _layout.Graph.GetClosestNode(cursorPosition);
 
-        if (closestNode == null)
-            return;
-
-        var threshhold = 0.4f;
-        var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
-
         var prevHovered = HoveredNode;
-        HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
+
+        if (closestNode != null)
+        {
+            var threshhold = 0.4f;
+            var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
+            
+            HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
+        }
 
         if (prevHovered != HoveredNode)
             await Render();
+    }
+
+    [JSInvokable]
+    public async ValueTask JSOnMouseMove(int mouseX, int mouseY)
+    {
+        if (PanStartPosition == null)
+            return;
+
+        var panEndPosition = new Vector2(mouseX, mouseY);
+        var deltaPan = (PanStartPosition.Value - panEndPosition) / _renderer.Scale;
+        PanStartPosition = panEndPosition;
+
+        _renderer.UpdateTRS(_renderer.CameraPosition - deltaPan, _renderer.Scale);
+        await Render();
     }
 
     private async Task Render()
