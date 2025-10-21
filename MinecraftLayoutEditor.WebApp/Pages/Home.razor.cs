@@ -204,4 +204,31 @@ public partial class Home : ComponentBase
         if (nodeMoved)
             await Render();
     }
+
+    public async Task OnWheel(WheelEventArgs e)
+    {
+        var scrollY = e.DeltaY;
+
+        if (scrollY == 0)
+            return;
+
+        var relativeCursorPos = new Vector2((float)e.OffsetX, (float)e.OffsetY);
+        var worldPosBeforeZoom = _renderer.ScreenToWorldPos(relativeCursorPos);
+
+        if (scrollY < 0)
+        {
+            _renderer.UpdateTRS(_renderer.CameraPosition, _renderer.Scale * 1.6f);
+        }
+        else
+        {
+            _renderer.UpdateTRS(_renderer.CameraPosition, _renderer.Scale / 1.6f);
+        }
+
+        var worldPosAfterZoom = _renderer.ScreenToWorldPos(relativeCursorPos);
+        var worldPosChange = worldPosAfterZoom - worldPosBeforeZoom;
+
+        _renderer.UpdateTRS(_renderer.CameraPosition + worldPosChange, _renderer.Scale);
+
+        await Render();
+    }
 }
