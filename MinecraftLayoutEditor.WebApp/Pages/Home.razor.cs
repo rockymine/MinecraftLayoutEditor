@@ -58,6 +58,13 @@ public partial class Home : ComponentBase
         await Render();
     }
 
+    private async Task OnRedo()
+    {
+        _historyStack.Redo();
+        SelectedNode = null;
+        await Render();
+    }
+
     private async Task OnSchematicCreate()
     {
         var schematic = SchematicMaker.FromLayout(_layout, height: 5, scale: 1);
