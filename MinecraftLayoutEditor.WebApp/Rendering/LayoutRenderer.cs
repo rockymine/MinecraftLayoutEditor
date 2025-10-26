@@ -10,8 +10,23 @@ namespace MinecraftLayoutEditor.WebApp.Rendering;
 public class LayoutRenderer
 {
     private readonly GridRenderer _gridRenderer = new();
-    private Vector2 Translation = new(25, 25);
-    private float Scale = 20f;
+    public float Scale { get; private set; } = 1f;
+    public Vector2 CameraPosition { get; private set; }
+    private Matrix4x4 WorldToScreen;
+    private Matrix4x4 ScreenToWorld;
+
+    public LayoutRenderer()
+    {
+        UpdateTRS(new Vector2(25, 25), 20f);
+    }
+
+    public void UpdateTRS(Vector2 translation, float scale)
+    {
+        WorldToScreen = Matrix4x4.CreateTranslation(translation.X, translation.Y, 0) * Matrix4x4.CreateScale(scale);
+        Matrix4x4.Invert(WorldToScreen, out ScreenToWorld);
+        Scale = scale;
+        CameraPosition = translation;
+    }
 
     public async Task RenderAsync(Context2D ctx, Logic.Layout layout,
         Node? hoveredNode, Node? selectedNode, RenderingOptions options)
@@ -48,7 +63,7 @@ public class LayoutRenderer
             {
                 await ctx.DrawCircle(WorldToScreenPos(Vector2.Zero), options.MirrorPointRadius, 
                     options.MirrorPointRadius, options.MirrorPointLineWidth, options.MirrorPointFill, 
-                    options.MirrorPointLineStroke, FillRule.NonZero);
+                    options.MirrorPointLineStroke, FillRule.NonZero, Scale);
             }
         }
 
@@ -77,7 +92,7 @@ public class LayoutRenderer
             if (baseStyle.Shape == "circle")
             {
                 await ctx.DrawCircle(WorldToScreenPos(n.Position), baseStyle.Radius, baseStyle.Radius,
-                    baseStyle.LineWidth, baseStyle.FillStyle, finalStroke, FillRule.NonZero);
+                    baseStyle.LineWidth, baseStyle.FillStyle, finalStroke, FillRule.NonZero, Scale);
             } 
             else if (baseStyle.Shape == "square")
             {
@@ -129,16 +144,15 @@ public class LayoutRenderer
 
     public Vector2 WorldToScreenPos(Vector2 worldPos)
     {
-        var screenCoord = worldPos + Translation;
-
-        return screenCoord * Scale;
+        var v3 = Vector3.Transform(new Vector3(worldPos.X, worldPos.Y, 0), WorldToScreen);
+        return new Vector2(v3.X, v3.Y);
     }
 
     public Vector2 ScreenToWorldPos(Vector2 screenPos)
     {
-        var worldPos = screenPos / Scale;
+        var v3 = Vector3.Transform(new Vector3(screenPos.X, screenPos.Y, 0), ScreenToWorld);
 
-        return worldPos - Translation;
+        return new Vector2(v3.X, v3.Y);
     }
 
     public float WorldToScreenScale(float worldLength)

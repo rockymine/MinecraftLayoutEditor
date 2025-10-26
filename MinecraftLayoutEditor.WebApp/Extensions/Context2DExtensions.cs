@@ -106,12 +106,12 @@ public static class Context2DExtensions
     }
 
     public static async Task DrawCircle(this Context2D ctx, Vector2 pos, float radiusX, 
-        float radiusY, float lineWidth, string fillStyle, string strokeStyle, FillRule fillRule)
+        float radiusY, float lineWidth, string fillStyle, string strokeStyle, FillRule fillRule, float scale)
     {
         await ctx.SaveAsync();
 
         await ctx.BeginPathAsync();
-        await ctx.EllipseAsync(pos.X, pos.Y, radiusX, radiusY, 0, 0, 2 * Math.PI);
+        await ctx.EllipseAsync(pos.X, pos.Y, radiusX * scale, radiusY  * scale, 0, 0, 2 * Math.PI);
 
         // Fill
         await ctx.FillStyleAsync(fillStyle);

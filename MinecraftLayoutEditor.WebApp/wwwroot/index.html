@@ -28,6 +28,20 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <script>
+        window.init = (instance) => {
+            var canvasContainer = document.getElementById('canvasContainer');
+            var canvases = canvasContainer.getElementsByTagName('canvas') || [];
+
+            window.canvas = canvases.length ? canvases[0] : null;
+
+            if (window.canvas) {
+                window.canvas.onmousemove = (e) => {
+                    instance.invokeMethodAsync('JSOnMouseMove', e.offsetX, e.offsetY);
+                };
+            }
+        };
+    </script>
 </body>
 
 </html>
