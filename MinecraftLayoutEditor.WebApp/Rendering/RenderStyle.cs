@@ -1,6 +1,6 @@
 ﻿namespace MinecraftLayoutEditor.WebApp.Rendering;
 
-public class NodeRenderStyle
+public record RenderStyle
 {
     public string FillStyle { get; init; } = "black";
     public string StrokeStyle { get; init; } = "black";

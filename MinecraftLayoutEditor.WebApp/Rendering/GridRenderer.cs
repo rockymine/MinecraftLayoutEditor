@@ -1,12 +1,12 @@
 ﻿using Excubo.Blazor.Canvas.Contexts;
-using MinecraftLayoutEditor.WebApp.Extensions;
 using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering;
 
 public class GridRenderer
 {
-    public async Task RenderAsync(Context2D ctx, int gridSpacing, float gridLineWidth, string gridStrokeStyle, Logic.Layout layout, LayoutRenderer renderer)
+    public async Task RenderAsync(Context2D ctx, int gridSpacing, float gridLineWidth, string gridStrokeStyle, 
+        Logic.Layout layout, LayoutRenderer renderer)
     {
         await ctx.SaveAsync();
         await ctx.BeginPathAsync();

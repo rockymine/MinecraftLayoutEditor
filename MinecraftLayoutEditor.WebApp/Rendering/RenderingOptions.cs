@@ -6,19 +6,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
     {
         public bool ShowBlocksEnabled { get; set; }
 
-        public float GridLineWidth { get; init; } = 0.5f;
         public float GridBorderLineWidth { get; init; } = 1f;
-        public string GridLineStroke { get; init; } = "black";
         public int GridSpacing { get; init; } = 1;
-
-        public float MirrorLineWidth { get; init; } = 2f;
-        public string MirrorLineStroke { get; init; } = "red";
-        public double[] MirrorLineDash { get; init; } = [5];
-
-        public float MirrorPointRadius { get; init; } = 6f;
-        public string MirrorPointFill { get; init; } = "red";
-        public string MirrorPointLineStroke { get; init; } = "red";
-        public float MirrorPointLineWidth { get; init; } = 2f;
 
         public string HoveredNodeStroke { get; init; } = "purple";
         public string SelectedNodeStroke { get; init; } = "cyan";
@@ -26,14 +15,12 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         public string CellFillStyle { get; init; } = "gray";
         public string BoundingBoxLineStroke { get; init; } = "purple";
 
-        //TODO: Refactor NodeRenderStyle and EdgeRenderStyle to RenderStyle
-        //TODO: Change to single dictionary
-        public Dictionary<Node.NodeType, NodeRenderStyle> NodeStyles { get; set; }
-        public Dictionary<Edge.EdgeType, EdgeRenderStyle> EdgeStyles { get; set; }
+        public Dictionary<string, RenderStyle> RenderStyles { get; set; }
 
         public RenderingOptions() 
         {
-            var defaultNodeStyle = new NodeRenderStyle
+            // Node styles
+            var defaultNodeStyle = new RenderStyle
             {
                 FillStyle = "lightgray",
                 StrokeStyle = "#666",
@@ -42,7 +29,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
                 LineWidth = 2
             };
 
-            var woolNodeStyle = new NodeRenderStyle
+            var woolNodeStyle = new RenderStyle
             {
                 FillStyle = "green",
                 StrokeStyle = "#666",
@@ -51,7 +38,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
                 LineWidth = 2f
             };
 
-            var spawnNodeStyle = new NodeRenderStyle
+            var spawnNodeStyle = new RenderStyle
             {
                 FillStyle = "blue",
                 StrokeStyle = "#666",
@@ -60,38 +47,58 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
                 LineWidth = 2f
             };
 
-            NodeStyles = new Dictionary<Node.NodeType, NodeRenderStyle>
-            {
-                { Node.NodeType.Undefined, defaultNodeStyle },
-                { Node.NodeType.Wool, woolNodeStyle },
-                { Node.NodeType.Spawn, spawnNodeStyle },
-            };
 
-            var walkableEdgeStyle = new EdgeRenderStyle
+            // Edge styles
+            var walkableEdgeStyle = new RenderStyle
             {
                 StrokeStyle = "#666",
                 LineDash = [],
                 LineWidth = 2f
             };
 
-            var bridgeableEdgeStyle = new EdgeRenderStyle
+            var bridgeableEdgeStyle = new RenderStyle
             {
                 StrokeStyle = "#666",
                 LineDash = [5],
                 LineWidth = 2f
             };
 
-            EdgeStyles = new Dictionary<Edge.EdgeType, EdgeRenderStyle>
+            // Other styles
+            var mirrorPointStyle = new RenderStyle
             {
-                { Edge.EdgeType.Walkable, walkableEdgeStyle },
-                { Edge.EdgeType.Bridgeable, bridgeableEdgeStyle }
+                Radius = 6f,
+                FillStyle = "red",
+                StrokeStyle = "red",
+                LineWidth = 2f
+            };
+
+            var mirrorLineStyle = new RenderStyle
+            {
+                LineWidth = 2f,
+                StrokeStyle = "red",
+                LineDash = [5]
+            };
+
+            var gridLineStyle = new RenderStyle
+            {
+                LineWidth = 0.5f,
+                StrokeStyle = "black",
+            };
+
+            RenderStyles = new Dictionary<string, RenderStyle>
+            {
+                { "undefined", defaultNodeStyle },
+                { "wool", woolNodeStyle },
+                { "spawn", spawnNodeStyle },
+                { "walkable", walkableEdgeStyle },
+                { "bridgeable", bridgeableEdgeStyle },
+                { "mirrorPointStyle", mirrorPointStyle },
+                { "mirrorLineStyle", mirrorLineStyle },
+                { "gridLineStyle", gridLineStyle }
             };
         }
 
-        public NodeRenderStyle GetStyle(Node.NodeType type) =>
-            NodeStyles.TryGetValue(type, out var style) ? style : new NodeRenderStyle();
-
-        public EdgeRenderStyle GetStyle(Edge.EdgeType type) =>
-            EdgeStyles.TryGetValue(type, out var style) ? style : new EdgeRenderStyle();
+        public RenderStyle GetStyle(string type) =>
+            RenderStyles.TryGetValue(type, out var style) ? style : new RenderStyle();
     }
 }
