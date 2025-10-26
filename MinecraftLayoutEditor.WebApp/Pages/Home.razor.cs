@@ -13,7 +13,7 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 
 public partial class Home : ComponentBase
 {
-    private Canvas Canvas;
+    private Canvas? Canvas;
     private readonly Logic.Layout _layout = LayoutFactory.Empty(40, 40);
     private readonly LayoutRenderer _renderer = new();
     private readonly RenderingOptions _renderingOptions = new();
@@ -61,14 +61,14 @@ public partial class Home : ComponentBase
 
     private async Task OnUndo()
     {
-        _historyStack.Undo();
+        _historyStack?.Undo();
         SelectedNode = null;
         await Render();
     }
 
     private async Task OnRedo()
     {
-        _historyStack.Redo();
+        _historyStack?.Redo();
         SelectedNode = null;
         await Render();
     }
@@ -112,6 +112,13 @@ public partial class Home : ComponentBase
         // Add node
         if (HoveredNode == null && _layout.Contains(worldPos))
         {
+            var pos = new Vector2(float.Floor(worldPos.X) + 0.5f, float.Floor(worldPos.Y) + 0.5f);
+            var closestNode = _layout.Graph.GetClosestNode(pos);
+
+            // Check if a node already exists at the given position
+            if (closestNode != null && Vector2.DistanceSquared(closestNode.Position, pos) < 1)
+                return;
+
             var action = new AddNodeAction(
                 _layout.Graph,
                 worldPos,
@@ -120,7 +127,7 @@ public partial class Home : ComponentBase
                 _layout.MirrorEnabled
                 );
 
-            _historyStack.ExecuteAction(action);
+            _historyStack?.ExecuteAction(action);
             await Render();
         }
         // Select node
@@ -144,7 +151,7 @@ public partial class Home : ComponentBase
                     SelectedNode
                     );
 
-                _historyStack.ExecuteAction(action);
+                _historyStack?.ExecuteAction(action);
                 SelectedNode = null;
             }
 
@@ -165,7 +172,7 @@ public partial class Home : ComponentBase
                 HoveredNode
                 );
 
-            _historyStack.ExecuteAction(action);
+            _historyStack?.ExecuteAction(action);
 
             if (SelectedNode == HoveredNode)
                 SelectedNode = null;

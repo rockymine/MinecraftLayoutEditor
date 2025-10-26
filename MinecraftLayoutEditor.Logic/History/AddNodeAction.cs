@@ -14,7 +14,7 @@ public class AddNodeAction : IHistoryAction
     private Node? _primaryNode;
     private Node? _mirroredNode;
 
-    public AddNodeAction(Graph graph, Vector2 position, Node.NodeType nodeType, SymmetryAxis symmetry, bool mirrorEnabled)
+    public AddNodeAction(Graph graph, Vector2 position, Node.NodeType nodeType, SymmetryAxis? symmetry, bool mirrorEnabled)
     {
         _graph = graph;
         _position = position;
@@ -25,13 +25,7 @@ public class AddNodeAction : IHistoryAction
 
     public void Execute()
     {
-        //TODO: move to ui
         var pos = new Vector2(float.Floor(_position.X) + 0.5f, float.Floor(_position.Y) + 0.5f);
-        var closestNode = _graph.GetClosestNode(pos);
-
-        // Check if a node already exists at the given position
-        if (closestNode != null && Vector2.DistanceSquared(closestNode.Position, pos) < 1)
-            return;
 
         _primaryNode = new Node(pos) { Type = _nodeType };
         _graph.AddNode(_primaryNode);
