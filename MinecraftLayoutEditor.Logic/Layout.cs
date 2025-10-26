@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using MinecraftLayoutEditor.Logic.Geometry;
+using System.Numerics;
 
 namespace MinecraftLayoutEditor.Logic;
 
@@ -11,8 +12,9 @@ public class Layout
     public List<Team> Teams { get; set; } = [];
     public string Author { get; set; } = "";
 
-    // TODO: find a more suitable place for the properties
     public SymmetryAxis? Symmetry { get; set; }
+    // TODO: Remove mirrorEnabled as it is the same as symmetry = null
+    // move to ui only
     public bool MirrorEnabled { get; set; }
     public Node.NodeType SelectedNodeType { get; set; } = Node.NodeType.Undefined;
 
@@ -20,7 +22,7 @@ public class Layout
     {
         if (axis.RotationDeg != 0)
         {
-            return RotateAboutOrigin(pos, Vector2.Zero, axis.RotationDeg * float.Pi / 180);
+            return Rotation.RotateAboutOrigin(pos, Vector2.Zero, axis.RotationDeg * float.Pi / 180);
         }
 
         if (axis.IsHorizontal)
@@ -47,42 +49,6 @@ public class Layout
             && pos.Y >= -Height / 2 && pos.Y <= Height / 2;
     }
 
-    public Node? AddNode(Vector2 pos)
-    {
-        pos = new Vector2(float.Floor(pos.X) + 0.5f, float.Floor(pos.Y) + 0.5f);
-
-        var closestNode = Graph.GetClosestNode(pos);
-
-        // node already exists
-        if (closestNode != null && Vector2.DistanceSquared(closestNode.Position, pos) < 1)
-            return null;
-
-        var node = new Node(pos)
-        {
-            Type = SelectedNodeType
-        };
-        Graph.AddNode(node);
-
-        if (Symmetry == null)
-            return node;
-
-        if (MirrorEnabled)
-        {
-            var mirroredPos = MirrorPosition(node.Position, Symmetry);
-
-            var mirrored = new Node(mirroredPos)
-            {
-                MirrorRef = node,
-                Type = node.Type
-            };
-
-            node.MirrorRef = mirrored;
-            Graph.AddNode(mirrored);
-        }
-        
-        return node;
-    }
-
     public void MoveNode(Node node, Vector2 offset)
     {
         Vector2 newPosition = node.Position + offset;
@@ -97,11 +63,5 @@ public class Layout
             var mirrorRefPosition = MirrorPosition(node.Position, Symmetry);
             node.MirrorRef.Position = mirrorRefPosition;
         }
-    }
-
-    // TODO: move to utility class
-    public Vector2 RotateAboutOrigin(Vector2 point, Vector2 origin, float rotation)
-    {
-        return Vector2.Transform(point - origin, Matrix3x2.CreateRotation(rotation)) + origin;
     }
 }

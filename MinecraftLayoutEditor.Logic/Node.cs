@@ -6,6 +6,7 @@ public class Node
 {
     public Vector2 Position { get; set; }
     public NodeType Type { get; set; }
+    //TODO: change to Dictionary<SymmetryAxis, List<Node> for double symmetry
     public Node? MirrorRef { get; set; }
     public List<Edge> Edges { get; set; } = [];
     public Team? Team { get; set; }
@@ -24,12 +25,6 @@ public class Node
         }
 
         return null;
-    }
-
-    public bool AxisAligned(Node other)
-    {
-        return Position.X == other.Position.X ||
-           Position.Y == other.Position.Y;
     }
 
     public enum NodeType

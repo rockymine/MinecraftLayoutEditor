@@ -7,11 +7,6 @@ public class HistoryStack
     private readonly Stack<IHistoryAction> _undoStack = [];
     private readonly Stack<IHistoryAction> _redoStack = [];
 
-    public HistoryStack()
-    {
-
-    }
-
     public void ExecuteAction(IHistoryAction action)
     {
         action.Execute();

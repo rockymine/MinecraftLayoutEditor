@@ -25,6 +25,7 @@ public class AddNodeAction : IHistoryAction
 
     public void Execute()
     {
+        //TODO: move to ui
         var pos = new Vector2(float.Floor(_position.X) + 0.5f, float.Floor(_position.Y) + 0.5f);
         var closestNode = _graph.GetClosestNode(pos);
 
@@ -35,6 +36,7 @@ public class AddNodeAction : IHistoryAction
         _primaryNode = new Node(pos) { Type = _nodeType };
         _graph.AddNode(_primaryNode);
 
+        //TODO: mirrorEnabled redundant
         if (_symmetry != null && _mirrorEnabled)
         {
             var mirroredPos = Rotation.MirrorPosition(_primaryNode.Position, _symmetry);
@@ -51,6 +53,7 @@ public class AddNodeAction : IHistoryAction
 
     public void Undo()
     {
+        //TODO: there will always be a node
         if (_primaryNode != null)
             _graph.DeleteNode(_primaryNode);
     }

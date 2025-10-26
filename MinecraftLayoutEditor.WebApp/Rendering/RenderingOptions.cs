@@ -26,6 +26,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         public string CellFillStyle { get; init; } = "gray";
         public string BoundingBoxLineStroke { get; init; } = "purple";
 
+        //TODO: Refactor NodeRenderStyle and EdgeRenderStyle to RenderStyle
+        //TODO: Change to single dictionary
         public Dictionary<Node.NodeType, NodeRenderStyle> NodeStyles { get; set; }
         public Dictionary<Edge.EdgeType, EdgeRenderStyle> EdgeStyles { get; set; }
 
