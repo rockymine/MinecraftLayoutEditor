@@ -38,6 +38,11 @@ public partial class LayoutSettings
     public EventCallback<bool> ShowBlocksEnabledChanged { get; set; }
 
     [Parameter]
+    public bool ShowBoundingBoxEnabled { get; set; }
+    [Parameter]
+    public EventCallback<bool> ShowBoundingBoxEnabledChanged { get; set; }
+
+    [Parameter]
     public Node.NodeType SelectedNodeType { get; set; }
     [Parameter]
     public EventCallback<Node.NodeType> SelectedNodeTypeChanged { get; set; }
@@ -51,6 +56,12 @@ public partial class LayoutSettings
     public async Task OnShowBlocksEnabledChanged()
     {
         await ShowBlocksEnabledChanged.InvokeAsync(ShowBlocksEnabled);
+        await SettingsChanged.InvokeAsync();
+    }
+
+    public async Task OnShowBoundingBoxEnabledChanged()
+    {
+        await ShowBoundingBoxEnabledChanged.InvokeAsync(ShowBoundingBoxEnabled);
         await SettingsChanged.InvokeAsync();
     }
 

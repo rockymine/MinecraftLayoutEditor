@@ -87,9 +87,9 @@ public class LayoutRenderer
         if (layout.Symmetry.RotationDeg == 180)
         {
             var mirrorPointStyle = GetMirrorPointStyle(options);
-            await ctx.DrawCircle(WorldToScreenPos(Vector2.Zero), mirrorPointStyle.Radius,
-                mirrorPointStyle.Radius, mirrorPointStyle.LineWidth, mirrorPointStyle.FillStyle,
-                mirrorPointStyle.StrokeStyle, FillRule.NonZero, Scale);
+            await ctx.DrawCircle(WorldToScreenPos(Vector2.Zero), WorldToScreenScale(mirrorPointStyle.Radius),
+                WorldToScreenScale(mirrorPointStyle.Radius), mirrorPointStyle.LineWidth, mirrorPointStyle.FillStyle,
+                mirrorPointStyle.StrokeStyle, FillRule.NonZero);
         }
     }
 
@@ -143,24 +143,24 @@ public class LayoutRenderer
 
     private async Task RenderCircleNode(Context2D ctx, Vector2 screenPos, RenderStyle style)
     {
-        await ctx.DrawCircle(screenPos, style.Radius, style.Radius,
-            style.LineWidth, style.FillStyle, style.StrokeStyle, FillRule.NonZero, Scale);
+        await ctx.DrawCircle(screenPos, WorldToScreenScale(style.Radius), WorldToScreenScale(style.Radius),
+            style.LineWidth, style.FillStyle, style.StrokeStyle, FillRule.NonZero);
     }
 
-    private static async Task RenderSquareNode(Context2D ctx, Vector2 screenPos, RenderStyle style)
+    private async Task RenderSquareNode(Context2D ctx, Vector2 screenPos, RenderStyle style)
     {
         var size = style.Radius * (float)Math.Sqrt(Math.PI / 4);
-        var topLeft = screenPos - new Vector2(size, size);
+        var topLeft = screenPos - new Vector2(WorldToScreenScale(size), WorldToScreenScale(size));
 
-        await ctx.DrawRect(topLeft, size * 2, size * 2,
+        await ctx.DrawRect(topLeft, WorldToScreenScale(size * 2), WorldToScreenScale(size * 2),
             style.LineWidth, style.StrokeStyle, style.LineDash, style.FillStyle);
     }
 
-    private static async Task RenderDiamondNode(Context2D ctx, Vector2 screenPos, RenderStyle style)
+    private async Task RenderDiamondNode(Context2D ctx, Vector2 screenPos, RenderStyle style)
     {
         var size = style.Radius * (float)Math.Sqrt(Math.PI / 2);
 
-        await ctx.DrawDiamond(screenPos, size, size,
+        await ctx.DrawDiamond(screenPos, WorldToScreenScale(size), WorldToScreenScale(size),
             style.LineWidth, style.StrokeStyle, style.LineDash, style.FillStyle);
     }
 
@@ -169,7 +169,8 @@ public class LayoutRenderer
         foreach (var e in edges)
         {
             // Render path bounding box preview
-            await RenderEdgeBoundingBox(ctx, e.Node1.Position, e.Node2.Position, options);
+            if (options.ShowBoundingBoxEnabled)
+                await RenderEdgeBoundingBox(ctx, e.Node1.Position, e.Node2.Position, options);
 
             // Render schematic preview
             if (options.ShowBlocksEnabled)

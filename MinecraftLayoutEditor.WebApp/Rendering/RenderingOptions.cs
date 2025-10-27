@@ -5,6 +5,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
     public class RenderingOptions
     {
         public bool ShowBlocksEnabled { get; set; }
+        public bool ShowBoundingBoxEnabled { get; set; }
 
         public float GridBorderLineWidth { get; init; } = 1f;
         public int GridSpacing { get; init; } = 1;
@@ -33,7 +34,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             {
                 FillStyle = "green",
                 StrokeStyle = "#666",
-                Radius = 6f,
+                Radius = 0.4f,
                 Shape = "square",
                 LineWidth = 2f
             };
@@ -42,7 +43,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             {
                 FillStyle = "blue",
                 StrokeStyle = "#666",
-                Radius = 6f,
+                Radius = 0.4f,
                 Shape = "diamond",
                 LineWidth = 2f
             };
@@ -66,7 +67,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             // Other styles
             var mirrorPointStyle = new RenderStyle
             {
-                Radius = 6f,
+                Radius = 0.4f,
                 FillStyle = "red",
                 StrokeStyle = "red",
                 LineWidth = 2f
