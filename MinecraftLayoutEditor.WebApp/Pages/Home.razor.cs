@@ -20,6 +20,7 @@ public partial class Home : ComponentBase
     private Node? HoveredNode;
     private Node? SelectedNode;
 
+    private string CursorClass => (PanStartPosition != null) ? "grab" : "default";
     private HistoryStack? _historyStack;
     private Vector2? PanStartPosition;
 
@@ -104,7 +105,9 @@ public partial class Home : ComponentBase
     private async Task OnMouseDown(MouseEventArgs e)
     {
         if (e.Button == 1)
+        {
             PanStartPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
+        }
     }
 
     private async Task HandleLeftClick(Vector2 worldPos)
