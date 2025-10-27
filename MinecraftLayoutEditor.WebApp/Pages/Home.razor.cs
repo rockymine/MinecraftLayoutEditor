@@ -23,7 +23,7 @@ public partial class Home : ComponentBase
     private HistoryStack? _historyStack;
     private Vector2? PanStartPosition;
 
-    [Inject] 
+    [Inject]
     public required IBlazorDownloadFileService BlazorDownloadFileService { get; init; }
     [Inject]
     public required IJSRuntime JSRuntime { get; init; }
@@ -42,10 +42,10 @@ public partial class Home : ComponentBase
     {
         _historyStack = new HistoryStack();
     }
-    
+
     private async Task OnSettingsChanged()
     {
-        await Render(); 
+        await Render();
     }
 
     private async Task OnClearLayout()
@@ -83,7 +83,7 @@ public partial class Home : ComponentBase
     }
 
     private async Task OnMouseUp(MouseEventArgs e)
-    {     
+    {
         Vector2 clickedAt = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX,
             (float)e.OffsetY));
 
@@ -181,7 +181,7 @@ public partial class Home : ComponentBase
             await Render();
         }
         // Deselect node
-        else if (SelectedNode != null && closestNode != null 
+        else if (SelectedNode != null && closestNode != null
             && Vector2.Distance(worldPos, closestNode.Position) >= threshhold)
         {
             SelectedNode = null;
@@ -200,7 +200,7 @@ public partial class Home : ComponentBase
         {
             var threshhold = 0.4f;
             var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
-            
+
             HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
         }
 
@@ -236,7 +236,7 @@ public partial class Home : ComponentBase
             return;
 
         bool nodeMoved = false;
-        
+
         if (e.Key == "ArrowUp")
         {
             _layout.MoveNode(SelectedNode, new Vector2(0, -1));
@@ -286,6 +286,53 @@ public partial class Home : ComponentBase
 
         _renderer.UpdateTRS(_renderer.CameraPosition + worldPosChange, _renderer.Scale);
 
+        await Render();
+    }
+
+    private async Task OnResetView()
+    {
+        _renderer.UpdateTRS(new Vector2(25, 25), 20f);
+        await Render();
+    }
+
+    public async Task OnFitLayout()
+    {
+        if (_layout.Width <= 0 | _layout.Height <= 0)
+            return;
+
+        var maxCanvas = float.Max(_renderer.CanvasWidth, _renderer.CanvasHeight);
+        var maxLayout = float.Max(_layout.Width, _layout.Height);
+
+        var newScale = (maxCanvas / maxLayout) * 0.98f;
+
+        var translationX = (_renderer.CanvasWidth / 2f) / newScale;
+        var translationY = (_renderer.CanvasHeight / 2f) / newScale;
+
+        _renderer.UpdateTRS(new Vector2(translationX, translationY), newScale);
+        await Render();
+    }
+
+    // TODO: Differentiate between vertical and horizontal mirror line
+    public async Task OnFitTeam()
+    {
+        if (_layout.Width <= 0 | _layout.Height <= 0)
+            return;
+
+        // Horizontal only
+        var halfH = _layout.Height / 2f;
+        
+        var topCenter = new Vector2(0, halfH / 2f);
+
+        float scaleX = _renderer.CanvasWidth / halfH;
+        float scaleY = _renderer.CanvasHeight / _layout.Width;
+        float newScale = float.Min(scaleX, scaleY) * 0.98f;
+
+        var translationX = (_renderer.CanvasWidth / 2f) / newScale;
+        var translationY = (_renderer.CanvasHeight / 2f) / newScale;
+
+        var canvasCenter = new Vector2(translationX, translationY);
+
+        _renderer.UpdateTRS(new Vector2(canvasCenter.X, canvasCenter.Y) + topCenter, newScale);
         await Render();
     }
 }

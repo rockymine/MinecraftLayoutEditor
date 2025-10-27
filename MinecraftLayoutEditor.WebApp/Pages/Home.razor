@@ -32,7 +32,19 @@ SettingsChanged="OnSettingsChanged"/>
     Redo
 </button>
 
-<div id="canvasContainer" style="width: fit-content; height: fit-content; outline: none"
+<button type="button" @onclick="OnResetView">
+    Reset View
+</button>
+
+<button type="button" @onclick="OnFitLayout">
+    Fit Layout
+</button>
+
+<button type="button" @onclick="OnFitTeam" disabled="@(!_layout.MirrorEnabled)">
+    Fit Team
+</button>
+
+<div id="canvasContainer" style="width: fit-content; height: fit-content; outline: solid"
     @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0"
     @onwheel="OnWheel" @onwheel:preventDefault=true @onmousedown="OnMouseDown">
     <Canvas @ref="@Canvas" width="1000" height="1000" />

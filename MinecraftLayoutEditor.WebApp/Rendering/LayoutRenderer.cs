@@ -10,8 +10,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering;
 public class LayoutRenderer
 {
     private const float DEFAULT_PATH_WIDTH = 4f;
-    private const int DEFAULT_CANVAS_WIDTH = 1000;
-    private const int DEFAULT_CANVAS_HEIGHT = 1000;
+    public float CanvasWidth { get; private set; } = 1000f;
+    public float CanvasHeight { get; private set; } = 1000f;
 
     private readonly GridRenderer _gridRenderer = new();
     public float Scale { get; private set; } = 1f;
@@ -26,6 +26,8 @@ public class LayoutRenderer
 
     public void UpdateTRS(Vector2 translation, float scale)
     {
+        Console.WriteLine($"scale={scale}, trans=({translation.X}, {translation.Y})");
+
         WorldToScreen = Matrix4x4.CreateTranslation(translation.X, translation.Y, 0) * Matrix4x4.CreateScale(scale);
         Matrix4x4.Invert(WorldToScreen, out ScreenToWorld);
         Scale = scale;
@@ -37,7 +39,7 @@ public class LayoutRenderer
     {
         var uniqueEdges = GetUniqueEdges(layout.Graph.Nodes);
 
-        await ctx.ClearRectAsync(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
+        await ctx.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
 
         await RenderGrid(ctx, layout, options);
         await RenderMirrorAxis(ctx, layout, options);
