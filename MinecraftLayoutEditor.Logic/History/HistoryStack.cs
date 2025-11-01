@@ -7,6 +7,9 @@ public class HistoryStack
     private readonly Stack<IHistoryAction> _undoStack = [];
     private readonly Stack<IHistoryAction> _redoStack = [];
 
+    public bool CanUndo => _undoStack.Count != 0;
+    public bool CanRedo => _redoStack.Count != 0;
+
     public void ExecuteAction(IHistoryAction action)
     {
         action.Execute();

@@ -1,0 +1,15 @@
+﻿<div class="view-controls">
+    <span>View controls</span>
+
+    <button type="button" @onclick="ResetView">
+        Reset View
+    </button>
+
+    <button type="button" @onclick="FitLayout">
+        Fit Layout
+    </button>
+
+    <button type="button" @onclick="FitTeam" disabled="@(!MirrorEnabled)">
+        Fit Team
+    </button>
+</div>
