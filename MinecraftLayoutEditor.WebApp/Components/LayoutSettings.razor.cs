@@ -9,6 +9,11 @@ public partial class LayoutSettings
     public EventCallback SettingsChanged { get; set; }
 
     [Parameter]
+    public string Name { get; set; }
+    [Parameter]
+    public EventCallback<string> NameChanged { get; set; }
+
+    [Parameter]
     public int Width { get; set; }
     [Parameter]
     public EventCallback<int> WidthChanged { get; set; }
@@ -32,15 +37,6 @@ public partial class LayoutSettings
     public bool IsHorizontal { get; set; }
     [Parameter] public EventCallback<bool> IsHorizontalChanged { get; set; }
 
-    [Parameter]
-    public bool ShowBlocksEnabled { get; set; }
-    [Parameter]
-    public EventCallback<bool> ShowBlocksEnabledChanged { get; set; }
-
-    [Parameter]
-    public bool ShowBoundingBoxEnabled { get; set; }
-    [Parameter]
-    public EventCallback<bool> ShowBoundingBoxEnabledChanged { get; set; }
 
     [Parameter]
     public Node.NodeType SelectedNodeType { get; set; }
@@ -53,18 +49,6 @@ public partial class LayoutSettings
         await SettingsChanged.InvokeAsync();
     }
 
-    public async Task OnShowBlocksEnabledChanged()
-    {
-        await ShowBlocksEnabledChanged.InvokeAsync(ShowBlocksEnabled);
-        await SettingsChanged.InvokeAsync();
-    }
-
-    public async Task OnShowBoundingBoxEnabledChanged()
-    {
-        await ShowBoundingBoxEnabledChanged.InvokeAsync(ShowBoundingBoxEnabled);
-        await SettingsChanged.InvokeAsync();
-    }
-
     public async Task OnRotationDegChanged()
     {
         await RotationDegChanged.InvokeAsync(RotationDeg);
@@ -74,6 +58,12 @@ public partial class LayoutSettings
     public async Task OnIsHorizontalChanged()
     {
         await IsHorizontalChanged.InvokeAsync(IsHorizontal);
+        await SettingsChanged.InvokeAsync();
+    }
+
+    public async Task OnNameChanged()
+    {
+        await NameChanged.InvokeAsync(Name); 
         await SettingsChanged.InvokeAsync();
     }
 

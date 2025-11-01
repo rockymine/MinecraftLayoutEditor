@@ -2,6 +2,24 @@
 @using static MinecraftLayoutEditor.Logic.Layout
 
 <h3>Layout Settings</h3>
+
+<div class="form-group">
+    <label for="name">Name</label>
+    <input type="text" id="name" class="form-control" @bind="Name" @bind:after="OnNameChanged"/>
+</div>
+
+<!-- Width -->
+<div class="form-group">
+    <label for="width">Width</label>
+    <input type="number" id="width" class="form-control" @bind="Width" @bind:after="OnWidthChanged"/>
+</div>
+
+<!-- Height -->
+<div class="form-group">
+    <label for="height">Height</label>
+    <input type="number" id="height" class="form-control" @bind="Height" @bind:after="OnHeightChanged"/>
+</div>
+
 <!-- Mirror -->
 <div class="form-group form-check">
     <input type="checkbox" class="form-check-input" id="mirrorEnabled"
@@ -29,36 +47,6 @@
         <option value="0">0°</option>
         <option value="180">180°</option>
     </select>
-</div>
-
-<!-- Width -->
-<div class="form-group">
-    <label for="width">Width</label>
-    <input type="number" id="width" class="form-control" @bind="Width" @bind:after="OnWidthChanged">
-</div>
-
-<!-- Height -->
-<div class="form-group">
-    <label for="height">Height</label>
-    <input type="number" id="height" class="form-control" @bind="Height" @bind:after="OnHeightChanged">
-</div>
-
-<!-- Edge Bounding Box -->
-<div class="form-group form-check">
-    <input type="checkbox" class="form-check-input" id="showBoundingBoxEnabled"
-           @bind="ShowBoundingBoxEnabled" @bind:after="OnShowBoundingBoxEnabledChanged" />
-    <label class="form-check-label" for="showBoundingBoxEnabled">
-        Show bounding box
-    </label>
-</div>
-
-<!-- Blocks -->
-<div class="form-group form-check">
-    <input type="checkbox" class="form-check-input" id="showBlocksEnabled"
-           @bind="ShowBlocksEnabled" @bind:after="OnShowBlocksEnabledChanged"/>
-    <label class="form-check-label" for="showBlocksEnabled">
-        Show blocks
-    </label>
 </div>
 
 <!-- Selected Node Type -->
