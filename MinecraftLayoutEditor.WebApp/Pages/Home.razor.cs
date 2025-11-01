@@ -74,6 +74,20 @@ public partial class Home : ComponentBase
         await Render();
     }
 
+    private async Task OnDeleteNode()
+    {
+        if (SelectedNode == null)
+            return;
+        
+        var action = new RemoveNodeAction(
+                _layout.Graph,
+                SelectedNode
+                );
+
+        _historyStack?.ExecuteAction(action);
+        await Render();
+    }
+
     private async Task OnSchematicCreate()
     {
         var schematic = SchematicMaker.FromLayout(_layout, height: 5, scale: 1);

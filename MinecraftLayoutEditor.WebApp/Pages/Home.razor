@@ -6,46 +6,53 @@
 
 <h1>Minecraft Layout Editor</h1>
 
-<LayoutSettings @bind-Width="_layout.Width" 
-@bind-Height="_layout.Height"
-@bind-MirrorEnabled="_layout.MirrorEnabled"
-@bind-RotationDeg="_layout.Symmetry.RotationDeg"
-@bind-IsHorizontal="_layout.Symmetry.IsHorizontal"
-@bind-ShowBlocksEnabled="_renderingOptions.ShowBlocksEnabled"
-@bind-ShowBoundingBoxEnabled="_renderingOptions.ShowBoundingBoxEnabled"
-@bind-SelectedNodeType="_layout.SelectedNodeType"
-SettingsChanged="OnSettingsChanged"/>
+<LayoutSettings 
+    @bind-Width="_layout.Width" 
+    @bind-Height="_layout.Height"
+    @bind-MirrorEnabled="_layout.MirrorEnabled"
+    @bind-RotationDeg="_layout.Symmetry.RotationDeg"
+    @bind-IsHorizontal="_layout.Symmetry.IsHorizontal"
+    @bind-ShowBlocksEnabled="_renderingOptions.ShowBlocksEnabled"
+    @bind-ShowBoundingBoxEnabled="_renderingOptions.ShowBoundingBoxEnabled"
+    @bind-SelectedNodeType="_layout.SelectedNodeType"
+    SettingsChanged="OnSettingsChanged"
+/>
 
 <button type="button" @onclick="OnSchematicCreate" disabled="@(!_layout.Graph.Nodes.Any())">
     Generate Schematic
 </button>
 
-<button type="button" @onclick="OnClearLayout" disabled="@(!_layout.Graph.Nodes.Any())">
-    Clear layout
-</button>
+<!-- History controls-->
+<HistoryControls 
+    CanUndo="@(_historyStack?.CanUndo ?? false)" 
+    CanRedo="@(_historyStack?.CanRedo ?? false)" 
+    CanClear="@(_layout.Graph.Nodes.Any())" 
+    OnClearLayout="OnClearLayout" 
+    OnUndo="OnUndo" 
+    OnRedo="OnRedo" 
+/>
 
-<button type="button" @onclick="OnUndo" disabled="@(!_layout.Graph.Nodes.Any())">
-    Undo
-</button>
+<!-- View controls -->
+<ViewControls 
+    MirrorEnabled="@(_layout.MirrorEnabled)"
+    OnResetView="OnResetView"
+    OnFitLayout="OnFitLayout"
+    OnFitTeam="OnFitTeam"
+/>
 
-<button type="button" @onclick="OnRedo" disabled="@(!_layout.Graph.Nodes.Any())">
-    Redo
-</button>
+<!-- Node information-->
+<NodeInformation
+    SelectedNode="SelectedNode"
+    OnDeleteNode="OnDeleteNode"
+/>
 
-<button type="button" @onclick="OnResetView">
-    Reset View
-</button>
-
-<button type="button" @onclick="OnFitLayout">
-    Fit Layout
-</button>
-
-<button type="button" @onclick="OnFitTeam" disabled="@(!_layout.MirrorEnabled)">
-    Fit Team
-</button>
-
+<!-- Canvas -->
+<span>Layout</span>
 <div id="canvasContainer" style="width: fit-content; height: fit-content; outline: solid; cursor: @(CursorClass)"
     @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0"
      @onwheel="OnWheel" @onwheel:preventDefault=true @onmousedown="OnMouseDown" @onmousedown:preventDefault=true>
     <Canvas @ref="@Canvas" width="1000" height="1000" />
 </div>
+
+<!-- Canvas controls-->
+<CanvasControlsHelp />
