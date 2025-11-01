@@ -1,0 +1,22 @@
+﻿<div class="node-information">
+    <span>Node Information</span>
+    <span>@SelectedNode?.Position.X</span>
+    <span>@SelectedNode?.Position.Y</span>
+    <span>@SelectedNode?.Type</span>
+
+    <button type="button">
+        Undefined
+    </button>
+
+    <button type="button">
+        Spawn
+    </button>
+
+    <button type="button">
+        Wool
+    </button>
+
+    <button type="button" @onclick="DeleteNode" disabled="@(SelectedNode == null)">
+        Delete Node
+    </button>
+</div>
