@@ -10,16 +10,22 @@
     @bind-Name="_layout.Name"
     @bind-Width="_layout.Width" 
     @bind-Height="_layout.Height"
-    @bind-MirrorEnabled="_layout.MirrorEnabled"
-    @bind-RotationDeg="_layout.Symmetry.RotationDeg"
-    @bind-IsHorizontal="_layout.Symmetry.IsHorizontal"
     @bind-SelectedNodeType="_layout.SelectedNodeType"
     SettingsChanged="OnSettingsChanged"
 />
 
-<VisualizationControls @bind-ShowBlocksEnabled="_renderingOptions.ShowBlocksEnabled"
-                       @bind-ShowBoundingBoxEnabled="_renderingOptions.ShowBoundingBoxEnabled" 
-                       SettingsChanged="OnSettingsChanged" />
+<MirrorControls 
+    @bind-MirrorEnabled="_layout.MirrorEnabled"
+    @bind-RotationDeg="_layout.Symmetry.RotationDeg"
+    @bind-IsHorizontal="_layout.Symmetry.IsHorizontal" 
+    SettingsChanged="OnSettingsChanged"
+/>
+
+<VisualizationControls
+    @bind-ShowBlocksEnabled="_renderingOptions.ShowBlocksEnabled"
+    @bind-ShowBoundingBoxEnabled="_renderingOptions.ShowBoundingBoxEnabled"
+    SettingsChanged="OnSettingsChanged"
+ />
 
 <button type="button" @onclick="OnSchematicCreate" disabled="@(!_layout.Graph.Nodes.Any())">
     Generate Schematic

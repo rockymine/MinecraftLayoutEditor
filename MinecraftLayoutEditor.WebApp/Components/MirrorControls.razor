@@ -1,0 +1,28 @@
+﻿<!-- Mirror -->
+<div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" id="mirrorEnabled"
+           @bind="MirrorEnabled" @bind:after="OnMirrorEnabledChanged" />
+    <label class="form-check-label" for="mirrorEnabled">
+        Enable mirroring
+    </label>
+</div>
+
+<!-- MirrorAxis -->
+<div class="form-group">
+    <input type="checkbox" class="form-check-input" id="isHorizontal"
+           @bind="IsHorizontal" @bind:after="OnIsHorizontalChanged" disabled="@(!MirrorEnabled)" />
+    <label class="form-check-label" for="isHorizontal">
+        Horizontal mirroring
+    </label>
+</div>
+
+<!-- RotationDeg -->
+<div class="form-group">
+    <label for="rotation">Rotation (deg)</label>
+    <select id="rotation" class="form-control"
+            @bind="RotationDeg" @bind:after="OnRotationDegChanged"
+            disabled="@(!MirrorEnabled)">
+        <option value="0">0°</option>
+        <option value="180">180°</option>
+    </select>
+</div>
