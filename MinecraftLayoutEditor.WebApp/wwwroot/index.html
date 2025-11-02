@@ -38,6 +38,11 @@
                 window.canvas.onmousemove = (e) => {
                     instance.invokeMethodAsync('JSOnMouseMove', e.offsetX, e.offsetY);
                 };
+
+                window.canvas.onwheel = (e) => {
+                    e.preventDefault();
+                    instance.invokeMethodAsync('JSOnWheel', e.deltaY, e.offsetX, e.offsetY);
+                };
             }
         };
     </script>

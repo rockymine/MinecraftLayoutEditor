@@ -279,17 +279,16 @@ public partial class Home : ComponentBase
             await Render();
     }
 
-    public async Task OnWheel(WheelEventArgs e)
+    [JSInvokable]
+    public async ValueTask JSOnWheel(double deltaY, double offsetX, double offsetY)
     {
-        var scrollY = e.DeltaY;
-
-        if (scrollY == 0)
+        if (deltaY == 0)
             return;
 
-        var relativeCursorPos = new Vector2((float)e.OffsetX, (float)e.OffsetY);
+        var relativeCursorPos = new Vector2((float)offsetX, (float)offsetY);
         var worldPosBeforeZoom = _renderer.ScreenToWorldPos(relativeCursorPos);
 
-        if (scrollY < 0)
+        if (deltaY < 0)
         {
             _renderer.UpdateTRS(_renderer.CameraPosition, _renderer.Scale * 1.6f);
         }
