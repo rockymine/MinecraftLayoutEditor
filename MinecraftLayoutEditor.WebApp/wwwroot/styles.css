@@ -1,0 +1,106 @@
+﻿:root {
+    --color-primary-h: 220;
+    --color-primary-s: 70%;
+    --color-primary-l: 50%;
+    --color-secondary-h: 30;
+    --color-secondary-s: 85%;
+    --color-secondary-l: 50%;
+    --color-tertiary-h: 150;
+    --color-tertiary-s: 60%;
+    --color-tertiary-l: 45%;
+    --color-neutral-h: 0;
+    --color-neutral-s: 0%;
+    --step-dark-2: -25%;
+    --step-dark-1: -15%;
+    --step-base: 0%;
+    --step-light-1: +15%;
+    --step-light-2: +35%;
+    --step-light-3: +45%;
+    --color-primary-900: hsl(var(--color-primary-h) var(--color-primary-s) calc(var(--color-primary-l) + var(--step-dark-2)));
+    --color-primary-700: hsl(var(--color-primary-h) var(--color-primary-s) calc(var(--color-primary-l) + var(--step-dark-1)));
+    --color-primary-500: hsl(var(--color-primary-h) var(--color-primary-s) calc(var(--color-primary-l) + var(--step-base)));
+    --color-primary-300: hsl(var(--color-primary-h) var(--color-primary-s) calc(var(--color-primary-l) + var(--step-light-1)));
+    --color-primary-100: hsl(var(--color-primary-h) var(--color-primary-s) calc(var(--color-primary-l) + var(--step-light-2)));
+    --color-secondary-500: hsl(var(--color-secondary-h) var(--color-secondary-s) var(--color-secondary-l));
+    --color-tertiary-500: hsl(var(--color-tertiary-h) var(--color-tertiary-s) var(--color-tertiary-l));
+    --color-neutral-900: hsl(var(--color-neutral-h) var(--color-neutral-s) calc(var(--color-primary-l) + var(--step-dark-2)));
+    --color-neutral-700: hsl(var(--color-neutral-h) var(--color-neutral-s) calc(var(--color-primary-l) + var(--step-dark-1)));
+    --color-neutral-500: hsl(var(--color-neutral-h) var(--color-neutral-s) calc(var(--color-primary-l) + var(--step-base)));
+    --color-neutral-300: hsl(var(--color-neutral-h) var(--color-neutral-s) calc(var(--color-primary-l) + var(--step-light-1)));
+    --color-neutral-100: hsl(var(--color-neutral-h) var(--color-neutral-s) calc(var(--color-primary-l) + var(--step-light-2)));
+    --color-neutral-50: hsl(var(--color-neutral-h) var(--color-neutral-s) calc(var(--color-primary-l) + var(--step-light-3)));
+}
+
+body {
+    background-color: var(--color-neutral-50);
+    font-family: "Verdana", sans-serif;
+    font-weight: 300;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+header {
+    background-color: var(--color-neutral-100);
+}
+
+footer {
+    background-color: var(--color-neutral-100);
+}
+
+canvas {
+    width: fit-content;
+    height: fit-content;
+    background-color: white;
+    border: thin;
+}
+
+.layout-settings {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+    .form-group label {
+        margin-bottom: 5px;
+        font-size: inherit;
+        font-weight: lighter;
+    }
+
+.form-control {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    font-size: inherit;
+}
+
+button {
+    font-size: inherit;
+    padding: 4px 8px 4px 8px;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--color-neutral-100);
+    color: var(--color-neutral-900);
+    font-weight: 300;
+}
+
+button:hover {
+    background-color: var(--color-neutral-300);
+}
+
+.button-primary {
+    background-color: var(--color-primary-500);
+    color: var(--color-neutral-100);
+    font-weight: 700;
+}
+
+    .button-primary:hover {
+        background-color: var(--color-primary-700);
+    }

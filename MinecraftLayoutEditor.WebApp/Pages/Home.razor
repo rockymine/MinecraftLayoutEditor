@@ -4,7 +4,9 @@
 
 <PageTitle>Minecraft Layout Editor</PageTitle>
 
-<h1>Minecraft Layout Editor</h1>
+<header>
+    <h1>Minecraft Layout Editor</h1>
+</header>
 
 <LayoutSettings 
     @bind-Name="_layout.Name"
@@ -31,7 +33,7 @@
     Generate Schematic
 </button>
 
-<!-- History controls-->
+<!-- History controls -->
 <HistoryControls 
     CanUndo="@(_historyStack?.CanUndo ?? false)" 
     CanRedo="@(_historyStack?.CanRedo ?? false)" 
@@ -49,7 +51,7 @@
     OnFitTeam="OnFitTeam"
 />
 
-<!-- Node information-->
+<!-- Node information -->
 <NodeInformation
     SelectedNode="SelectedNode"
     OnDeleteNode="OnDeleteNode"
@@ -57,11 +59,16 @@
 
 <!-- Canvas -->
 <span>Layout</span>
-<div id="canvasContainer" style="width: fit-content; height: fit-content; outline: solid; cursor: @(CursorClass)"
+<div id="canvasContainer" style="cursor: @(CursorClass)"
     @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0"
-     @onwheel="OnWheel" @onwheel:preventDefault=true @onmousedown="OnMouseDown" @onmousedown:preventDefault=true>
-    <Canvas @ref="@Canvas" width="1000" height="1000" />
+      @onmousedown="OnMouseDown" @onmousedown:preventDefault=true>
+    <Canvas @ref="@Canvas" width="1000" height="1000" @onwheel="OnWheel" @onwheel:preventDefault=true/>
 </div>
 
-<!-- Canvas controls-->
+<!-- Canvas controls -->
 <CanvasControlsHelp />
+
+<footer>
+    <p>&copy; 2025 Michael Ganske.</p>
+    <p><a href="https://github.com/rockymine/MinecraftLayoutEditor">View on GitHub</a></p>
+</footer>
