@@ -20,6 +20,9 @@ public partial class Home : ComponentBase
     private Node? HoveredNode;
     private Node? SelectedNode;
 
+    private float MaxZoom => 100f;
+    private float MinZoom => CalculateMinZoom();
+
     private string CursorClass => (PanStartPosition != null) ? "grab" : "default";
     private HistoryStack? _historyStack;
     private Vector2? PanStartPosition;
@@ -288,19 +291,27 @@ public partial class Home : ComponentBase
         var relativeCursorPos = new Vector2((float)offsetX, (float)offsetY);
         var worldPosBeforeZoom = _renderer.ScreenToWorldPos(relativeCursorPos);
 
+        float newScale;
         if (deltaY < 0)
         {
-            _renderer.UpdateTRS(_renderer.CameraPosition, _renderer.Scale * 1.6f);
+            newScale = _renderer.Scale * 1.6f;
         }
         else
         {
-            _renderer.UpdateTRS(_renderer.CameraPosition, _renderer.Scale / 1.6f);
+            newScale = _renderer.Scale / 1.6f;
         }
+
+        newScale = float.Clamp(newScale, MinZoom, MaxZoom);
+
+        if (Math.Abs(newScale - _renderer.Scale) < 0.001f)
+            return;
+
+        _renderer.UpdateTRS(_renderer.CameraPosition, newScale);
 
         var worldPosAfterZoom = _renderer.ScreenToWorldPos(relativeCursorPos);
         var worldPosChange = worldPosAfterZoom - worldPosBeforeZoom;
 
-        _renderer.UpdateTRS(_renderer.CameraPosition + worldPosChange, _renderer.Scale);
+        _renderer.UpdateTRS(_renderer.CameraPosition + worldPosChange, newScale);
 
         await Render();
     }
@@ -350,5 +361,16 @@ public partial class Home : ComponentBase
 
         _renderer.UpdateTRS(new Vector2(canvasCenter.X, canvasCenter.Y) + topCenter, newScale);
         await Render();
+    }
+
+    private float CalculateMinZoom()
+    {
+        if (_layout.Width <= 0 || _layout.Height <= 0)
+            return 1f;
+
+        var maxCanvas = float.Max(_renderer.CanvasWidth, _renderer.CanvasHeight);
+        var maxLayout = float.Max(_layout.Width, _layout.Height);
+
+        return (maxCanvas / maxLayout) * 0.8f;
     }
 }
