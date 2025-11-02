@@ -8,65 +8,55 @@
     <h1>Minecraft Layout Editor</h1>
 </header>
 
-<LayoutSettings 
-    @bind-Name="_layout.Name"
-    @bind-Width="_layout.Width" 
-    @bind-Height="_layout.Height"
-    @bind-SelectedNodeType="_layout.SelectedNodeType"
-    SettingsChanged="OnSettingsChanged"
-/>
+<div class="layout">
+    <div class="sidebar">
+        <LayoutSettings @bind-Name="_layout.Name"
+                        @bind-Width="_layout.Width"
+                        @bind-Height="_layout.Height"
+                        @bind-SelectedNodeType="_layout.SelectedNodeType"
+                        SettingsChanged="OnSettingsChanged" />
+        <button type="button" class="btn btn-primary" @onclick="OnSchematicCreate" disabled="@(!_layout.Graph.Nodes.Any())">
+            Generate Schematic
+        </button>
+        <MirrorControls @bind-MirrorEnabled="_layout.MirrorEnabled"
+                        @bind-RotationDeg="_layout.Symmetry.RotationDeg"
+                        @bind-IsHorizontal="_layout.Symmetry.IsHorizontal"
+                        SettingsChanged="OnSettingsChanged" />
 
-<MirrorControls 
-    @bind-MirrorEnabled="_layout.MirrorEnabled"
-    @bind-RotationDeg="_layout.Symmetry.RotationDeg"
-    @bind-IsHorizontal="_layout.Symmetry.IsHorizontal" 
-    SettingsChanged="OnSettingsChanged"
-/>
+        <VisualizationControls @bind-ShowBlocksEnabled="_renderingOptions.ShowBlocksEnabled"
+                               @bind-ShowBoundingBoxEnabled="_renderingOptions.ShowBoundingBoxEnabled"
+                               SettingsChanged="OnSettingsChanged" />
+        <!-- Node information -->
+        <NodeInformation SelectedNode="SelectedNode"
+                         OnDeleteNode="OnDeleteNode" />
+        <!-- Canvas controls -->
+        <CanvasControlsHelp />
+    </div>
 
-<VisualizationControls
-    @bind-ShowBlocksEnabled="_renderingOptions.ShowBlocksEnabled"
-    @bind-ShowBoundingBoxEnabled="_renderingOptions.ShowBoundingBoxEnabled"
-    SettingsChanged="OnSettingsChanged"
- />
-
-<button type="button" @onclick="OnSchematicCreate" disabled="@(!_layout.Graph.Nodes.Any())">
-    Generate Schematic
-</button>
-
-<!-- History controls -->
-<HistoryControls 
-    CanUndo="@(_historyStack?.CanUndo ?? false)" 
-    CanRedo="@(_historyStack?.CanRedo ?? false)" 
-    CanClear="@(_layout.Graph.Nodes.Any())" 
-    OnClearLayout="OnClearLayout" 
-    OnUndo="OnUndo" 
-    OnRedo="OnRedo" 
-/>
-
-<!-- View controls -->
-<ViewControls 
-    MirrorEnabled="@(_layout.MirrorEnabled)"
-    OnResetView="OnResetView"
-    OnFitLayout="OnFitLayout"
-    OnFitTeam="OnFitTeam"
-/>
-
-<!-- Node information -->
-<NodeInformation
-    SelectedNode="SelectedNode"
-    OnDeleteNode="OnDeleteNode"
-/>
-
-<!-- Canvas -->
-<span>Layout</span>
-<div id="canvasContainer" style="cursor: @(CursorClass)"
-    @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0"
-      @onmousedown="OnMouseDown" @onmousedown:preventDefault=true>
-    <Canvas @ref="@Canvas" width="1000" height="1000"/>
+    <div class="editor">
+        <div class="editor-toolbar">
+            <!-- History controls -->
+            <HistoryControls CanUndo="@(_historyStack?.CanUndo ?? false)"
+                             CanRedo="@(_historyStack?.CanRedo ?? false)"
+                             CanClear="@(_layout.Graph.Nodes.Any())"
+                             OnClearLayout="OnClearLayout"
+                             OnUndo="OnUndo"
+                             OnRedo="OnRedo" />
+            <!-- View controls -->
+            <ViewControls MirrorEnabled="@(_layout.MirrorEnabled)"
+                          OnResetView="OnResetView"
+                          OnFitLayout="OnFitLayout"
+                          OnFitTeam="OnFitTeam" />
+        </div>
+        <!-- Canvas -->
+        <span>Layout</span>
+        <div id="canvasContainer" style="cursor: @(CursorClass)"
+             @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0"
+             @onmousedown="OnMouseDown" @onmousedown:preventDefault=true>
+            <Canvas @ref="@Canvas" width="1000" height="1000" />
+        </div>
+    </div>
 </div>
-
-<!-- Canvas controls -->
-<CanvasControlsHelp />
 
 <footer>
     <p>&copy; 2025 Michael Ganske.</p>

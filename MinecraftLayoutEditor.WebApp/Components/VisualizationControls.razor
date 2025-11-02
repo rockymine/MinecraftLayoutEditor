@@ -1,5 +1,5 @@
 ﻿<!-- Edge Bounding Box -->
-<div class="form-group form-check">
+<div class="form-check">
     <input type="checkbox" class="form-check-input" id="showBoundingBoxEnabled"
            @bind="ShowBoundingBoxEnabled" @bind:after="OnShowBoundingBoxEnabledChanged" />
     <label class="form-check-label" for="showBoundingBoxEnabled">
@@ -8,10 +8,10 @@
 </div>
 
 <!-- Blocks -->
-<div class="form-group form-check">
-    <input type="checkbox" class="form-check-input" id="showBlocksEnabled"
+<div class="form-check">
+    <input type="checkbox" id="showBlocksEnabled"
            @bind="ShowBlocksEnabled" @bind:after="OnShowBlocksEnabledChanged" />
-    <label class="form-check-label" for="showBlocksEnabled">
+    <label for="showBlocksEnabled">
         Show blocks
     </label>
 </div>

@@ -4,19 +4,19 @@
     <span>@SelectedNode?.Position.Y</span>
     <span>@SelectedNode?.Type</span>
 
-    <button type="button">
+    <button type="button" class="btn">
         Undefined
     </button>
 
-    <button type="button">
+    <button type="button" class="btn">
         Spawn
     </button>
 
-    <button type="button">
+    <button type="button" class="btn">
         Wool
     </button>
 
-    <button type="button" @onclick="DeleteNode" disabled="@(SelectedNode == null)">
+    <button type="button" class="btn" @onclick="DeleteNode" disabled="@(SelectedNode == null)">
         Delete Node
     </button>
 </div>

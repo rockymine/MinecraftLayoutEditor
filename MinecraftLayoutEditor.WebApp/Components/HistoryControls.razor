@@ -1,15 +1,13 @@
 ﻿<div class="history-controls">
-    <span>History controls</span>
-
-    <button type="button" class="button-primary" @onclick="Clear" disabled="@(!CanClear)">
+    <button type="button" class="btn" @onclick="Clear" disabled="@(!CanClear)">
         Clear layout
     </button>
 
-    <button type="button" @onclick="Undo" disabled="@(!CanUndo)">
+    <button type="button" class="btn" @onclick="Undo" disabled="@(!CanUndo)">
         Undo
     </button>
 
-    <button type="button" @onclick="Redo" disabled="@(!CanRedo)">
+    <button type="button" class="btn" @onclick="Redo" disabled="@(!CanRedo)">
         Redo
     </button>
 </div>
