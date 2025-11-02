@@ -9,6 +9,7 @@ public class Layout
     public string Name { get; set; } = "layout";
     public int Width { get; set; }
     public int Height { get; set; }
+    public int LaneWidth { get; set; }
     public List<Team> Teams { get; set; } = [];
     public string Author { get; set; } = "";
 

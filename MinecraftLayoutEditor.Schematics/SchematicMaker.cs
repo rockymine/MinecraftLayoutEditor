@@ -11,13 +11,13 @@ public class SchematicMaker
         var schematic = new Schematic(layout.Name, (short)(layout.Width * scale), (short)height, 
             (short)(layout.Height * scale));
 
-        AddEdgesToSchematic(schematic, layout, scale, schematic.Height);
+        AddEdgesToSchematic(schematic, layout, scale, schematic.Height, layout.LaneWidth);
         AddNodesToSchematic(schematic, layout, scale, schematic.Height);
 
         return schematic;
     }
 
-    private static void AddEdgesToSchematic(Schematic schematic, Layout layout, int scale, int height)
+    private static void AddEdgesToSchematic(Schematic schematic, Layout layout, int scale, int height, int laneWidth)
     {
         // Collect unique edges to avoid drawing each edge twice
         var uniqueEdges = new HashSet<Edge>();
@@ -34,7 +34,7 @@ public class SchematicMaker
         foreach (var edge in uniqueEdges)
         {
             // Use original world coordinates for rectangle calculation
-            var blocksInside = Rectangle.DiscretePointsInsideRect(edge.Node1.Position, edge.Node2.Position, 4);
+            var blocksInside = Rectangle.DiscretePointsInsideRect(edge.Node1.Position, edge.Node2.Position, laneWidth);
 
             foreach (var block in blocksInside)
             {

@@ -9,7 +9,6 @@ namespace MinecraftLayoutEditor.WebApp.Rendering;
 
 public class LayoutRenderer
 {
-    private const float DEFAULT_PATH_WIDTH = 4f;
     public float CanvasWidth { get; private set; } = 1000f;
     public float CanvasHeight { get; private set; } = 1000f;
 
@@ -43,7 +42,7 @@ public class LayoutRenderer
 
         await RenderGrid(ctx, layout, options);
         await RenderMirrorAxis(ctx, layout, options);
-        await RenderEdges(ctx, uniqueEdges, options);
+        await RenderEdges(ctx, uniqueEdges, options, layout.LaneWidth);
         await RenderNodes(ctx, layout.Graph.Nodes, hoveredNode, selectedNode, options);
     }
 
@@ -166,17 +165,17 @@ public class LayoutRenderer
             style.LineWidth, style.StrokeStyle, style.LineDash, style.FillStyle);
     }
 
-    private async Task RenderEdges(Context2D ctx, HashSet<Edge> edges, RenderingOptions options)
+    private async Task RenderEdges(Context2D ctx, HashSet<Edge> edges, RenderingOptions options, float laneWidth)
     {
         foreach (var e in edges)
         {
             // Render path bounding box preview
             if (options.ShowBoundingBoxEnabled)
-                await RenderEdgeBoundingBox(ctx, e.Node1.Position, e.Node2.Position, options);
+                await RenderEdgeBoundingBox(ctx, e.Node1.Position, e.Node2.Position, options, laneWidth);
 
             // Render schematic preview
             if (options.ShowBlocksEnabled)
-                await RenderEdgeSchematicBlocks(ctx, e.Node1.Position, e.Node2.Position, options);
+                await RenderEdgeSchematicBlocks(ctx, e.Node1.Position, e.Node2.Position, options, laneWidth);
 
             var style = options.GetStyle(e.Type.ToString().ToLower());
 
@@ -185,18 +184,20 @@ public class LayoutRenderer
         }
     }
 
-    private async Task RenderEdgeSchematicBlocks(Context2D ctx, Vector2 pos1, Vector2 pos2, RenderingOptions options)
+    private async Task RenderEdgeSchematicBlocks(Context2D ctx, Vector2 pos1, Vector2 pos2, 
+        RenderingOptions options, float laneWidth)
     {
-        foreach (var block in Rectangle.DiscretePointsInsideRect(pos1, pos2, DEFAULT_PATH_WIDTH))
+        foreach (var block in Rectangle.DiscretePointsInsideRect(pos1, pos2, laneWidth))
         {
             await ctx.DrawRect(WorldToScreenPos(block), WorldToScreenScale(1), WorldToScreenScale(1), 
                 1, "black", [], options.CellFillStyle);
         }
     }
 
-    private async Task RenderEdgeBoundingBox(Context2D ctx, Vector2 pos1, Vector2 pos2, RenderingOptions options)
+    private async Task RenderEdgeBoundingBox(Context2D ctx, Vector2 pos1, Vector2 pos2, 
+        RenderingOptions options, float laneWidth)
     {
-        var corners = Rectangle.FindRectCorners(pos1, pos2, DEFAULT_PATH_WIDTH);
+        var corners = Rectangle.FindRectCorners(pos1, pos2, laneWidth);
 
         await ctx.DrawRect(WorldToScreenPos(corners[0]), WorldToScreenPos(corners[2]),
             WorldToScreenPos(corners[3]), WorldToScreenPos(corners[1]), 0.5f, options.BoundingBoxLineStroke, []);

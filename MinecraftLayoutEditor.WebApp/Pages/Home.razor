@@ -13,6 +13,7 @@
         <LayoutSettings @bind-Name="_layout.Name"
                         @bind-Width="_layout.Width"
                         @bind-Height="_layout.Height"
+                        @bind-LaneWidth="_layout.LaneWidth"
                         @bind-SelectedNodeType="_layout.SelectedNodeType"
                         SettingsChanged="OnSettingsChanged" />
         <button type="button" class="btn btn-primary" @onclick="OnSchematicCreate" disabled="@(!_layout.Graph.Nodes.Any())">

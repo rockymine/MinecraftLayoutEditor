@@ -4,13 +4,14 @@ namespace MinecraftLayoutEditor.Logic
 {
     public static class LayoutFactory
     {
-        public static Layout Empty(int width, int height)
+        public static Layout Empty(int width, int height, int laneWidth)
         {
             var layout = new Layout
             {
                 Width = width,
                 Height = height,
                 MirrorEnabled = true,
+                LaneWidth = laneWidth,
                 Symmetry = new SymmetryAxis()
                 {
                     IsHorizontal = true,
