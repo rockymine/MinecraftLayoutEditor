@@ -5,7 +5,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering;
 
 public class GridRenderer
 {
-    public async Task RenderAsync(Context2D ctx, int gridSpacing, float gridLineWidth, string gridStrokeStyle, 
+    public async Task RenderAsync(IContext2DWithoutGetters ctx, int gridSpacing, float gridLineWidth, string gridStrokeStyle, 
         Logic.Layout layout, LayoutRenderer renderer)
     {
         await ctx.SaveAsync();

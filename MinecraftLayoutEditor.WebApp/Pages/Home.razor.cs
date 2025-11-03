@@ -39,7 +39,7 @@ public partial class Home : ComponentBase
 
         await JSRuntime.InvokeAsync<object>("init", DotNetObjectReference.Create(this));
 
-        await Render();
+        await Render(RenderTrigger.Initial);
     }
 
     protected override void OnInitialized()
@@ -49,7 +49,7 @@ public partial class Home : ComponentBase
 
     private async Task OnSettingsChanged()
     {
-        await Render();
+        await Render(RenderTrigger.SettingsChanged);
     }
 
     private async Task OnClearLayout()
@@ -60,21 +60,21 @@ public partial class Home : ComponentBase
         _layout.Graph.Clear();
         _historyStack = new HistoryStack();
 
-        await Render();
+        await Render(RenderTrigger.LayoutCleared);
     }
 
     private async Task OnUndo()
     {
         _historyStack?.Undo();
         SelectedNode = null;
-        await Render();
+        await Render(RenderTrigger.Undo);
     }
 
     private async Task OnRedo()
     {
         _historyStack?.Redo();
         SelectedNode = null;
-        await Render();
+        await Render(RenderTrigger.Redo);
     }
 
     private async Task OnDeleteNode()
@@ -88,7 +88,7 @@ public partial class Home : ComponentBase
                 );
 
         _historyStack?.ExecuteAction(action);
-        await Render();
+        await Render(RenderTrigger.NodeRemoved);
     }
 
     private async Task OnSchematicCreate()
@@ -148,7 +148,7 @@ public partial class Home : ComponentBase
                 );
 
             _historyStack?.ExecuteAction(action);
-            await Render();
+            await Render(RenderTrigger.NodeAdded);
         }
         // Select node
         else if (HoveredNode != null)
@@ -172,10 +172,11 @@ public partial class Home : ComponentBase
                     );
 
                 _historyStack?.ExecuteAction(action);
+                _layout.CalculateEdgeBlocks();
                 SelectedNode = null;
             }
 
-            await Render();
+            await Render(RenderTrigger.EdgeRemoved);
         }
     }
 
@@ -193,19 +194,20 @@ public partial class Home : ComponentBase
                 );
 
             _historyStack?.ExecuteAction(action);
+            _layout.CalculateEdgeBlocks();
 
             if (SelectedNode == HoveredNode)
                 SelectedNode = null;
 
             HoveredNode = null;
-            await Render();
+            await Render(RenderTrigger.NodeRemoved);
         }
         // Deselect node
         else if (SelectedNode != null && closestNode != null
             && Vector2.Distance(worldPos, closestNode.Position) >= threshhold)
         {
             SelectedNode = null;
-            await Render();
+            await Render(RenderTrigger.NodeDeselected);
         }
     }
 
@@ -225,7 +227,7 @@ public partial class Home : ComponentBase
         }
 
         if (prevHovered != HoveredNode)
-            await Render();
+            await Render(RenderTrigger.NodeHover);
     }
 
     [JSInvokable]
@@ -239,15 +241,20 @@ public partial class Home : ComponentBase
         PanStartPosition = panEndPosition;
 
         _renderer.UpdateTRS(_renderer.CameraPosition - deltaPan, _renderer.Scale);
-        await Render();
+        await Render(RenderTrigger.Pan);
     }
 
-    private async Task Render()
+    private async Task Render(RenderTrigger trigger)
     {
-        await using (var ctx = await Canvas.GetContext2DAsync())
+        var ctx = await Canvas.GetContext2DAsync();
+        var batch = ctx.CreateBatch();
+        
+        await using (batch)
         {
-            await _renderer.RenderAsync(ctx, _layout, HoveredNode, SelectedNode, _renderingOptions);
+            await _renderer.RenderAsync(batch, _layout, HoveredNode, SelectedNode, _renderingOptions, trigger);
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     public async Task OnKeyUp(KeyboardEventArgs e)
@@ -279,7 +286,7 @@ public partial class Home : ComponentBase
         }
 
         if (nodeMoved)
-            await Render();
+            await Render(RenderTrigger.NodeMoved);
     }
 
     [JSInvokable]
@@ -313,13 +320,13 @@ public partial class Home : ComponentBase
 
         _renderer.UpdateTRS(_renderer.CameraPosition + worldPosChange, newScale);
 
-        await Render();
+        await Render(RenderTrigger.Zoom);
     }
 
     private async Task OnResetView()
     {
         _renderer.UpdateTRS(new Vector2(25, 25), 20f);
-        await Render();
+        await Render(RenderTrigger.ViewReset);
     }
 
     public async Task OnFitLayout()
@@ -336,7 +343,7 @@ public partial class Home : ComponentBase
         var translationY = (_renderer.CanvasHeight / 2f) / newScale;
 
         _renderer.UpdateTRS(new Vector2(translationX, translationY), newScale);
-        await Render();
+        await Render(RenderTrigger.ViewFit);
     }
 
     // TODO: Differentiate between vertical and horizontal mirror line
@@ -360,7 +367,7 @@ public partial class Home : ComponentBase
         var canvasCenter = new Vector2(translationX, translationY);
 
         _renderer.UpdateTRS(new Vector2(canvasCenter.X, canvasCenter.Y) + topCenter, newScale);
-        await Render();
+        await Render(RenderTrigger.ViewFit);
     }
 
     private float CalculateMinZoom()

@@ -8,6 +8,7 @@ public class Edge
     public Node Node2 { get; set; }
     public EdgeType Type { get; set; }
     public double Distance => Vector2.Distance(Node1.Position, Node2.Position);
+    public List<Vector2> EdgeBlocks { get; set; } = [];
 
     public Edge(Node node1, Node node2)
     {

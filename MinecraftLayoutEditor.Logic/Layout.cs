@@ -65,4 +65,18 @@ public class Layout
             node.MirrorRef.Position = mirrorRefPosition;
         }
     }
+
+    public void CalculateEdgeBlocks()
+    {
+        foreach (var n in Graph.Nodes)
+        {
+            foreach (var e in n.Edges)
+            {
+                if (e.EdgeBlocks.Count == 0)
+                {
+                    e.EdgeBlocks = Rectangle.DiscretePointsInsideRect(e.Node1.Position, e.Node2.Position, LaneWidth);
+                }
+            }
+        }
+    }
 }

@@ -6,7 +6,7 @@ namespace MinecraftLayoutEditor.WebApp.Extensions;
 
 public static class Context2DExtensions
 {
-    public static async Task DrawLine(this Context2D ctx, Vector2 pos1, Vector2 pos2, 
+    public static async Task DrawLine(this IContext2DWithoutGetters ctx, Vector2 pos1, Vector2 pos2, 
         float lineWidth, string strokeStyle, double[] defaultDash)
     {
         await ctx.SaveAsync();
@@ -24,10 +24,10 @@ public static class Context2DExtensions
         await ctx.RestoreAsync();
     }
 
-    public static async Task DrawRect(this Context2D ctx, Vector2 origin, float width, float height, 
+    public static async Task DrawRect(this IContext2DWithoutGetters ctx, Vector2 origin, float width, float height, 
         float lineWidth, string strokeStyle, double[] lineDash, string? fillStyle = null)
     {
-        await ctx.SaveAsync();
+        //await ctx.SaveAsync();
 
         var bottomLeft = new Vector2(origin.X, origin.Y + height);
         var bottomRight = new Vector2(origin.X + width, origin.Y + height);
@@ -51,10 +51,10 @@ public static class Context2DExtensions
         }
 
         await ctx.StrokeAsync();
-        await ctx.RestoreAsync();
+        //await ctx.RestoreAsync();
     }
 
-    public static async Task DrawRect(this Context2D ctx, Vector2 pos1, Vector2 pos2, Vector2 pos3, Vector2 pos4,
+    public static async Task DrawRect(this IContext2DWithoutGetters ctx, Vector2 pos1, Vector2 pos2, Vector2 pos3, Vector2 pos4,
         float lineWidth, string strokeStyle, double[] lineDash)
     {
         await ctx.SaveAsync();
@@ -74,7 +74,7 @@ public static class Context2DExtensions
         await ctx.RestoreAsync();
     }
 
-    public static async Task DrawDiamond(this Context2D ctx, Vector2 origin, float width, float height,
+    public static async Task DrawDiamond(this IContext2DWithoutGetters ctx, Vector2 origin, float width, float height,
         float lineWidth, string strokeStyle, double[] lineDash, string? fillStyle = null)
     {
         await ctx.SaveAsync();
@@ -105,7 +105,7 @@ public static class Context2DExtensions
         await ctx.RestoreAsync();
     }
 
-    public static async Task DrawCircle(this Context2D ctx, Vector2 pos, float radiusX, 
+    public static async Task DrawCircle(this IContext2DWithoutGetters ctx, Vector2 pos, float radiusX, 
         float radiusY, float lineWidth, string fillStyle, string strokeStyle, FillRule fillRule)
     {
         await ctx.SaveAsync();

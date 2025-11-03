@@ -102,4 +102,27 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         public RenderStyle GetStyle(string type) =>
             RenderStyles.TryGetValue(type, out var style) ? style : new RenderStyle();
     }
+
+    public enum RenderTrigger
+    {
+        Initial,
+        MouseMove,
+        MouseClick,
+        Zoom,
+        Pan,
+        KeyboardMove,
+        SettingsChanged,
+        NodeAdded,
+        NodeRemoved,
+        NodeDeselected,
+        NodeMoved,
+        NodeHover,
+        EdgeAdded,
+        EdgeRemoved,
+        Undo,
+        Redo,
+        LayoutCleared,
+        ViewReset,
+        ViewFit
+    }
 }
