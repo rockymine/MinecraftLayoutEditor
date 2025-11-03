@@ -1,13 +1,8 @@
-﻿using Excubo.Blazor.Canvas;
-using Excubo.Blazor.Canvas.Contexts;
-using Microsoft.AspNetCore.Components.RenderTree;
-using MinecraftLayoutEditor.Logic;
+﻿using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.Geometry;
-using MinecraftLayoutEditor.WebApp.Extensions;
 using SkiaSharp;
 using System.Diagnostics;
 using System.Numerics;
-using System.Reflection.Metadata;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering;
 
@@ -36,7 +31,8 @@ public class LayoutRenderer
             {
                 Color = color,
                 Style = style,
-                StrokeWidth = lineWidth
+                StrokeWidth = lineWidth,
+                IsAntialias = false
             };
 
             _paintCache.Add((color, style, lineWidth), paint);
@@ -175,8 +171,7 @@ public class LayoutRenderer
                 RenderSquareNode(surface, screenPos, style);
                 break;
             case "diamond":
-                //RenderDiamondNode(surface, screenPos, style);
-                RenderSquareNode(surface, screenPos, style);
+                RenderDiamondNode(surface, screenPos, style);
                 break;
             default:
                 RenderCircleNode(surface, screenPos, style);
@@ -207,13 +202,29 @@ public class LayoutRenderer
         surface.Canvas.DrawRect(topLeft.X, topLeft.Y, size, size, squareStrokePaint);
     }
 
-    //private void RenderDiamondNode(IContext2DWithoutGetters ctx, Vector2 screenPos, RenderStyle style)
-    //{
-    //    var size = style.Radius * (float)Math.Sqrt(Math.PI / 2);
+    private void RenderDiamondNode(SKSurface surface, Vector2 screenPos, RenderStyle style)
+    {
+        var size = style.Radius * (float)Math.Sqrt(Math.PI / 2);
 
-    //    ctx.DrawDiamond(screenPos, WorldToScreenScale(size), WorldToScreenScale(size),
-    //        style.LineWidth, style.StrokeStyle, style.LineDash, style.FillStyle);
-    //}
+        var left = new Vector2(screenPos.X - WorldToScreenScale(size), screenPos.Y);
+        var top = new Vector2(screenPos.X, screenPos.Y - WorldToScreenScale(size));
+        var right = new Vector2(screenPos.X + WorldToScreenScale(size), screenPos.Y);
+        var bottom = new Vector2(screenPos.X, screenPos.Y + WorldToScreenScale(size));
+
+        var diamondFillPaint = GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth);
+        var diamondStrokePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
+
+        SKPath diamond = new SKPath();
+        diamond.MoveTo(left.X, left.Y);
+        diamond.LineTo(top.X, top.Y);
+        diamond.LineTo(right.X, right.Y);
+        diamond.LineTo(bottom.X, bottom.Y);
+        diamond.LineTo(left.X, left.Y);
+        diamond.Close();
+
+        surface.Canvas.DrawPath(diamond, diamondFillPaint);
+        surface.Canvas.DrawPath(diamond, diamondStrokePaint);
+    }
 
     private void RenderEdges(SKSurface surface, HashSet<Edge> edges, RenderingOptions options, float laneWidth)
     {
