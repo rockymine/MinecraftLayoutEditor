@@ -5,6 +5,7 @@ using MinecraftLayoutEditor.Logic.Geometry;
 using MinecraftLayoutEditor.WebApp.Extensions;
 using System.Diagnostics;
 using System.Numerics;
+using System.Reflection.Metadata;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering;
 
@@ -217,8 +218,10 @@ public class LayoutRenderer
         
         foreach (var block in edge.EdgeBlocks)
         {
-            await ctx.DrawRect(WorldToScreenPos(block), WorldToScreenScale(1), WorldToScreenScale(1),
-                1, "black", [], options.CellFillStyle);
+            var screenPos = WorldToScreenPos(block);
+            var size = WorldToScreenScale(1);
+            await ctx.FillStyleAsync(options.CellFillStyle);
+            await ctx.FillRectAsync(screenPos.X, screenPos.Y, size, size);
         }
     }
 
