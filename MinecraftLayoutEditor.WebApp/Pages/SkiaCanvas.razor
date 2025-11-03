@@ -1,0 +1,13 @@
+﻿@page "/canvas"
+@using SkiaSharp
+@using SkiaSharp.Views.Blazor
+
+<SKGLView OnPaintSurface="PaintSurface" Width="640" Height="480">></SKGLView>
+
+@code {
+
+    private void PaintSurface(SKPaintGLSurfaceEventArgs args)
+    {
+        args.Surface.Canvas.Clear(SKColors.DarkSalmon);
+    }
+}

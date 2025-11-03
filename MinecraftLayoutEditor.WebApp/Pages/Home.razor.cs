@@ -7,13 +7,15 @@ using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
+using SkiaSharp;
+using SkiaSharp.Views.Blazor;
 using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Pages;
 
 public partial class Home : ComponentBase
 {
-    private Canvas Canvas;
+    private SKGLView Canvas;
     private readonly Logic.Layout _layout = LayoutFactory.Empty(40, 80, 4);
     private readonly LayoutRenderer _renderer = new();
     private readonly RenderingOptions _renderingOptions = new();
@@ -31,6 +33,13 @@ public partial class Home : ComponentBase
     public required IBlazorDownloadFileService BlazorDownloadFileService { get; init; }
     [Inject]
     public required IJSRuntime JSRuntime { get; init; }
+
+    private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
+    {
+        args.Surface.Canvas.Clear(SKColors.White);
+
+        _renderer.Render(args.Surface, _layout, HoveredNode, SelectedNode, _renderingOptions);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -246,15 +255,8 @@ public partial class Home : ComponentBase
 
     private async Task Render(RenderTrigger trigger)
     {
-        var ctx = await Canvas.GetContext2DAsync();
-        var batch = ctx.CreateBatch();
-        
-        await using (batch)
-        {
-            await _renderer.RenderAsync(batch, _layout, HoveredNode, SelectedNode, _renderingOptions, trigger);
-        }
 
-        await InvokeAsync(StateHasChanged);
+        Canvas.Invalidate();
     }
 
     public async Task OnKeyUp(KeyboardEventArgs e)

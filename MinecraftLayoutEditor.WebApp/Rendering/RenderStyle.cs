@@ -1,9 +1,11 @@
-﻿namespace MinecraftLayoutEditor.WebApp.Rendering;
+﻿using SkiaSharp;
+
+namespace MinecraftLayoutEditor.WebApp.Rendering;
 
 public record RenderStyle
 {
-    public string FillStyle { get; init; } = "black";
-    public string StrokeStyle { get; init; } = "black";
+    public SKColor FillStyle { get; init; } = SKColors.Black;
+    public SKColor StrokeStyle { get; init; } = SKColors.Black;
     public float Radius { get; init; } = 6f;
     public string Shape { get; init; } = "circle";
     public float LineWidth { get; init; } = 2f;

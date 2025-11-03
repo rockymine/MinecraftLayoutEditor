@@ -1,4 +1,5 @@
 ﻿using MinecraftLayoutEditor.Logic;
+using SkiaSharp;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering
 {
@@ -10,11 +11,11 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         public float GridBorderLineWidth { get; init; } = 1f;
         public int GridSpacing { get; init; } = 1;
 
-        public string HoveredNodeStroke { get; init; } = "purple";
-        public string SelectedNodeStroke { get; init; } = "cyan";
+        public SKColor HoveredNodeStroke { get; init; } = SKColors.Purple;
+        public SKColor SelectedNodeStroke { get; init; } = SKColors.Cyan;
 
-        public string CellFillStyle { get; init; } = "gray";
-        public string BoundingBoxLineStroke { get; init; } = "purple";
+        public SKColor CellFillStyle { get; init; } = SKColors.Gray;
+        public SKColor BoundingBoxLineStroke { get; init; } = SKColors.Purple;
 
         public Dictionary<string, RenderStyle> RenderStyles { get; set; }
 
@@ -23,8 +24,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             // Node styles
             var defaultNodeStyle = new RenderStyle
             {
-                FillStyle = "lightgray",
-                StrokeStyle = "#666",
+                FillStyle = SKColors.LightGray,
+                StrokeStyle = SKColors.DarkGray,
                 Radius = 0.4f,
                 Shape = "circle",
                 LineWidth = 2
@@ -32,8 +33,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
 
             var woolNodeStyle = new RenderStyle
             {
-                FillStyle = "green",
-                StrokeStyle = "#666",
+                FillStyle = SKColors.Green,
+                StrokeStyle = SKColors.DarkGray,
                 Radius = 0.4f,
                 Shape = "square",
                 LineWidth = 2f
@@ -41,8 +42,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
 
             var spawnNodeStyle = new RenderStyle
             {
-                FillStyle = "blue",
-                StrokeStyle = "#666",
+                FillStyle = SKColors.Blue,
+                StrokeStyle = SKColors.DarkGray,
                 Radius = 0.4f,
                 Shape = "diamond",
                 LineWidth = 2f
@@ -52,14 +53,14 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             // Edge styles
             var walkableEdgeStyle = new RenderStyle
             {
-                StrokeStyle = "#666",
+                StrokeStyle = SKColors.DarkGray,
                 LineDash = [],
                 LineWidth = 2f
             };
 
             var bridgeableEdgeStyle = new RenderStyle
             {
-                StrokeStyle = "#666",
+                StrokeStyle = SKColors.DarkGray,
                 LineDash = [5],
                 LineWidth = 2f
             };
@@ -68,22 +69,22 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             var mirrorPointStyle = new RenderStyle
             {
                 Radius = 0.4f,
-                FillStyle = "red",
-                StrokeStyle = "red",
+                FillStyle = SKColors.Red,
+                StrokeStyle = SKColors.Red,
                 LineWidth = 2f
             };
 
             var mirrorLineStyle = new RenderStyle
             {
                 LineWidth = 2f,
-                StrokeStyle = "red",
+                StrokeStyle = SKColors.Red,
                 LineDash = [5]
             };
 
             var gridLineStyle = new RenderStyle
             {
-                LineWidth = 0.5f,
-                StrokeStyle = "black",
+                LineWidth = 1f,
+                StrokeStyle = SKColors.Black,
             };
 
             RenderStyles = new Dictionary<string, RenderStyle>
