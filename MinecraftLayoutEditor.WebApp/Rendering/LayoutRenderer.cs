@@ -68,7 +68,7 @@ public class LayoutRenderer
         var edgesStopwatch = Stopwatch.StartNew();
         RenderEdges(surface, uniqueEdges, options, layout.LaneWidth);
         edgesStopwatch.Stop();
-        Console.WriteLine($"Edges: {edgesStopwatch.ElapsedMilliseconds}ms (count: {uniqueEdges.Count}, bounding box: {options.ShowBoundingBoxEnabled}, bounding box: {options.ShowBlocksEnabled}, width: {layout.LaneWidth})");
+        Console.WriteLine($"Edges (total): {edgesStopwatch.ElapsedMilliseconds}ms (count: {uniqueEdges.Count}, bounding box: {options.ShowBoundingBoxEnabled}, bounding box: {options.ShowBlocksEnabled}, width: {layout.LaneWidth})");
 
         var nodesStopwatch = Stopwatch.StartNew();
         RenderNodes(surface, layout.Graph.Nodes, hoveredNode, selectedNode, options);
@@ -235,18 +235,33 @@ public class LayoutRenderer
         {
             // Render path bounding box preview
             if (options.ShowBoundingBoxEnabled)
+            {
+                var bBoxStopwatch = Stopwatch.StartNew();
                 RenderEdgeBoundingBox(surface, e.Node1.Position, e.Node2.Position, options, laneWidth);
+                bBoxStopwatch.Stop();
+                Console.WriteLine($"Bounding Box: {bBoxStopwatch.ElapsedMilliseconds}ms");
+            }
+                
 
             // Render schematic preview
             if (options.ShowBlocksEnabled)
+            {
+                var blockStopwatch = Stopwatch.StartNew();
                 RenderEdgeSchematicBlocks(surface, e, options);
+                blockStopwatch.Stop();
+                Console.WriteLine($"Blocks: {blockStopwatch.ElapsedMilliseconds}ms");
+            }
+                
 
             var style = options.GetStyle(e.Type.ToString().ToLower());
             var from = WorldToScreenPos(e.Node1.Position);
             var to = WorldToScreenPos(e.Node2.Position);
             var edgePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
 
+            var edgeStopwatch = Stopwatch.StartNew();
             surface.Canvas.DrawLine(from, to, edgePaint);
+            edgeStopwatch.Stop();
+            Console.WriteLine($"Edges: {edgeStopwatch.ElapsedMilliseconds}ms");
         }
     }
 
