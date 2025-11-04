@@ -236,20 +236,14 @@ public class LayoutRenderer
             // Render path bounding box preview
             if (options.ShowBoundingBoxEnabled)
             {
-                var bBoxStopwatch = Stopwatch.StartNew();
                 RenderEdgeBoundingBox(surface, e.Node1.Position, e.Node2.Position, options, laneWidth);
-                bBoxStopwatch.Stop();
-                Console.WriteLine($"Bounding Box: {bBoxStopwatch.ElapsedMilliseconds}ms");
             }
                 
 
             // Render schematic preview
             if (options.ShowBlocksEnabled)
             {
-                var blockStopwatch = Stopwatch.StartNew();
                 RenderEdgeSchematicBlocks(surface, e, options);
-                blockStopwatch.Stop();
-                Console.WriteLine($"Blocks: {blockStopwatch.ElapsedMilliseconds}ms");
             }
                 
 
@@ -258,10 +252,7 @@ public class LayoutRenderer
             var to = WorldToScreenPos(e.Node2.Position);
             var edgePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
 
-            var edgeStopwatch = Stopwatch.StartNew();
             surface.Canvas.DrawLine(from, to, edgePaint);
-            edgeStopwatch.Stop();
-            Console.WriteLine($"Edges: {edgeStopwatch.ElapsedMilliseconds}ms");
         }
     }
 
