@@ -254,14 +254,21 @@ public class LayoutRenderer
         RenderingOptions options)
     {
         var edgeBlockPaint = GetPaint(options.CellFillStyle, SKPaintStyle.Fill, 1f);
+        SKPath blockList = new()
+        {
+            FillType = SKPathFillType.Winding
+        };
 
         foreach (var block in edge.EdgeBlocks)
         {
             var screenPos = WorldToScreenPos(block);
             var size = WorldToScreenScale(1);
 
-            surface.Canvas.DrawRect(screenPos.X, screenPos.Y, size, size, edgeBlockPaint);
+            blockList.AddRect(SKRect.Create(screenPos.X, screenPos.Y, size, size));
         }
+
+        blockList.Close();
+        surface.Canvas.DrawPath(blockList, edgeBlockPaint);
     }
 
     private void RenderEdgeBoundingBox(SKSurface surface, Vector2 pos1, Vector2 pos2,
