@@ -16,7 +16,8 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 public partial class Home : ComponentBase
 {
     private SKGLView Canvas;
-    private readonly Logic.Layout _layout = LayoutFactory.Empty(40, 80, 4);
+    //private readonly Logic.Layout _layout = LayoutFactory.Empty(40, 80, 4);
+    private readonly Logic.Layout _layout = LayoutFactory.PerformanceTestLayout();
     private readonly LayoutRenderer _renderer = new();
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
@@ -255,7 +256,6 @@ public partial class Home : ComponentBase
 
     private async Task Render(RenderTrigger trigger)
     {
-
         Canvas.Invalidate();
     }
 
