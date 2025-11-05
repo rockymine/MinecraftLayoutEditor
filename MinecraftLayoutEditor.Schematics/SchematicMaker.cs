@@ -6,13 +6,13 @@ namespace MinecraftLayoutEditor.Schematics;
 
 public class SchematicMaker
 {
-    public static Schematic FromLayout(Layout layout, int height = 1, int scale = 1)
+    public static Schematic FromLayout(Layout layout, int scale = 1)
     {
-        var schematic = new Schematic(layout.Name, (short)(layout.Width * scale), (short)height, 
+        var schematic = new Schematic(layout.Name, (short)(layout.Width * scale), (short)layout.Thickness, 
             (short)(layout.Height * scale));
 
         AddEdgesToSchematic(schematic, layout, scale, schematic.Height, layout.LaneWidth);
-        AddNodesToSchematic(schematic, layout, scale, schematic.Height);
+        //AddNodesToSchematic(schematic, layout, scale, schematic.Height);
 
         return schematic;
     }
@@ -38,23 +38,32 @@ public class SchematicMaker
 
             foreach (var block in blocksInside)
             {
-                // Transform each resulting block position to schematic coordinates
-                var (x, z) = GetSchematicPosition(block, layout.Width, layout.Height, scale);
-                schematic.SetBlock(x, 0, z, 2);
+                // TODO: Stack layers inside schematic
+                for (int i = 0; i < height; i++)
+                {
+                    var (x, z) = GetSchematicPosition(block, layout.Width, layout.Height, scale);
+                    int blockId = 1;
+
+
+                    if (i < 2)
+                        blockId = 7;
+
+                    schematic.SetBlock(x, i, z, (byte)blockId);
+                }                
             }
         }
 
         // TODO: Find and fill missing corner polygons
     }
 
-    private static void AddNodesToSchematic(Schematic schematic, Layout layout, int scale, int height)
-    {
-        foreach (var node in layout.Graph.Nodes)
-        {
-            var (x, z) = GetSchematicPosition(node.Position, layout.Width, layout.Height, scale);
-            schematic.SetBlock(x, height - 1, z, 7);
-        }
-    }
+    //private static void AddNodesToSchematic(Schematic schematic, Layout layout, int scale, int height)
+    //{
+    //    foreach (var node in layout.Graph.Nodes)
+    //    {
+    //        var (x, z) = GetSchematicPosition(node.Position, layout.Width, layout.Height, scale);
+    //        schematic.SetBlock(x, height - 1, z, 7);
+    //    }
+    //}
 
     private static (int x, int z) GetSchematicPosition(Vector2 position, int width, int height, int scale)
     {

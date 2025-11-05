@@ -1,5 +1,4 @@
 using BlazorDownloadFile;
-using Excubo.Blazor.Canvas;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -16,8 +15,7 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 public partial class Home : ComponentBase
 {
     private SKGLView Canvas;
-    //private readonly Logic.Layout _layout = LayoutFactory.Empty(40, 80, 4);
-    private readonly Logic.Layout _layout = LayoutFactory.PerformanceTestLayout();
+    private readonly Logic.Layout _layout = LayoutFactory.Empty(80, 160, 12, 10);
     private readonly LayoutRenderer _renderer = new();
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
@@ -103,7 +101,7 @@ public partial class Home : ComponentBase
 
     private async Task OnSchematicCreate()
     {
-        var schematic = SchematicMaker.FromLayout(_layout, height: 5, scale: 1);
+        var schematic = SchematicMaker.FromLayout(_layout);
         var fileName = $"{schematic.Name}.schematic";
 
         await BlazorDownloadFileService.DownloadFile(fileName, schematic.Save(),

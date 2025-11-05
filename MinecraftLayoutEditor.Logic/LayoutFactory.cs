@@ -4,7 +4,7 @@ namespace MinecraftLayoutEditor.Logic
 {
     public static class LayoutFactory
     {
-        public static Layout Empty(int width, int height, int laneWidth)
+        public static Layout Empty(int width, int height, int laneWidth, int thickness)
         {
             var layout = new Layout
             {
@@ -12,6 +12,7 @@ namespace MinecraftLayoutEditor.Logic
                 Height = height,
                 MirrorEnabled = true,
                 LaneWidth = laneWidth,
+                Thickness = thickness,
                 Symmetry = new SymmetryAxis()
                 {
                     IsHorizontal = true,
@@ -24,7 +25,7 @@ namespace MinecraftLayoutEditor.Logic
 
         public static Layout PerformanceTestLayout(int numEdges = 20, int edgeLength = 200, int laneWidth = 10)
         {
-            var layout = Empty(edgeLength + 10, numEdges * 20 + 10, laneWidth);  // Adjust dimensions to fit
+            var layout = Empty(edgeLength + 10, numEdges * 20 + 10, laneWidth, 10);  // Adjust dimensions to fit
 
             for (int i = 0; i < numEdges; i++)
             {

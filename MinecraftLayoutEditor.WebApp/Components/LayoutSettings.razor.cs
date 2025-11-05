@@ -24,6 +24,11 @@ public partial class LayoutSettings
     public EventCallback<int> HeightChanged { get; set; }
 
     [Parameter]
+    public int Thickness { get; set; }
+    [Parameter]
+    public EventCallback<int> ThicknessChanged { get; set; }
+
+    [Parameter]
     public int LaneWidth { get; set; }
     [Parameter]
     public EventCallback<int> LaneWidthChanged { get; set; }
@@ -60,6 +65,12 @@ public partial class LayoutSettings
     public async Task OnSelectedNodeTypeChanged()
     {
         await SelectedNodeTypeChanged.InvokeAsync(SelectedNodeType);
+        await SettingsChanged.InvokeAsync();
+    }
+
+    public async Task OnThicknessChanged()
+    {
+        await ThicknessChanged.InvokeAsync(Thickness);
         await SettingsChanged.InvokeAsync();
     }
 }
