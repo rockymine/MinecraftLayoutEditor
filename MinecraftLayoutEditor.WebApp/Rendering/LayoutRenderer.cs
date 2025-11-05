@@ -1,11 +1,8 @@
-﻿using Excubo.Blazor.Canvas;
-using Excubo.Blazor.Canvas.Contexts;
-using MinecraftLayoutEditor.Logic;
+﻿using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.Geometry;
-using MinecraftLayoutEditor.WebApp.Extensions;
+using SkiaSharp;
 using System.Diagnostics;
 using System.Numerics;
-using System.Reflection.Metadata;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering;
 
@@ -19,49 +16,62 @@ public class LayoutRenderer
     public Vector2 CameraPosition { get; private set; }
     private Matrix4x4 WorldToScreen;
     private Matrix4x4 ScreenToWorld;
-
+    private readonly Dictionary<(SKColor, SKPaintStyle, float), SKPaint> _paintCache = [];
+    
     public LayoutRenderer()
     {
         UpdateTRS(new Vector2(25, 25), 20f);
     }
 
+    public SKPaint GetPaint(SKColor color, SKPaintStyle style, float lineWidth)
+    {
+        if (!_paintCache.TryGetValue((color, style, lineWidth), out var paint))
+        {
+            paint = new SKPaint
+            {
+                Color = color,
+                Style = style,
+                StrokeWidth = lineWidth,
+                IsAntialias = false
+            };
+
+            _paintCache.Add((color, style, lineWidth), paint);
+        }
+
+        return paint;
+    }
+
     public void UpdateTRS(Vector2 translation, float scale)
     {
-        Console.WriteLine($"scale={scale}, trans=({translation.X}, {translation.Y})");
-
         WorldToScreen = Matrix4x4.CreateTranslation(translation.X, translation.Y, 0) * Matrix4x4.CreateScale(scale);
         Matrix4x4.Invert(WorldToScreen, out ScreenToWorld);
         Scale = scale;
         CameraPosition = translation;
     }
 
-    public async Task RenderAsync(IContext2DWithoutGetters ctx, Logic.Layout layout,
-        Node? hoveredNode, Node? selectedNode, RenderingOptions options, RenderTrigger trigger)
+    public void Render(SKSurface surface, Logic.Layout layout,
+        Node? hoveredNode, Node? selectedNode, RenderingOptions options)
     {
         var totalStopwatch = Stopwatch.StartNew();
         var uniqueEdges = GetUniqueEdges(layout.Graph.Nodes);
 
-        await ctx.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
-
-        Console.WriteLine($"Render trigger: {trigger}");
-
         var gridStopwatch = Stopwatch.StartNew();
-        await RenderGrid(ctx, layout, options);
+        RenderGrid(surface, layout, options);
         gridStopwatch.Stop();
         Console.WriteLine($"Grid: {gridStopwatch.ElapsedMilliseconds}ms (dimension: {layout.Width} x {layout.Height})");
 
         var mirrorStopwatch = Stopwatch.StartNew();
-        await RenderMirrorAxis(ctx, layout, options);
+        RenderMirrorAxis(surface, layout, options);
         mirrorStopwatch.Stop();
         Console.WriteLine($"Mirror: {mirrorStopwatch.ElapsedMilliseconds}ms");
 
         var edgesStopwatch = Stopwatch.StartNew();
-        await RenderEdges(ctx, uniqueEdges, options, layout.LaneWidth);
+        RenderEdges(surface, uniqueEdges, options, layout.LaneWidth);
         edgesStopwatch.Stop();
-        Console.WriteLine($"Edges: {edgesStopwatch.ElapsedMilliseconds}ms (count: {uniqueEdges.Count}, bounding box: {options.ShowBoundingBoxEnabled}, bounding box: {options.ShowBlocksEnabled}, width: {layout.LaneWidth})");
+        Console.WriteLine($"Edges (total): {edgesStopwatch.ElapsedMilliseconds}ms (count: {uniqueEdges.Count}, bounding box: {options.ShowBoundingBoxEnabled}, bounding box: {options.ShowBlocksEnabled}, width: {layout.LaneWidth})");
 
         var nodesStopwatch = Stopwatch.StartNew();
-        await RenderNodes(ctx, layout.Graph.Nodes, hoveredNode, selectedNode, options);
+        RenderNodes(surface, layout.Graph.Nodes, hoveredNode, selectedNode, options);
         nodesStopwatch.Stop();
         Console.WriteLine($"Nodes: {nodesStopwatch.ElapsedMilliseconds}ms (count: {layout.Graph.Nodes.Count})");
 
@@ -84,47 +94,50 @@ public class LayoutRenderer
         return uniqueEdges;
     }
 
-    private async Task RenderGrid(IContext2DWithoutGetters ctx, Logic.Layout layout, RenderingOptions options)
+    private void RenderGrid(SKSurface surface, Logic.Layout layout, RenderingOptions options)
     {
         // Render grid cells
         var gridLineStyle = GetGridLineStyle(options);
-        await _gridRenderer.RenderAsync(ctx, options.GridSpacing, gridLineStyle.LineWidth, 
+        _gridRenderer.Render(surface, options.GridSpacing, gridLineStyle.LineWidth, 
             gridLineStyle.StrokeStyle, layout, this);
 
         // Render grid box
-        await ctx.DrawRect(WorldToScreenPos(new Vector2(-layout.Width / 2f, -layout.Height / 2f)),
-            WorldToScreenScale(layout.Width), WorldToScreenScale(layout.Height), options.GridBorderLineWidth,
-            gridLineStyle.StrokeStyle, []);
+        var gridBoxPaint = GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, options.GridBorderLineWidth);
+        var origin = WorldToScreenPos(new Vector2(-layout.Width / 2f, -layout.Height / 2f));
+        surface.Canvas.DrawRect(origin.X, origin.Y, WorldToScreenScale(layout.Width), 
+            WorldToScreenScale(layout.Height), gridBoxPaint);
     }
 
-    private async Task RenderMirrorAxis(IContext2DWithoutGetters ctx, Logic.Layout layout, RenderingOptions options)
+    private void RenderMirrorAxis(SKSurface surface, Logic.Layout layout, RenderingOptions options)
     {
         if (layout.Symmetry == null || !layout.MirrorEnabled)
             return;
 
         // Render mirror line
         var mirrorLineStyle = GetMirrorLineStyle(options);
-        await ctx.DrawLine(WorldToScreenPos(layout.Symmetry.GetStartPointWorld(layout)),
-            WorldToScreenPos(layout.Symmetry.GetEndPointWorld(layout)), mirrorLineStyle.LineWidth,
-            mirrorLineStyle.StrokeStyle, mirrorLineStyle.LineDash);
+        var mirrorLinePaint = GetPaint(mirrorLineStyle.StrokeStyle, SKPaintStyle.Stroke, mirrorLineStyle.LineWidth);
+        var start = WorldToScreenPos(layout.Symmetry.GetStartPointWorld(layout));
+        var end = WorldToScreenPos(layout.Symmetry.GetEndPointWorld(layout));
+        surface.Canvas.DrawLine(start.X, start.Y, end.X, end.Y, mirrorLinePaint);
 
         // Render rotation point
         if (layout.Symmetry.RotationDeg == 180)
         {
             var mirrorPointStyle = GetMirrorPointStyle(options);
-            await ctx.DrawCircle(WorldToScreenPos(Vector2.Zero), WorldToScreenScale(mirrorPointStyle.Radius),
-                WorldToScreenScale(mirrorPointStyle.Radius), mirrorPointStyle.LineWidth, mirrorPointStyle.FillStyle,
-                mirrorPointStyle.StrokeStyle, FillRule.NonZero);
+            var mirrorPointPaint = GetPaint(mirrorPointStyle.FillStyle, SKPaintStyle.Fill, mirrorPointStyle.LineWidth);
+            var center = WorldToScreenPos(Vector2.Zero);
+            var radius = WorldToScreenScale(mirrorPointStyle.Radius);
+            surface.Canvas.DrawCircle(center.X, center.Y, radius, mirrorPointPaint);
         }
     }
 
-    private async Task RenderNodes(IContext2DWithoutGetters ctx, IReadOnlyList<Node> nodes, 
+    private void RenderNodes(SKSurface surface, IReadOnlyList<Node> nodes, 
         Node? hoveredNode, Node? selectedNode, RenderingOptions options)
     {
         foreach (var n in nodes)
         {
             var style = GetNodeStyle(n, hoveredNode, selectedNode, options);
-            await RenderNodeShape(ctx, n.Position, style);
+            RenderNodeShape(surface, n.Position, style);
         }
     }
 
@@ -145,51 +158,75 @@ public class LayoutRenderer
         return style;
     }
 
-    private async Task RenderNodeShape(IContext2DWithoutGetters ctx, Vector2 position, RenderStyle style)
+    private void RenderNodeShape(SKSurface surface, Vector2 position, RenderStyle style)
     {
         var screenPos = WorldToScreenPos(position);
 
         switch (style.Shape.ToLower())
         {
             case "circle":
-                await RenderCircleNode(ctx, screenPos, style);
+                RenderCircleNode(surface, screenPos, style);
                 break;
             case "square":
-                await RenderSquareNode(ctx, screenPos, style);
+                RenderSquareNode(surface, screenPos, style);
                 break;
             case "diamond":
-                await RenderDiamondNode(ctx, screenPos, style);
+                RenderDiamondNode(surface, screenPos, style);
                 break;
             default:
-                await RenderCircleNode(ctx, screenPos, style);
+                RenderCircleNode(surface, screenPos, style);
                 break;
         }
     }
 
-    private async Task RenderCircleNode(IContext2DWithoutGetters ctx, Vector2 screenPos, RenderStyle style)
+    private void RenderCircleNode(SKSurface surface, Vector2 screenPos, RenderStyle style)
     {
-        await ctx.DrawCircle(screenPos, WorldToScreenScale(style.Radius), WorldToScreenScale(style.Radius),
-            style.LineWidth, style.FillStyle, style.StrokeStyle, FillRule.NonZero);
+        var circleFillPaint = GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth);
+        var circleStrokePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
+
+        surface.Canvas.DrawCircle(screenPos.X, screenPos.Y, WorldToScreenScale(style.Radius), circleFillPaint);
+        surface.Canvas.DrawCircle(screenPos.X, screenPos.Y, WorldToScreenScale(style.Radius), circleStrokePaint);
     }
 
-    private async Task RenderSquareNode(IContext2DWithoutGetters ctx, Vector2 screenPos, RenderStyle style)
+    private void RenderSquareNode(SKSurface surface, Vector2 screenPos, RenderStyle style)
     {
         var size = style.Radius * (float)Math.Sqrt(Math.PI / 4);
         var topLeft = screenPos - new Vector2(WorldToScreenScale(size), WorldToScreenScale(size));
 
-        await ctx.DrawRect(topLeft, WorldToScreenScale(size * 2), WorldToScreenScale(size * 2),
-            style.LineWidth, style.StrokeStyle, style.LineDash, style.FillStyle);
+        size = WorldToScreenScale(size * 2);
+
+        var squareFillPaint = GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth);
+        var squareStrokePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
+
+        surface.Canvas.DrawRect(topLeft.X, topLeft.Y, size, size, squareFillPaint);
+        surface.Canvas.DrawRect(topLeft.X, topLeft.Y, size, size, squareStrokePaint);
     }
 
-    private async Task RenderDiamondNode(IContext2DWithoutGetters ctx, Vector2 screenPos, RenderStyle style)
+    private void RenderDiamondNode(SKSurface surface, Vector2 screenPos, RenderStyle style)
     {
         var size = style.Radius * (float)Math.Sqrt(Math.PI / 2);
 
-        await ctx.DrawDiamond(screenPos, WorldToScreenScale(size), WorldToScreenScale(size),
-            style.LineWidth, style.StrokeStyle, style.LineDash, style.FillStyle);
+        var left = new Vector2(screenPos.X - WorldToScreenScale(size), screenPos.Y);
+        var top = new Vector2(screenPos.X, screenPos.Y - WorldToScreenScale(size));
+        var right = new Vector2(screenPos.X + WorldToScreenScale(size), screenPos.Y);
+        var bottom = new Vector2(screenPos.X, screenPos.Y + WorldToScreenScale(size));
+
+        var diamondFillPaint = GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth);
+        var diamondStrokePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
+
+        SKPath diamond = new SKPath();
+        diamond.MoveTo(left.X, left.Y);
+        diamond.LineTo(top.X, top.Y);
+        diamond.LineTo(right.X, right.Y);
+        diamond.LineTo(bottom.X, bottom.Y);
+        diamond.LineTo(left.X, left.Y);
+        diamond.Close();
+
+        surface.Canvas.DrawPath(diamond, diamondFillPaint);
+        surface.Canvas.DrawPath(diamond, diamondStrokePaint);
     }
 
-    private async Task RenderEdges(IContext2DWithoutGetters ctx, HashSet<Edge> edges, RenderingOptions options, float laneWidth)
+    private void RenderEdges(SKSurface surface, HashSet<Edge> edges, RenderingOptions options, float laneWidth)
     {
         if (edges.Count == 0)
             return;
@@ -198,40 +235,63 @@ public class LayoutRenderer
         {
             // Render path bounding box preview
             if (options.ShowBoundingBoxEnabled)
-                await RenderEdgeBoundingBox(ctx, e.Node1.Position, e.Node2.Position, options, laneWidth);
+            {
+                RenderEdgeBoundingBox(surface, e.Node1.Position, e.Node2.Position, options, laneWidth);
+            }
+                
 
             // Render schematic preview
             if (options.ShowBlocksEnabled)
-                await RenderEdgeSchematicBlocks(ctx, e, options);
+            {
+                RenderEdgeSchematicBlocks(surface, e, options);
+            }
+                
 
             var style = options.GetStyle(e.Type.ToString().ToLower());
+            var from = WorldToScreenPos(e.Node1.Position);
+            var to = WorldToScreenPos(e.Node2.Position);
+            var edgePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
 
-            await ctx.DrawLine(WorldToScreenPos(e.Node1.Position), WorldToScreenPos(e.Node2.Position), 
-                style.LineWidth, style.StrokeStyle, style.LineDash);
+            surface.Canvas.DrawLine(from, to, edgePaint);
         }
     }
 
-    private async Task RenderEdgeSchematicBlocks(IContext2DWithoutGetters ctx, Edge edge, 
+    private void RenderEdgeSchematicBlocks(SKSurface surface, Edge edge,
         RenderingOptions options)
     {
-        Console.WriteLine($"Edge blocks count: { edge.EdgeBlocks.Count}");
-        
+        var edgeBlockPaint = GetPaint(options.CellFillStyle, SKPaintStyle.Fill, 1f);
+        SKPath blockList = new()
+        {
+            FillType = SKPathFillType.Winding
+        };
+
         foreach (var block in edge.EdgeBlocks)
         {
             var screenPos = WorldToScreenPos(block);
             var size = WorldToScreenScale(1);
-            await ctx.FillStyleAsync(options.CellFillStyle);
-            await ctx.FillRectAsync(screenPos.X, screenPos.Y, size, size);
+
+            blockList.AddRect(SKRect.Create(screenPos.X, screenPos.Y, size, size));
         }
+
+        blockList.Close();
+        surface.Canvas.DrawPath(blockList, edgeBlockPaint);
     }
 
-    private async Task RenderEdgeBoundingBox(IContext2DWithoutGetters ctx, Vector2 pos1, Vector2 pos2, 
+    private void RenderEdgeBoundingBox(SKSurface surface, Vector2 pos1, Vector2 pos2,
         RenderingOptions options, float laneWidth)
     {
         var corners = Rectangle.FindRectCorners(pos1, pos2, laneWidth);
 
-        await ctx.DrawRect(WorldToScreenPos(corners[0]), WorldToScreenPos(corners[2]),
-            WorldToScreenPos(corners[3]), WorldToScreenPos(corners[1]), 0.5f, options.BoundingBoxLineStroke, []);
+        var corner0 = WorldToScreenPos(corners[0]);
+        var corner1 = WorldToScreenPos(corners[1]);
+        var corner2 = WorldToScreenPos(corners[2]);
+        var corner3 = WorldToScreenPos(corners[3]);
+
+        var boundingBoxPaint = GetPaint(options.BoundingBoxLineStroke, SKPaintStyle.Stroke, 1f);
+        surface.Canvas.DrawLine(corner0.X, corner0.Y, corner2.X, corner2.Y, boundingBoxPaint);
+        surface.Canvas.DrawLine(corner2.X, corner2.Y, corner3.X, corner3.Y, boundingBoxPaint);
+        surface.Canvas.DrawLine(corner3.X, corner3.Y, corner1.X, corner1.Y, boundingBoxPaint);
+        surface.Canvas.DrawLine(corner1.X, corner1.Y, corner0.X, corner0.Y, boundingBoxPaint);
     }
 
     public Vector2 WorldToScreenPos(Vector2 worldPos)

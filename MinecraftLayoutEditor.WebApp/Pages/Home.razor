@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using Excubo.Blazor.Canvas
 @using MinecraftLayoutEditor.WebApp.Components
+@using SkiaSharp.Views.Blazor
 
 <PageTitle>Minecraft Layout Editor</PageTitle>
 
@@ -14,6 +15,7 @@
                         @bind-Width="_layout.Width"
                         @bind-Height="_layout.Height"
                         @bind-LaneWidth="_layout.LaneWidth"
+                        @bind-Thickness="_layout.Thickness"
                         @bind-SelectedNodeType="_layout.SelectedNodeType"
                         SettingsChanged="OnSettingsChanged" />
         <button type="button" class="btn btn-primary" @onclick="OnSchematicCreate" disabled="@(!_layout.Graph.Nodes.Any())">
@@ -54,7 +56,7 @@
         <div id="canvasContainer" style="cursor: @(CursorClass)"
              @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0"
              @onmousedown="OnMouseDown" @onmousedown:preventDefault=true>
-            <Canvas @ref="@Canvas" width="1000" height="1000" />
+            <SKGLView @ref="@(Canvas)" OnPaintSurface="OnPaintSurface" Width="1000" Height="1000" IgnorePixelScaling="true"></SKGLView>
         </div>
     </div>
 </div>

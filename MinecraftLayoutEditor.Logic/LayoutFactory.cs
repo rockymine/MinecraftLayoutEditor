@@ -4,7 +4,7 @@ namespace MinecraftLayoutEditor.Logic
 {
     public static class LayoutFactory
     {
-        public static Layout Empty(int width, int height, int laneWidth)
+        public static Layout Empty(int width, int height, int laneWidth, int thickness)
         {
             var layout = new Layout
             {
@@ -12,6 +12,7 @@ namespace MinecraftLayoutEditor.Logic
                 Height = height,
                 MirrorEnabled = true,
                 LaneWidth = laneWidth,
+                Thickness = thickness,
                 Symmetry = new SymmetryAxis()
                 {
                     IsHorizontal = true,
@@ -21,80 +22,40 @@ namespace MinecraftLayoutEditor.Logic
 
             return layout;
         }
-        
-        public static Layout OneTeamDemo()
+
+        public static Layout PerformanceTestLayout(int numEdges = 20, int edgeLength = 200, int laneWidth = 10)
         {
-            var layout = new Layout
+            var layout = Empty(edgeLength + 10, numEdges * 20 + 10, laneWidth, 10);  // Adjust dimensions to fit
+
+            for (int i = 0; i < numEdges; i++)
             {
-                Name = "One-Team Demo",
-                Width = 300,
-                Height = 160,
-                Symmetry = new SymmetryAxis()
-            };
+                // Horizontal long edges, spaced vertically
+                var y = (i - numEdges / 2f) * 20 + 0.5f;  // Centered, spaced by 20 units
+                var n1 = new Node(new Vector2(-edgeLength / 2f + 0.5f, y)) { Type = Node.NodeType.Undefined };
+                var n2 = new Node(new Vector2(edgeLength / 2f - 0.5f, y)) { Type = Node.NodeType.Undefined };
 
-            // --- Team (Blue as example) ---
-            var blue = new Team { Color = MinecraftColor.BLUE };
-            layout.Teams.Add(blue);
+                layout.Graph.AddNode(n1);
+                layout.Graph.AddNode(n2);
 
-            // --- Nodes ---
-            // 1 spawn
-            var spawn = new Node(new Vector2(50, 80)) { Type = Node.NodeType.Spawn, Team = blue };
+                var e = new Edge(n1, n2) { Type = Edge.EdgeType.Walkable };
+                n1.Edges.Add(e);
+                n2.Edges.Add(e);
+            }
 
-            // 5 undefined nodes (use Corridor as neutral/undefined)
-            var nA = new Node(new Vector2(90, 80)) { Type = Node.NodeType.Undefined, Team = blue };
-            var nB = new Node(new Vector2(130, 80)) { Type = Node.NodeType.Undefined, Team = blue };
-            var nTop = new Node(new Vector2(170, 50)) { Type = Node.NodeType.Undefined };
-            var nMid = new Node(new Vector2(170, 80)) { Type = Node.NodeType.Undefined };
-            var nBot = new Node(new Vector2(170, 110)) { Type = Node.NodeType.Undefined };
-
-            // 2 wools
-            var wool1 = new Node(new Vector2(240, 40)) { Type = Node.NodeType.Wool, Team = blue };
-            var wool2 = new Node(new Vector2(240, 120)) { Type = Node.NodeType.Wool, Team = blue };
-
-            // Add to graph
-            layout.Graph.AddNode(spawn);
-            layout.Graph.AddNode(nA);
-            layout.Graph.AddNode(nB);
-            layout.Graph.AddNode(nTop);
-            layout.Graph.AddNode(nMid);
-            layout.Graph.AddNode(nBot);
-            layout.Graph.AddNode(wool1);
-            layout.Graph.AddNode(wool2);
-
-            // --- Goals (for the team) ---
-            blue.Goals.Add(new Goal(wool1)
+            // Add some cross-connections for complexity (vertical short edges)
+            var nodes = layout.Graph.Nodes.ToList();  // Assuming even numEdges for pairing
+            for (int i = 0; i < numEdges - 1; i += 2)
             {
-                Owner = blue,
-                Color = MinecraftColor.BLUE,
-                Type = Goal.GoalType.Wool
-            });
-            blue.Goals.Add(new Goal(wool2)
-            {
-                Owner = blue,
-                Color = MinecraftColor.BLUE,
-                Type = Goal.GoalType.Wool
-            });
+                // Connect left nodes vertically
+                Connect(nodes[i], nodes[i + 1], Edge.EdgeType.Bridgeable);
+                // Connect right nodes vertically
+                Connect(nodes[i + numEdges], nodes[i + numEdges + 1], Edge.EdgeType.Bridgeable);
+            }
 
-            // --- Edges (bidirectional via helper) ---
-            Connect(spawn, nA, Edge.EdgeType.Walkable);
-            Connect(nA, nB, Edge.EdgeType.Walkable);
-
-            // hub splits into three corridors
-            Connect(nB, nTop, Edge.EdgeType.Walkable);
-            Connect(nB, nMid, Edge.EdgeType.Walkable);
-            Connect(nB, nBot, Edge.EdgeType.Walkable);
-
-            // corridors to wools (make these bridgeable to vary gameplay)
-            Connect(nTop, wool1, Edge.EdgeType.Bridgeable);
-            Connect(nBot, wool2, Edge.EdgeType.Bridgeable);
-
-            // small cross-links to avoid chokepoints
-            Connect(nTop, nMid, Edge.EdgeType.Walkable);
-            Connect(nMid, nBot, Edge.EdgeType.Walkable);
+            layout.CalculateEdgeBlocks();  // Precompute for perf testing
 
             return layout;
 
-            // --- local helpers ---
             static void Connect(Node a, Node b, Edge.EdgeType type)
             {
                 var e = new Edge(a, b) { Type = type };
