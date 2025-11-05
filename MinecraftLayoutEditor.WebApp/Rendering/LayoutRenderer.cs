@@ -65,12 +65,12 @@ public class LayoutRenderer
         canvas.Save();
         canvas.Concat(ref SKWorldToScreen);
 
-        using var axisPaint = new SKPaint { Color = SKColors.Red, StrokeWidth = 0.1f, IsAntialias = false };
-        canvas.DrawLine(-2, 0, 2, 0, axisPaint);
-        canvas.DrawLine(0, -2, 0, 2, axisPaint);
-
         var totalStopwatch = Stopwatch.StartNew();
         var uniqueEdges = GetUniqueEdges(layout.Graph.Nodes);
+
+        var layoutRect = SKRect.Create(-layout.Width / 2f, -layout.Height / 2f, layout.Width, layout.Height);
+        var backdropPaint = GetPaint(SKColors.White, SKPaintStyle.Fill, 1f);
+        surface.Canvas.DrawRect(layoutRect, backdropPaint);
 
         var gridStopwatch = Stopwatch.StartNew();
         RenderGrid(surface, layout, options);

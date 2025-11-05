@@ -17,7 +17,7 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 public partial class Home : ComponentBase
 {
     private SKGLView Canvas;
-    private readonly Logic.Layout _layout = LayoutFactory.Empty(96,192,10,10);
+    private readonly Logic.Layout _layout = LayoutFactory.Empty(192,96,10,10);
     private readonly LayoutRenderer _renderer = new();
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
@@ -40,7 +40,7 @@ public partial class Home : ComponentBase
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
     {
-        args.Surface.Canvas.Clear(SKColors.LightPink);
+        args.Surface.Canvas.Clear(SKColors.LightGray);
 
         _renderer.Render(args.Surface, _layout, HoveredNode, SelectedNode, _renderingOptions);
     }
