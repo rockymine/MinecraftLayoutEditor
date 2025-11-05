@@ -31,13 +31,16 @@
     --color-neutral-50: hsl(var(--color-neutral-h) var(--color-neutral-s) calc(var(--color-primary-l) + var(--step-light-3)));
 }
 
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     background-color: var(--color-neutral-50);
     font-family: "Verdana", sans-serif;
     font-weight: 300;
-    margin: 0;
-    padding: 0;
-    height: 100%;
 }
 
 header {
@@ -92,7 +95,7 @@ canvas {
 
 .layout {
     display: flex;
-    min-height: calc(100vh - 120px);
+    height: calc(100vh - 120px);
 }
 
 .sidebar {
@@ -105,11 +108,27 @@ canvas {
 }
 
 .editor {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    margin: 0 8px;
+    flex: 1;
+    height: 100%;
 }
+
+#canvasContainer {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    cursor: inherit;
+}
+
+    #canvasContainer > canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+    }
 
 .editor-toolbar {
     display: flex;

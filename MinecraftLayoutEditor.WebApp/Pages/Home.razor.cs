@@ -9,6 +9,7 @@ using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
+using System.Drawing;
 using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Pages;
@@ -21,6 +22,9 @@ public partial class Home : ComponentBase
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
     private Node? SelectedNode;
+    private ElementReference _canvasContainer;
+    private float CanvasWidth => _renderer.CanvasWidth;
+    private float CanvasHeight => _renderer.CanvasHeight;
 
     private float MaxZoom => 100f;
     private float MinZoom => CalculateMinZoom();
@@ -47,8 +51,25 @@ public partial class Home : ComponentBase
             return;
 
         await JSRuntime.InvokeAsync<object>("init", DotNetObjectReference.Create(this));
+        await JSRuntime.InvokeVoidAsync("initResizeObserver", DotNetObjectReference.Create(this));
 
         await Render(RenderTrigger.Initial);
+    }
+
+    [JSInvokable]
+    public async Task OnBrowserResize()
+    {
+        await ResizeCanvas();
+        await Render(RenderTrigger.Initial);
+    }
+
+    private async Task ResizeCanvas()
+    {
+        var size = await JSRuntime.InvokeAsync<Size>("getElementClientSize", _canvasContainer);
+        _renderer.Resize(size.Width, size.Height);
+        // keep the same world-center after resize
+        var center = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
+        _renderer.UpdateTRS(center, _renderer.Scale);
     }
 
     protected override void OnInitialized()

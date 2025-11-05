@@ -8,8 +8,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering;
 
 public class LayoutRenderer
 {
-    public float CanvasWidth { get; private set; } = 1000f;
-    public float CanvasHeight { get; private set; } = 1000f;
+    public float CanvasWidth { get; private set; }
+    public float CanvasHeight { get; private set; }
 
     private readonly GridRenderer _gridRenderer = new();
     public float Scale { get; private set; } = 1f;
@@ -40,6 +40,12 @@ public class LayoutRenderer
             _paintCache.Add(key, paint);
         }
         return paint;
+    }
+
+    public void Resize(float width, float height)
+    {
+        CanvasWidth = width;
+        CanvasHeight = height;
     }
 
     public void UpdateTRS(Vector2 translation, float scale)
