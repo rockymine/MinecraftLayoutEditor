@@ -14,8 +14,6 @@ public class LayoutRenderer
     private readonly GridRenderer _gridRenderer = new();
     public float Scale { get; private set; } = 1f;
     public Vector2 CameraPosition { get; private set; }
-    private Matrix4x4 WorldToScreen;
-    private Matrix4x4 ScreenToWorld;
     private SKMatrix SKWorldToScreen;
     private readonly Dictionary<(SKColor, SKPaintStyle, float), SKPaint> _paintCache = [];
     
@@ -37,7 +35,7 @@ public class LayoutRenderer
                 Color = color,
                 Style = style,
                 StrokeWidth = adjustedWidth,
-                IsAntialias = false  // Keep for perf; test true if aliasing is bad
+                IsAntialias = false
             };
             _paintCache.Add(key, paint);
         }
@@ -49,11 +47,6 @@ public class LayoutRenderer
         Scale = scale;
         CameraPosition = translation;
 
-        // Keep your numerics matrix for picking, if you want:
-        WorldToScreen = Matrix4x4.CreateScale(scale) * Matrix4x4.CreateTranslation(translation.X, translation.Y, 0);
-        Matrix4x4.Invert(WorldToScreen, out ScreenToWorld);
-
-        // Build a correct SKMatrix: scale then translate (world → screen = p*scale + translation)
         SKWorldToScreen = SKMatrix.CreateScale(scale, scale);
         SKWorldToScreen.TransX = translation.X;
         SKWorldToScreen.TransY = translation.Y;
@@ -314,24 +307,8 @@ public class LayoutRenderer
         surface.Canvas.DrawLine(corner1.X, corner1.Y, corner0.X, corner0.Y, boundingBoxPaint);
     }
 
-    public Vector2 WorldToScreenPos(Vector2 worldPos)
-    {
-        var v3 = Vector3.Transform(new Vector3(worldPos.X, worldPos.Y, 0), WorldToScreen);
-
-        return new Vector2(v3.X, v3.Y);
-    }
-
-    public Vector2 ScreenToWorldPos(Vector2 screenPos)
-    {
-        var v3 = Vector3.Transform(new Vector3(screenPos.X, screenPos.Y, 0), ScreenToWorld);
-
-        return new Vector2(v3.X, v3.Y);
-    }
-
-    public float WorldToScreenScale(float worldLength)
-    {
-        return worldLength * Scale;
-    }
+    public Vector2 ScreenToWorldPos(Vector2 screen)
+        => new((screen.X - CameraPosition.X) / Scale, (screen.Y - CameraPosition.Y) / Scale);
 
     private static RenderStyle GetMirrorLineStyle(RenderingOptions options)
     {
