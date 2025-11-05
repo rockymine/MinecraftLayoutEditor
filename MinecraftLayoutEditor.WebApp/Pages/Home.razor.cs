@@ -17,7 +17,7 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 public partial class Home : ComponentBase
 {
     private SKGLView Canvas;
-    private readonly Logic.Layout _layout = LayoutFactory.PerformanceTestLayout();
+    private readonly Logic.Layout _layout = LayoutFactory.Empty(96,192,10,10);
     private readonly LayoutRenderer _renderer = new();
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
@@ -26,7 +26,7 @@ public partial class Home : ComponentBase
     private float CanvasWidth => _renderer.CanvasWidth;
     private float CanvasHeight => _renderer.CanvasHeight;
 
-    private float MaxZoom => 100f;
+    private float MaxZoom => 200f;
     private float MinZoom => CalculateMinZoom();
 
     private string CursorClass => (PanStartPosition != null) ? "grab" : "default";

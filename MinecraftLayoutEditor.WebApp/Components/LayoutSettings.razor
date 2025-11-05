@@ -10,13 +10,20 @@
     </div>
     <div class="row">
         <div class="form-group">
-            <label for="width">Width</label>
-            <input type="number" id="width" class="form-control" @bind="Width" @bind:after="OnWidthChanged" />
+            <label>Width</label>
+            <div class="stepper">
+                <span class="stepper-value">@Width</span>
+                <button type="button" class="btn stepper-btn" @onclick="() => AdjustWidth(-16)" disabled="@(Width <= 32)">−</button>
+                <button type="button" class="btn stepper-btn" @onclick="() => AdjustWidth(16)">+</button>
+            </div>
         </div>
-
         <div class="form-group">
-            <label for="height">Height</label>
-            <input type="number" id="height" class="form-control" @bind="Height" @bind:after="OnHeightChanged" />
+            <label>Height</label>
+            <div class="stepper">
+                <span class="stepper-value">@Height</span>
+                <button type="button" class="btn stepper-btn" @onclick="() => AdjustHeight(-16)" disabled="@(Height <= 32)">−</button>
+                <button type="button" class="btn stepper-btn" @onclick="() => AdjustHeight(16)">+</button>
+            </div>
         </div>
     </div>
     <div class="form-group">

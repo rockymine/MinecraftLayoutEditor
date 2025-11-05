@@ -4,37 +4,44 @@ using System.Numerics;
 namespace MinecraftLayoutEditor.WebApp.Rendering;
 
 public class GridRenderer
-{  
-    public void Render(SKSurface surface, int gridSpacing, float gridLineWidth, SKColor gridStrokeStyle, 
+{
+    public void Render(SKSurface surface, int chunkSize, float gridLineWidth, SKColor gridStrokeStyle,
         Logic.Layout layout, LayoutRenderer renderer)
     {
-        var gridOrigin = new Vector2(-layout.Width / 2f, -layout.Height / 2f);
         var paint = renderer.GetPaint(gridStrokeStyle, SKPaintStyle.Stroke, gridLineWidth);
-        var gridPath = new SKPath();
+        using var gridPath = new SKPath();
 
-        // Add all vertical lines to the path
-        for (float x = gridOrigin.X + gridSpacing; x < layout.Width / 2f; x += gridSpacing)
+        float left = -layout.Width / 2f;
+        float right = layout.Width / 2f;
+        float bottom = -layout.Height / 2f;
+        float top = layout.Height / 2f;
+
+        const float epsilon = 0.001f;  // Tolerance for float comparison
+
+        // --- Vertical chunk lines ---
+        float firstX = MathF.Floor(left / chunkSize) * chunkSize;
+        for (float x = firstX; x < right + epsilon; x += chunkSize)
         {
-            var pos1 = new Vector2(x, -layout.Height / 2f);
-            var pos2 = new Vector2(x, layout.Height / 2f);
-
-            //surface.Canvas.DrawLine(pos1.X, pos1.Y, pos2.X, pos2.Y, paint);
-            gridPath.MoveTo(pos1.X, pos1.Y);
-            gridPath.LineTo(pos2.X, pos2.Y);
+            // Only draw if line intersects layout bounds
+            if (x >= left - epsilon && x <= right + epsilon)
+            {
+                gridPath.MoveTo(x, bottom);
+                gridPath.LineTo(x, top);
+            }
         }
 
-        // Add all horizontal lines to the same path
-        for (float y = gridOrigin.Y; y < layout.Height / 2f; y += gridSpacing)
+        // --- Horizontal chunk lines ---
+        float firstY = MathF.Floor(bottom / chunkSize) * chunkSize;
+        for (float y = firstY; y < top + epsilon; y += chunkSize)
         {
-            var pos1 = new Vector2(-layout.Width / 2f, y);
-            var pos2 = new Vector2(layout.Width / 2f, y);
-
-            //surface.Canvas.DrawLine(pos1.X, pos1.Y, pos2.X, pos2.Y, paint);
-            gridPath.MoveTo(pos1.X, pos1.Y);
-            gridPath.LineTo(pos2.X, pos2.Y);
+            // Only draw if line intersects layout bounds
+            if (y >= bottom - epsilon && y <= top + epsilon)
+            {
+                gridPath.MoveTo(left, y);
+                gridPath.LineTo(right, y);
+            }
         }
 
-        gridPath.Close();
         surface.Canvas.DrawPath(gridPath, paint);
     }
 }

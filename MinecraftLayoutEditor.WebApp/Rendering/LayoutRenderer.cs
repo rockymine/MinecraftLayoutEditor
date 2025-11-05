@@ -66,8 +66,8 @@ public class LayoutRenderer
         canvas.Concat(ref SKWorldToScreen);
 
         using var axisPaint = new SKPaint { Color = SKColors.Red, StrokeWidth = 0.1f, IsAntialias = false };
-        canvas.DrawLine(-10, 0, 10, 0, axisPaint);
-        canvas.DrawLine(0, -10, 0, 10, axisPaint);
+        canvas.DrawLine(-2, 0, 2, 0, axisPaint);
+        canvas.DrawLine(0, -2, 0, 2, axisPaint);
 
         var totalStopwatch = Stopwatch.StartNew();
         var uniqueEdges = GetUniqueEdges(layout.Graph.Nodes);
@@ -117,7 +117,7 @@ public class LayoutRenderer
     {
         // Render grid cells
         var gridLineStyle = GetGridLineStyle(options);
-        _gridRenderer.Render(surface, options.GridSpacing, gridLineStyle.LineWidth, 
+        _gridRenderer.Render(surface, 16, gridLineStyle.LineWidth, 
             gridLineStyle.StrokeStyle, layout, this);
 
         // Render grid box
