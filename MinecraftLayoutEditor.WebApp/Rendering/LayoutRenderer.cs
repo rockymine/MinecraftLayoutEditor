@@ -1,4 +1,6 @@
-﻿using MinecraftLayoutEditor.Logic;
+﻿using Microsoft.AspNetCore.Components.RenderTree;
+using Microsoft.Extensions.Options;
+using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.Geometry;
 using SkiaSharp;
 using System.Diagnostics;
@@ -10,13 +12,12 @@ public class LayoutRenderer
 {
     public float CanvasWidth { get; private set; }
     public float CanvasHeight { get; private set; }
-
-    private readonly GridRenderer _gridRenderer = new();
-    public float Scale { get; private set; } = 1f;
     public Vector2 CameraPosition { get; private set; }
+    public float Scale { get; private set; } = 1f;
+
     private SKMatrix SKWorldToScreen;
     private readonly Dictionary<(SKColor, SKPaintStyle, float), SKPaint> _paintCache = [];
-    
+
     public LayoutRenderer()
     {
         UpdateTRS(new Vector2(25, 25), 20f);
@@ -24,10 +25,9 @@ public class LayoutRenderer
 
     public SKPaint GetPaint(SKColor color, SKPaintStyle style, float lineWidth)
     {
-        // Adjust lineWidth for constant screen size (divide by scale for strokes)
         var adjustedWidth = (style == SKPaintStyle.Stroke) ? lineWidth / Math.Max(Scale, 0.001f) : lineWidth;
 
-        var key = (color, style, adjustedWidth);  // Cache with adjusted width
+        var key = (color, style, adjustedWidth);
         if (!_paintCache.TryGetValue(key, out var paint))
         {
             paint = new SKPaint
@@ -63,62 +63,64 @@ public class LayoutRenderer
     {
         var canvas = surface.Canvas;
         canvas.Save();
-        canvas.Concat(ref SKWorldToScreen);
+        canvas.Concat(in SKWorldToScreen);
 
-        var totalStopwatch = Stopwatch.StartNew();
-        var uniqueEdges = GetUniqueEdges(layout.Graph.Nodes);
+        var uniqueEdges = layout.Graph.GetUniqueEdges();
 
+        RenderBackground(surface, layout);
+        RenderGrid(surface, layout, options);
+        RenderMirrorAxis(surface, layout, options);
+        RenderEdges(surface, uniqueEdges, options, layout.LaneWidth);
+        RenderNodes(surface, layout.Graph.Nodes, hoveredNode, selectedNode, options);
+
+        canvas.Restore();
+    }
+
+    private void RenderBackground(SKSurface surface, Logic.Layout layout)
+    {
         var layoutRect = SKRect.Create(-layout.Width / 2f, -layout.Height / 2f, layout.Width, layout.Height);
         var backdropPaint = GetPaint(SKColors.White, SKPaintStyle.Fill, 1f);
         surface.Canvas.DrawRect(layoutRect, backdropPaint);
-
-        var gridStopwatch = Stopwatch.StartNew();
-        RenderGrid(surface, layout, options);
-        gridStopwatch.Stop();
-        Console.WriteLine($"Grid: {gridStopwatch.ElapsedMilliseconds}ms (dimension: {layout.Width} x {layout.Height})");
-
-        var mirrorStopwatch = Stopwatch.StartNew();
-        RenderMirrorAxis(surface, layout, options);
-        mirrorStopwatch.Stop();
-        Console.WriteLine($"Mirror: {mirrorStopwatch.ElapsedMilliseconds}ms");
-
-        var edgesStopwatch = Stopwatch.StartNew();
-        RenderEdges(surface, uniqueEdges, options, layout.LaneWidth);
-        edgesStopwatch.Stop();
-        Console.WriteLine($"Edges (total): {edgesStopwatch.ElapsedMilliseconds}ms (count: {uniqueEdges.Count}, bounding box: {options.ShowBoundingBoxEnabled}, bounding box: {options.ShowBlocksEnabled}, width: {layout.LaneWidth})");
-
-        var nodesStopwatch = Stopwatch.StartNew();
-        RenderNodes(surface, layout.Graph.Nodes, hoveredNode, selectedNode, options);
-        nodesStopwatch.Stop();
-        Console.WriteLine($"Nodes: {nodesStopwatch.ElapsedMilliseconds}ms (count: {layout.Graph.Nodes.Count})");
-
-        canvas.Restore();
-
-        totalStopwatch.Stop();
-        Console.WriteLine($"Total Render: {totalStopwatch.ElapsedMilliseconds}ms");
-        Console.WriteLine("---");
-    }
-
-    private static HashSet<Edge> GetUniqueEdges(IReadOnlyList<Node> nodes)
-    {
-        var uniqueEdges = new HashSet<Edge>();
-        foreach (var n in nodes)
-        {
-            foreach (var e in n.Edges)
-            {
-                uniqueEdges.Add(e);
-            }
-        }
-
-        return uniqueEdges;
     }
 
     private void RenderGrid(SKSurface surface, Logic.Layout layout, RenderingOptions options)
     {
         // Render grid cells
         var gridLineStyle = GetGridLineStyle(options);
-        _gridRenderer.Render(surface, 16, gridLineStyle.LineWidth, 
-            gridLineStyle.StrokeStyle, layout, this);
+        var paint = GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, gridLineStyle.LineWidth);
+        using var gridPath = new SKPath();
+
+        float left = -layout.Width / 2f;
+        float right = layout.Width / 2f;
+        float bottom = -layout.Height / 2f;
+        float top = layout.Height / 2f;
+
+        const float epsilon = 0.001f;
+        var chunkSize = 16;
+
+        // Vertical lines
+        float firstX = MathF.Floor(left / chunkSize) * chunkSize;
+        for (float x = firstX; x < right + epsilon; x += chunkSize)
+        {
+            if (x >= left - epsilon && x <= right + epsilon)
+            {
+                gridPath.MoveTo(x, bottom);
+                gridPath.LineTo(x, top);
+            }
+        }
+
+        // Horizontal lines
+        float firstY = MathF.Floor(bottom / chunkSize) * chunkSize;
+        for (float y = firstY; y < top + epsilon; y += chunkSize)
+        {
+            if (y >= bottom - epsilon && y <= top + epsilon)
+            {
+                gridPath.MoveTo(left, y);
+                gridPath.LineTo(right, y);
+            }
+        }
+
+        surface.Canvas.DrawPath(gridPath, paint);
 
         // Render grid box
         var gridBoxPaint = GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, options.GridBorderLineWidth);
@@ -153,10 +155,10 @@ public class LayoutRenderer
     private void RenderNodes(SKSurface surface, IReadOnlyList<Node> nodes, 
         Node? hoveredNode, Node? selectedNode, RenderingOptions options)
     {
-        foreach (var n in nodes)
+        foreach (var node in nodes)
         {
-            var style = GetNodeStyle(n, hoveredNode, selectedNode, options);
-            RenderNodeShape(surface, n.Position, style);
+            var style = GetNodeStyle(node, hoveredNode, selectedNode, options);
+            RenderNodeShape(surface, node.Position, style);
         }
     }
 
@@ -212,13 +214,11 @@ public class LayoutRenderer
         var size = style.Radius * (float)Math.Sqrt(Math.PI / 4);
         var topLeft = screenPos - new Vector2(size, size);
 
-        size = size * 2;
-
         var squareFillPaint = GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth);
         var squareStrokePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
 
-        surface.Canvas.DrawRect(topLeft.X, topLeft.Y, size, size, squareFillPaint);
-        surface.Canvas.DrawRect(topLeft.X, topLeft.Y, size, size, squareStrokePaint);
+        surface.Canvas.DrawRect(topLeft.X, topLeft.Y, size * 2, size * 2, squareFillPaint);
+        surface.Canvas.DrawRect(topLeft.X, topLeft.Y, size * 2, size * 2, squareStrokePaint);
     }
 
     private void RenderDiamondNode(SKSurface surface, Vector2 screenPos, RenderStyle style)
@@ -233,7 +233,7 @@ public class LayoutRenderer
         var diamondFillPaint = GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth);
         var diamondStrokePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
 
-        SKPath diamond = new SKPath();
+        SKPath diamond = new();
         diamond.MoveTo(left.X, left.Y);
         diamond.LineTo(top.X, top.Y);
         diamond.LineTo(right.X, right.Y);
@@ -250,41 +250,37 @@ public class LayoutRenderer
         if (edges.Count == 0)
             return;
         
-        foreach (var e in edges)
+        foreach (var edge in edges)
         {
-            // Render path bounding box preview
             if (options.ShowBoundingBoxEnabled)
-            {
-                RenderEdgeBoundingBox(surface, e.Node1.Position, e.Node2.Position, options, laneWidth);
-            }
-                
+                RenderBoundingBox(surface, edge.Node1.Position, edge.Node2.Position, options, laneWidth);                
 
-            // Render schematic preview
             if (options.ShowBlocksEnabled)
-            {
-                RenderEdgeSchematicBlocks(surface, e, options);
-            }
-                
+                RenderBlocks(surface, edge.EdgeBlocks, options);
 
-            var style = options.GetStyle(e.Type.ToString().ToLower());
-            var from = e.Node1.Position;
-            var to = e.Node2.Position;
-            var edgePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
-
-            surface.Canvas.DrawLine(from, to, edgePaint);
+            RenderEdge(surface, edge, options);
         }
     }
 
-    private void RenderEdgeSchematicBlocks(SKSurface surface, Edge edge,
-        RenderingOptions options)
+    private void RenderEdge(SKSurface surface, Edge edge, RenderingOptions options)
     {
-        var edgeBlockPaint = GetPaint(options.CellFillStyle, SKPaintStyle.Fill, 1f);
+        var style = options.GetStyle(edge.Type.ToString().ToLower());
+        var p0 = edge.Node1.Position;
+        var p1 = edge.Node2.Position;
+        var edgePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
+
+        surface.Canvas.DrawLine(p0, p1, edgePaint);
+    }
+    
+    private void RenderBlocks(SKSurface surface, List<Vector2> positions, RenderingOptions options)
+    {
+        var blockPaint = GetPaint(options.CellFillStyle, SKPaintStyle.Fill, 1f);
         SKPath blockList = new()
         {
             FillType = SKPathFillType.Winding
         };
 
-        foreach (var block in edge.EdgeBlocks)
+        foreach(var block in positions)
         {
             var screenPos = block;
             var size = 1;
@@ -293,10 +289,10 @@ public class LayoutRenderer
         }
 
         blockList.Close();
-        surface.Canvas.DrawPath(blockList, edgeBlockPaint);
+        surface.Canvas.DrawPath(blockList, blockPaint);
     }
 
-    private void RenderEdgeBoundingBox(SKSurface surface, Vector2 pos1, Vector2 pos2,
+    private void RenderBoundingBox(SKSurface surface, Vector2 pos1, Vector2 pos2,
         RenderingOptions options, float laneWidth)
     {
         var corners = Rectangle.FindRectCorners(pos1, pos2, laneWidth);

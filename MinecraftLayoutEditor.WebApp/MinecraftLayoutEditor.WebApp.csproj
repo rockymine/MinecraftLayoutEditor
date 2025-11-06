@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Extensions\**" />
+    <Content Remove="Extensions\**" />
+    <EmbeddedResource Remove="Extensions\**" />
+    <None Remove="Extensions\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BlazorDownloadFile" Version="2.4.0.2" />
     <PackageReference Include="Excubo.Blazor.Canvas" Version="3.2.92" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0-rc.1.25451.107" />
@@ -20,10 +27,6 @@
   <ItemGroup>
     <ProjectReference Include="..\MinecraftLayoutEditor.Logic\MinecraftLayoutEditor.Logic.csproj" />
     <ProjectReference Include="..\MinecraftLayoutEditor.Schematics\MinecraftLayoutEditor.Schematics.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Extensions\" />
   </ItemGroup>
 
 </Project>

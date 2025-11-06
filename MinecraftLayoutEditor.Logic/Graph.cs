@@ -28,6 +28,20 @@ public class Graph
         return closestNode;
     }
 
+    public HashSet<Edge> GetUniqueEdges()
+    {
+        var uniqueEdges = new HashSet<Edge>();
+        foreach (var node in _nodes)
+        {
+            foreach (var edge in node.Edges)
+            {
+                uniqueEdges.Add(edge);
+            }
+        }
+
+        return uniqueEdges;
+    }
+
     public void Clear()
     {
         _nodes.Clear(); 
