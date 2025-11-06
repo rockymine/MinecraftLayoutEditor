@@ -1,5 +1,6 @@
 using BlazorDownloadFile;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MinecraftLayoutEditor.Logic;
@@ -379,5 +380,44 @@ public partial class Home : ComponentBase
         var maxLayout = float.Max(_layout.Width, _layout.Height);
 
         return (maxCanvas / maxLayout) * 0.8f;
+    }
+
+    private async Task LoadWorldFiles(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles().ToArray();
+        if (!files.Any()) return;
+
+        try
+        {
+            var (blocks, spawn, worldName) = await WorldImporter.ImportWorld(files);
+
+            var centerX = blocks.Any() ? blocks.Average(b => b.X) : spawn.X;
+            var centerZ = blocks.Any() ? blocks.Average(b => b.Z) : spawn.Y;
+
+            _layout.Graph.Clear();
+
+            foreach (var b in blocks)
+            {
+                var pos = new Vector2((float)(b.X - centerX), (float)(b.Z - centerZ));
+                _layout.Graph.AddNode(new Node(pos) { Type = Node.NodeType.Wool });
+            }
+
+            var spawnNode = new Node(new Vector2((float)(spawn.X - centerX), (float)(spawn.Y - centerZ)))
+            {
+                Type = Node.NodeType.Spawn
+            };
+            _layout.Graph.AddNode(spawnNode);
+
+            _layout.Name = worldName;
+            _layout.Width = (int)(blocks.Max(b => Math.Abs(b.X - centerX)) * 2) + 64;
+            _layout.Height = (int)(blocks.Max(b => Math.Abs(b.Z - centerZ)) * 2) + 64;
+
+            await OnFitLayout();
+            await Render(RenderTrigger.WorldImport);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Import failed: {ex.Message}");
+        }
     }
 }
