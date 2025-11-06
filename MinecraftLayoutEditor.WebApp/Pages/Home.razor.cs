@@ -26,6 +26,9 @@ public partial class Home : ComponentBase
     private float CanvasWidth => _renderer.CanvasWidth;
     private float CanvasHeight => _renderer.CanvasHeight;
 
+    private float _mirrorRotationDeg = 0f;
+    private bool _mirrorIsHorizontal = false;
+
     private float MaxZoom => 200f;
     private float MinZoom => CalculateMinZoom();
 
@@ -173,8 +176,7 @@ public partial class Home : ComponentBase
                 _layout.Graph,
                 worldPos,
                 _layout.SelectedNodeType,
-                _layout.Symmetry,
-                _layout.MirrorEnabled
+                _layout.Symmetry
                 );
 
             _historyStack?.ExecuteAction(action);

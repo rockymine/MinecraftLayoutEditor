@@ -21,9 +21,9 @@
         <button type="button" class="btn btn-primary" @onclick="OnSchematicCreate" disabled="@(!_layout.Graph.Nodes.Any())">
             Generate Schematic
         </button>
-        <MirrorControls @bind-MirrorEnabled="_layout.MirrorEnabled"
-                        @bind-RotationDeg="_layout.Symmetry.RotationDeg"
-                        @bind-IsHorizontal="_layout.Symmetry.IsHorizontal"
+        <MirrorControls @bind-SymmetryAxis="_layout.Symmetry"
+                        @bind-RotationDeg="_mirrorRotationDeg"
+                        @bind-IsHorizontal="_mirrorIsHorizontal"
                         SettingsChanged="OnSettingsChanged" />
 
         <VisualizationControls @bind-ShowBlocksEnabled="_renderingOptions.ShowBlocksEnabled"
@@ -50,7 +50,7 @@
                              OnUndo="OnUndo"
                              OnRedo="OnRedo" />
             <!-- View controls -->
-            <ViewControls MirrorEnabled="@(_layout.MirrorEnabled)"
+            <ViewControls SymmetryAxis="@(_layout.Symmetry)"
                           OnResetView="OnResetView"
                           OnFitLayout="OnFitLayout"
                           OnFitTeam="OnFitTeam" />

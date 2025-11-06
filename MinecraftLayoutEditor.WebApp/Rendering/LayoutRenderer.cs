@@ -131,7 +131,7 @@ public class LayoutRenderer
 
     private void RenderMirrorAxis(SKSurface surface, Logic.Layout layout, RenderingOptions options)
     {
-        if (layout.Symmetry == null || !layout.MirrorEnabled)
+        if (layout.Symmetry == null)
             return;
 
         // Render mirror line

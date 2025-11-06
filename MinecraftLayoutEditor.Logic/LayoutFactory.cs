@@ -10,7 +10,6 @@ namespace MinecraftLayoutEditor.Logic
             {
                 Width = width,
                 Height = height,
-                MirrorEnabled = true,
                 LaneWidth = laneWidth,
                 Thickness = thickness,
                 Symmetry = new SymmetryAxis()

@@ -3,7 +3,8 @@
     <!-- Mirror -->
     <div class="form-check">
         <input type="checkbox" id="mirrorEnabled"
-               @bind="MirrorEnabled" @bind:after="OnMirrorEnabledChanged" />
+            checked="@IsMirrorEnabled"
+               @onchange="@((e) => OnSymmetryAxisChanged((bool)e.Value!))" />
         <label for="mirrorEnabled">
             Enable mirroring
         </label>
@@ -12,7 +13,7 @@
     <!-- MirrorAxis -->
     <div class="form-check">
         <input type="checkbox" id="isHorizontal"
-               @bind="IsHorizontal" @bind:after="OnIsHorizontalChanged" disabled="@(!MirrorEnabled)" />
+               @bind="IsHorizontal" @bind:after="OnIsHorizontalChanged" disabled="@(!IsMirrorEnabled)" />
         <label for="isHorizontal">
             Horizontal mirroring
         </label>
@@ -23,7 +24,7 @@
         <label for="rotation">Rotation (deg)</label>
         <select id="rotation" class="form-control"
                 @bind="RotationDeg" @bind:after="OnRotationDegChanged"
-                disabled="@(!MirrorEnabled)">
+                disabled="@(!IsMirrorEnabled)">
             <option value="0">0°</option>
             <option value="180">180°</option>
         </select>

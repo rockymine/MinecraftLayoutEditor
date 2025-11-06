@@ -15,9 +15,6 @@ public class Layout
     public string Author { get; set; } = "";
 
     public SymmetryAxis? Symmetry { get; set; }
-    // TODO: Remove mirrorEnabled as it is the same as symmetry = null
-    // move to ui only
-    public bool MirrorEnabled { get; set; }
     public Node.NodeType SelectedNodeType { get; set; } = Node.NodeType.Undefined;
 
     public Vector2 MirrorPosition(Vector2 pos, SymmetryAxis axis)
@@ -60,7 +57,7 @@ public class Layout
 
         node.Position = newPosition;
         
-        if (MirrorEnabled && node.MirrorRef != null && Symmetry != null)
+        if (node.MirrorRef != null && Symmetry != null)
         {
             var mirrorRefPosition = MirrorPosition(node.Position, Symmetry);
             node.MirrorRef.Position = mirrorRefPosition;

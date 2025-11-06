@@ -9,18 +9,16 @@ public class AddNodeAction : IHistoryAction
     private readonly Vector2 _position;
     private readonly Node.NodeType _nodeType;
     private readonly SymmetryAxis? _symmetry;
-    private readonly bool _mirrorEnabled;
 
     private Node? _primaryNode;
     private Node? _mirroredNode;
 
-    public AddNodeAction(Graph graph, Vector2 position, Node.NodeType nodeType, SymmetryAxis? symmetry, bool mirrorEnabled)
+    public AddNodeAction(Graph graph, Vector2 position, Node.NodeType nodeType, SymmetryAxis? symmetry)
     {
         _graph = graph;
         _position = position;
         _nodeType = nodeType;
         _symmetry = symmetry;
-        _mirrorEnabled = mirrorEnabled;
     }
 
     public void Execute()
@@ -30,8 +28,7 @@ public class AddNodeAction : IHistoryAction
         _primaryNode = new Node(pos) { Type = _nodeType };
         _graph.AddNode(_primaryNode);
 
-        //TODO: mirrorEnabled redundant
-        if (_symmetry != null && _mirrorEnabled)
+        if (_symmetry != null)
         {
             var mirroredPos = Rotation.MirrorPosition(_primaryNode.Position, _symmetry);
             _mirroredNode = new Node(mirroredPos) 
