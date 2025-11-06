@@ -15,7 +15,7 @@ namespace MinecraftLayoutEditor.Logic
                 Thickness = thickness,
                 Symmetry = new SymmetryAxis()
                 {
-                    IsHorizontal = true,
+                    IsHorizontal = false,
                     RotationDeg = 0
                 }
             };

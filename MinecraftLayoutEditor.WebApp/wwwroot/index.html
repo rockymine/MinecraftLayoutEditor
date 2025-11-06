@@ -45,11 +45,28 @@
                 };
             }
         };
+
         Blazor.start({
             configureRuntime: function (runtime) {
                 runtime.configureZlib();
             }
         });
+
+        window.getElementClientSize = (element) => {
+            return {
+                Width: element.clientWidth,
+                Height: element.clientHeight
+            };
+        };
+
+        let resizeObserver = null;
+        window.initResizeObserver = (dotnetHelper) => {
+            const container = document.getElementById('canvasContainer');
+            resizeObserver = new ResizeObserver(() => {
+                dotnetHelper.invokeMethodAsync('OnBrowserResize');
+            });
+            resizeObserver.observe(container);
+        };
     </script>
 </body>
 

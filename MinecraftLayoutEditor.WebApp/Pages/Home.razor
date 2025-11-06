@@ -56,11 +56,22 @@
                           OnFitTeam="OnFitTeam" />
         </div>
         <!-- Canvas -->
-        <span>Layout</span>
-        <div id="canvasContainer" style="cursor: @(CursorClass)"
-             @onmouseup="OnMouseUp" @onmousemove="OnMouseMove" @oncontextmenu:preventDefault=true @onkeyup="OnKeyUp" tabindex="0"
-             @onmousedown="OnMouseDown" @onmousedown:preventDefault=true>
-            <SKGLView @ref="@(Canvas)" OnPaintSurface="OnPaintSurface" Width="1000" Height="1000" IgnorePixelScaling="true"></SKGLView>
+        <div id="canvasContainer"
+             @ref="@(_canvasContainer)"
+             style="cursor: @(CursorClass)"
+             @onmouseup="OnMouseUp"
+             @onmousemove="OnMouseMove"
+             @oncontextmenu:preventDefault=true
+             @onkeyup="OnKeyUp"
+             tabindex="0"
+             @onmousedown="OnMouseDown"
+             @onmousedown:preventDefault=true>
+            <SKGLView @ref="Canvas"
+                      OnPaintSurface="OnPaintSurface"
+                      Width="@CanvasWidth"
+                      Height="@CanvasHeight"
+                      IgnorePixelScaling="true">
+            </SKGLView>
         </div>
     </div>
 </div>

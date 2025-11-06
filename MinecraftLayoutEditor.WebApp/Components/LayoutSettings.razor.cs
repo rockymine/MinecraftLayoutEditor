@@ -44,18 +44,6 @@ public partial class LayoutSettings
         await SettingsChanged.InvokeAsync();
     }
 
-    public async Task OnWidthChanged()
-    {
-        await WidthChanged.InvokeAsync(Width);
-        await SettingsChanged.InvokeAsync();
-    }
-
-    public async Task OnHeightChanged()
-    {
-        await HeightChanged.InvokeAsync(Height);
-        await SettingsChanged.InvokeAsync();
-    }
-
     public async Task OnLaneWidthChanged()
     {
         await LaneWidthChanged.InvokeAsync(LaneWidth);
@@ -72,5 +60,29 @@ public partial class LayoutSettings
     {
         await ThicknessChanged.InvokeAsync(Thickness);
         await SettingsChanged.InvokeAsync();
+    }
+
+    private async Task AdjustWidth(int delta)
+    {
+        var newWidth = Math.Max(16, Width + delta);
+        newWidth = (newWidth / 16) * 16; // Ensure multiple of 16
+        if (newWidth != Width)
+        {
+            Width = newWidth;
+            await WidthChanged.InvokeAsync(Width);
+            await SettingsChanged.InvokeAsync();
+        }
+    }
+
+    private async Task AdjustHeight(int delta)
+    {
+        var newHeight = Math.Max(16, Height + delta);
+        newHeight = (newHeight / 16) * 16; // Ensure multiple of 16
+        if (newHeight != Height)
+        {
+            Height = newHeight;
+            await HeightChanged.InvokeAsync(Height);
+            await SettingsChanged.InvokeAsync();
+        }
     }
 }

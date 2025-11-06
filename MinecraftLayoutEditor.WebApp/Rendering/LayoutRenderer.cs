@@ -8,14 +8,13 @@ namespace MinecraftLayoutEditor.WebApp.Rendering;
 
 public class LayoutRenderer
 {
-    public float CanvasWidth { get; private set; } = 1000f;
-    public float CanvasHeight { get; private set; } = 1000f;
+    public float CanvasWidth { get; private set; }
+    public float CanvasHeight { get; private set; }
 
     private readonly GridRenderer _gridRenderer = new();
     public float Scale { get; private set; } = 1f;
     public Vector2 CameraPosition { get; private set; }
-    private Matrix4x4 WorldToScreen;
-    private Matrix4x4 ScreenToWorld;
+    private SKMatrix SKWorldToScreen;
     private readonly Dictionary<(SKColor, SKPaintStyle, float), SKPaint> _paintCache = [];
     
     public LayoutRenderer()
@@ -25,35 +24,53 @@ public class LayoutRenderer
 
     public SKPaint GetPaint(SKColor color, SKPaintStyle style, float lineWidth)
     {
-        if (!_paintCache.TryGetValue((color, style, lineWidth), out var paint))
+        // Adjust lineWidth for constant screen size (divide by scale for strokes)
+        var adjustedWidth = (style == SKPaintStyle.Stroke) ? lineWidth / Math.Max(Scale, 0.001f) : lineWidth;
+
+        var key = (color, style, adjustedWidth);  // Cache with adjusted width
+        if (!_paintCache.TryGetValue(key, out var paint))
         {
             paint = new SKPaint
             {
                 Color = color,
                 Style = style,
-                StrokeWidth = lineWidth,
+                StrokeWidth = adjustedWidth,
                 IsAntialias = false
             };
-
-            _paintCache.Add((color, style, lineWidth), paint);
+            _paintCache.Add(key, paint);
         }
-
         return paint;
+    }
+
+    public void Resize(float width, float height)
+    {
+        CanvasWidth = width;
+        CanvasHeight = height;
     }
 
     public void UpdateTRS(Vector2 translation, float scale)
     {
-        WorldToScreen = Matrix4x4.CreateTranslation(translation.X, translation.Y, 0) * Matrix4x4.CreateScale(scale);
-        Matrix4x4.Invert(WorldToScreen, out ScreenToWorld);
         Scale = scale;
         CameraPosition = translation;
+
+        SKWorldToScreen = SKMatrix.CreateScale(scale, scale);
+        SKWorldToScreen.TransX = translation.X;
+        SKWorldToScreen.TransY = translation.Y;
     }
 
     public void Render(SKSurface surface, Logic.Layout layout,
         Node? hoveredNode, Node? selectedNode, RenderingOptions options)
     {
+        var canvas = surface.Canvas;
+        canvas.Save();
+        canvas.Concat(ref SKWorldToScreen);
+
         var totalStopwatch = Stopwatch.StartNew();
         var uniqueEdges = GetUniqueEdges(layout.Graph.Nodes);
+
+        var layoutRect = SKRect.Create(-layout.Width / 2f, -layout.Height / 2f, layout.Width, layout.Height);
+        var backdropPaint = GetPaint(SKColors.White, SKPaintStyle.Fill, 1f);
+        surface.Canvas.DrawRect(layoutRect, backdropPaint);
 
         var gridStopwatch = Stopwatch.StartNew();
         RenderGrid(surface, layout, options);
@@ -74,6 +91,8 @@ public class LayoutRenderer
         RenderNodes(surface, layout.Graph.Nodes, hoveredNode, selectedNode, options);
         nodesStopwatch.Stop();
         Console.WriteLine($"Nodes: {nodesStopwatch.ElapsedMilliseconds}ms (count: {layout.Graph.Nodes.Count})");
+
+        canvas.Restore();
 
         totalStopwatch.Stop();
         Console.WriteLine($"Total Render: {totalStopwatch.ElapsedMilliseconds}ms");
@@ -98,14 +117,14 @@ public class LayoutRenderer
     {
         // Render grid cells
         var gridLineStyle = GetGridLineStyle(options);
-        _gridRenderer.Render(surface, options.GridSpacing, gridLineStyle.LineWidth, 
+        _gridRenderer.Render(surface, 16, gridLineStyle.LineWidth, 
             gridLineStyle.StrokeStyle, layout, this);
 
         // Render grid box
         var gridBoxPaint = GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, options.GridBorderLineWidth);
-        var origin = WorldToScreenPos(new Vector2(-layout.Width / 2f, -layout.Height / 2f));
-        surface.Canvas.DrawRect(origin.X, origin.Y, WorldToScreenScale(layout.Width), 
-            WorldToScreenScale(layout.Height), gridBoxPaint);
+        var origin = new Vector2(-layout.Width / 2f, -layout.Height / 2f);
+        surface.Canvas.DrawRect(origin.X, origin.Y, layout.Width, 
+            layout.Height, gridBoxPaint);
     }
 
     private void RenderMirrorAxis(SKSurface surface, Logic.Layout layout, RenderingOptions options)
@@ -116,8 +135,8 @@ public class LayoutRenderer
         // Render mirror line
         var mirrorLineStyle = GetMirrorLineStyle(options);
         var mirrorLinePaint = GetPaint(mirrorLineStyle.StrokeStyle, SKPaintStyle.Stroke, mirrorLineStyle.LineWidth);
-        var start = WorldToScreenPos(layout.Symmetry.GetStartPointWorld(layout));
-        var end = WorldToScreenPos(layout.Symmetry.GetEndPointWorld(layout));
+        var start = layout.Symmetry.GetStartPointWorld(layout);
+        var end = layout.Symmetry.GetEndPointWorld(layout);
         surface.Canvas.DrawLine(start.X, start.Y, end.X, end.Y, mirrorLinePaint);
 
         // Render rotation point
@@ -125,8 +144,8 @@ public class LayoutRenderer
         {
             var mirrorPointStyle = GetMirrorPointStyle(options);
             var mirrorPointPaint = GetPaint(mirrorPointStyle.FillStyle, SKPaintStyle.Fill, mirrorPointStyle.LineWidth);
-            var center = WorldToScreenPos(Vector2.Zero);
-            var radius = WorldToScreenScale(mirrorPointStyle.Radius);
+            var center = Vector2.Zero;
+            var radius = mirrorPointStyle.Radius;
             surface.Canvas.DrawCircle(center.X, center.Y, radius, mirrorPointPaint);
         }
     }
@@ -160,7 +179,7 @@ public class LayoutRenderer
 
     private void RenderNodeShape(SKSurface surface, Vector2 position, RenderStyle style)
     {
-        var screenPos = WorldToScreenPos(position);
+        var screenPos = position;
 
         switch (style.Shape.ToLower())
         {
@@ -184,16 +203,16 @@ public class LayoutRenderer
         var circleFillPaint = GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth);
         var circleStrokePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
 
-        surface.Canvas.DrawCircle(screenPos.X, screenPos.Y, WorldToScreenScale(style.Radius), circleFillPaint);
-        surface.Canvas.DrawCircle(screenPos.X, screenPos.Y, WorldToScreenScale(style.Radius), circleStrokePaint);
+        surface.Canvas.DrawCircle(screenPos.X, screenPos.Y, style.Radius, circleFillPaint);
+        surface.Canvas.DrawCircle(screenPos.X, screenPos.Y, style.Radius, circleStrokePaint);
     }
 
     private void RenderSquareNode(SKSurface surface, Vector2 screenPos, RenderStyle style)
     {
         var size = style.Radius * (float)Math.Sqrt(Math.PI / 4);
-        var topLeft = screenPos - new Vector2(WorldToScreenScale(size), WorldToScreenScale(size));
+        var topLeft = screenPos - new Vector2(size, size);
 
-        size = WorldToScreenScale(size * 2);
+        size = size * 2;
 
         var squareFillPaint = GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth);
         var squareStrokePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
@@ -206,10 +225,10 @@ public class LayoutRenderer
     {
         var size = style.Radius * (float)Math.Sqrt(Math.PI / 2);
 
-        var left = new Vector2(screenPos.X - WorldToScreenScale(size), screenPos.Y);
-        var top = new Vector2(screenPos.X, screenPos.Y - WorldToScreenScale(size));
-        var right = new Vector2(screenPos.X + WorldToScreenScale(size), screenPos.Y);
-        var bottom = new Vector2(screenPos.X, screenPos.Y + WorldToScreenScale(size));
+        var left = new Vector2(screenPos.X - size, screenPos.Y);
+        var top = new Vector2(screenPos.X, screenPos.Y - size);
+        var right = new Vector2(screenPos.X + size, screenPos.Y);
+        var bottom = new Vector2(screenPos.X, screenPos.Y + size);
 
         var diamondFillPaint = GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth);
         var diamondStrokePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
@@ -248,8 +267,8 @@ public class LayoutRenderer
                 
 
             var style = options.GetStyle(e.Type.ToString().ToLower());
-            var from = WorldToScreenPos(e.Node1.Position);
-            var to = WorldToScreenPos(e.Node2.Position);
+            var from = e.Node1.Position;
+            var to = e.Node2.Position;
             var edgePaint = GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth);
 
             surface.Canvas.DrawLine(from, to, edgePaint);
@@ -267,8 +286,8 @@ public class LayoutRenderer
 
         foreach (var block in edge.EdgeBlocks)
         {
-            var screenPos = WorldToScreenPos(block);
-            var size = WorldToScreenScale(1);
+            var screenPos = block;
+            var size = 1;
 
             blockList.AddRect(SKRect.Create(screenPos.X, screenPos.Y, size, size));
         }
@@ -282,10 +301,10 @@ public class LayoutRenderer
     {
         var corners = Rectangle.FindRectCorners(pos1, pos2, laneWidth);
 
-        var corner0 = WorldToScreenPos(corners[0]);
-        var corner1 = WorldToScreenPos(corners[1]);
-        var corner2 = WorldToScreenPos(corners[2]);
-        var corner3 = WorldToScreenPos(corners[3]);
+        var corner0 = corners[0];
+        var corner1 = corners[1];
+        var corner2 = corners[2];
+        var corner3 = corners[3];
 
         var boundingBoxPaint = GetPaint(options.BoundingBoxLineStroke, SKPaintStyle.Stroke, 1f);
         surface.Canvas.DrawLine(corner0.X, corner0.Y, corner2.X, corner2.Y, boundingBoxPaint);
@@ -294,24 +313,8 @@ public class LayoutRenderer
         surface.Canvas.DrawLine(corner1.X, corner1.Y, corner0.X, corner0.Y, boundingBoxPaint);
     }
 
-    public Vector2 WorldToScreenPos(Vector2 worldPos)
-    {
-        var v3 = Vector3.Transform(new Vector3(worldPos.X, worldPos.Y, 0), WorldToScreen);
-
-        return new Vector2(v3.X, v3.Y);
-    }
-
-    public Vector2 ScreenToWorldPos(Vector2 screenPos)
-    {
-        var v3 = Vector3.Transform(new Vector3(screenPos.X, screenPos.Y, 0), ScreenToWorld);
-
-        return new Vector2(v3.X, v3.Y);
-    }
-
-    public float WorldToScreenScale(float worldLength)
-    {
-        return worldLength * Scale;
-    }
+    public Vector2 ScreenToWorldPos(Vector2 screen)
+        => new((screen.X - CameraPosition.X) / Scale, (screen.Y - CameraPosition.Y) / Scale);
 
     private static RenderStyle GetMirrorLineStyle(RenderingOptions options)
     {

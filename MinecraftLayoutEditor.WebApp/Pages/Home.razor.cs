@@ -9,6 +9,7 @@ using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
+using System.Drawing;
 using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Pages;
@@ -16,13 +17,16 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 public partial class Home : ComponentBase
 {
     private SKGLView Canvas;
-    private readonly Logic.Layout _layout = LayoutFactory.Empty(80, 160, 12, 10);
+    private readonly Logic.Layout _layout = LayoutFactory.Empty(192,96,10,10);
     private readonly LayoutRenderer _renderer = new();
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
     private Node? SelectedNode;
+    private ElementReference _canvasContainer;
+    private float CanvasWidth => _renderer.CanvasWidth;
+    private float CanvasHeight => _renderer.CanvasHeight;
 
-    private float MaxZoom => 100f;
+    private float MaxZoom => 200f;
     private float MinZoom => CalculateMinZoom();
 
     private string CursorClass => (PanStartPosition != null) ? "grab" : "default";
@@ -36,7 +40,7 @@ public partial class Home : ComponentBase
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
     {
-        args.Surface.Canvas.Clear(SKColors.White);
+        args.Surface.Canvas.Clear(SKColors.LightGray);
 
         _renderer.Render(args.Surface, _layout, HoveredNode, SelectedNode, _renderingOptions);
     }
@@ -47,8 +51,25 @@ public partial class Home : ComponentBase
             return;
 
         await JSRuntime.InvokeAsync<object>("init", DotNetObjectReference.Create(this));
+        await JSRuntime.InvokeVoidAsync("initResizeObserver", DotNetObjectReference.Create(this));
 
         await Render(RenderTrigger.Initial);
+    }
+
+    [JSInvokable]
+    public async Task OnBrowserResize()
+    {
+        await ResizeCanvas();
+        await Render(RenderTrigger.Initial);
+    }
+
+    private async Task ResizeCanvas()
+    {
+        var size = await JSRuntime.InvokeAsync<Size>("getElementClientSize", _canvasContainer);
+        _renderer.Resize(size.Width, size.Height);
+        // keep the same world-center after resize
+        var center = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
+        _renderer.UpdateTRS(center, _renderer.Scale);
     }
 
     protected override void OnInitialized()
@@ -246,7 +267,7 @@ public partial class Home : ComponentBase
             return;
 
         var panEndPosition = new Vector2(mouseX, mouseY);
-        var deltaPan = (PanStartPosition.Value - panEndPosition) / _renderer.Scale;
+        var deltaPan = PanStartPosition.Value - panEndPosition;
         PanStartPosition = panEndPosition;
 
         _renderer.UpdateTRS(_renderer.CameraPosition - deltaPan, _renderer.Scale);
@@ -314,12 +335,10 @@ public partial class Home : ComponentBase
         if (Math.Abs(newScale - _renderer.Scale) < 0.001f)
             return;
 
-        _renderer.UpdateTRS(_renderer.CameraPosition, newScale);
+        // Calculate new translation to keep cursor world pos at cursor screen pos
+        var newTranslation = relativeCursorPos - worldPosBeforeZoom * newScale;
 
-        var worldPosAfterZoom = _renderer.ScreenToWorldPos(relativeCursorPos);
-        var worldPosChange = worldPosAfterZoom - worldPosBeforeZoom;
-
-        _renderer.UpdateTRS(_renderer.CameraPosition + worldPosChange, newScale);
+        _renderer.UpdateTRS(newTranslation, newScale);
 
         await Render(RenderTrigger.Zoom);
     }
@@ -340,10 +359,12 @@ public partial class Home : ComponentBase
 
         var newScale = (maxCanvas / maxLayout) * 0.98f;
 
-        var translationX = (_renderer.CanvasWidth / 2f) / newScale;
-        var translationY = (_renderer.CanvasHeight / 2f) / newScale;
+        var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
 
-        _renderer.UpdateTRS(new Vector2(translationX, translationY), newScale);
+        // Center on world (0,0)
+        var newTranslation = canvasCenter;  // Since world center is 0, no offset needed
+
+        _renderer.UpdateTRS(newTranslation, newScale);
         await Render(RenderTrigger.ViewFit);
     }
 
@@ -362,12 +383,12 @@ public partial class Home : ComponentBase
         float scaleY = _renderer.CanvasHeight / _layout.Width;
         float newScale = float.Min(scaleX, scaleY) * 0.98f;
 
-        var translationX = (_renderer.CanvasWidth / 2f) / newScale;
-        var translationY = (_renderer.CanvasHeight / 2f) / newScale;
+        var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
 
-        var canvasCenter = new Vector2(translationX, translationY);
+        // Center on world topCenter
+        var newTranslation = canvasCenter - topCenter * newScale;
 
-        _renderer.UpdateTRS(new Vector2(canvasCenter.X, canvasCenter.Y) + topCenter, newScale);
+        _renderer.UpdateTRS(newTranslation, newScale);
         await Render(RenderTrigger.ViewFit);
     }
 
