@@ -45,6 +45,11 @@
                 };
             }
         };
+        Blazor.start({
+            configureRuntime: function (runtime) {
+                runtime.configureZlib();
+            }
+        });
     </script>
 </body>
 
