@@ -354,7 +354,7 @@ public partial class Home : ComponentBase
 
     public async Task OnFitLayout()
     {
-        if (_layout.Width <= 0 | _layout.Height <= 0)
+        if (_layout.Width <= 0 || _layout.Height <= 0)
             return;
 
         var maxCanvas = float.Max(_renderer.CanvasWidth, _renderer.CanvasHeight);
@@ -374,7 +374,7 @@ public partial class Home : ComponentBase
     // TODO: Differentiate between vertical and horizontal mirror line
     public async Task OnFitTeam()
     {
-        if (_layout.Width <= 0 | _layout.Height <= 0)
+        if (_layout.Width <= 0 || _layout.Height <= 0)
             return;
 
         // Horizontal only
