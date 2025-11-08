@@ -420,7 +420,7 @@ public partial class Home : ComponentBase
             foreach (var b in blocks)
             {
                 var pos = new Vector2((float)(b.X - centerX), (float)(b.Z - centerZ));
-                _layout.Graph.AddNode(new Node(pos) { Type = Node.NodeType.Wool });
+                _layout.Blocks.Add(pos);
             }
 
             var spawnNode = new Node(new Vector2((float)(spawn.X - centerX), (float)(spawn.Y - centerZ)))

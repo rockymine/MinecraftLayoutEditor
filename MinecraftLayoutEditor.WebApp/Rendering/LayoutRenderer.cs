@@ -69,6 +69,7 @@ public class LayoutRenderer
 
         RenderBackground(surface, layout);
         RenderGrid(surface, layout, options);
+        RenderBlocks(surface, layout.Blocks, options);
         RenderMirrorAxis(surface, layout, options);
         RenderEdges(surface, uniqueEdges, options, layout.LaneWidth);
         RenderNodes(surface, layout.Graph.Nodes, hoveredNode, selectedNode, options);

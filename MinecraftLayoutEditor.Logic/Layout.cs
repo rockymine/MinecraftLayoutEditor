@@ -13,6 +13,7 @@ public class Layout
     public int Thickness { get; set; }
     public List<Team> Teams { get; set; } = [];
     public string Author { get; set; } = "";
+    public List<Vector2> Blocks { get; set; } = [];
 
     public SymmetryAxis? Symmetry { get; set; }
     // TODO: Remove mirrorEnabled as it is the same as symmetry = null
