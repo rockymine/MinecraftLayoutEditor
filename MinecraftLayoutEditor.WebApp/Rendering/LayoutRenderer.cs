@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Components.RenderTree;
-using Microsoft.Extensions.Options;
-using MinecraftLayoutEditor.Logic;
+﻿using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.Geometry;
 using SkiaSharp;
-using System.Diagnostics;
 using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering;
@@ -66,12 +63,14 @@ public class LayoutRenderer
         canvas.Concat(in SKWorldToScreen);
 
         var uniqueEdges = layout.Graph.GetUniqueEdges();
+        var limitX = (int)(layout.Width / 2f);
+        var limitY = (int)(layout.Height / 2f);
 
         RenderBackground(surface, layout);
         RenderGrid(surface, layout, options);
-        RenderBlocks(surface, layout.Blocks, options);
+        RenderBlocks(surface, layout.Blocks, options, limitX, limitY);
         RenderMirrorAxis(surface, layout, options);
-        RenderEdges(surface, uniqueEdges, options, layout.LaneWidth);
+        RenderEdges(surface, uniqueEdges, options, layout.LaneWidth, limitX, limitY);
         RenderNodes(surface, layout.Graph.Nodes, hoveredNode, selectedNode, options);
 
         canvas.Restore();
@@ -246,7 +245,7 @@ public class LayoutRenderer
         surface.Canvas.DrawPath(diamond, diamondStrokePaint);
     }
 
-    private void RenderEdges(SKSurface surface, HashSet<Edge> edges, RenderingOptions options, float laneWidth)
+    private void RenderEdges(SKSurface surface, HashSet<Edge> edges, RenderingOptions options, float laneWidth, float limitX, float limitY)
     {
         if (edges.Count == 0)
             return;
@@ -257,7 +256,7 @@ public class LayoutRenderer
                 RenderBoundingBox(surface, edge.Node1.Position, edge.Node2.Position, options, laneWidth);                
 
             if (options.ShowBlocksEnabled)
-                RenderBlocks(surface, edge.EdgeBlocks, options);
+                RenderBlocks(surface, edge.EdgeBlocks, options, limitX, limitY);
 
             RenderEdge(surface, edge, options);
         }
@@ -273,7 +272,7 @@ public class LayoutRenderer
         surface.Canvas.DrawLine(p0, p1, edgePaint);
     }
     
-    private void RenderBlocks(SKSurface surface, List<Vector2> positions, RenderingOptions options)
+    private void RenderBlocks(SKSurface surface, List<Vector2> positions, RenderingOptions options, float limitX, float limitY)
     {
         var blockPaint = GetPaint(options.CellFillStyle, SKPaintStyle.Stroke, 1f);
         SKPath blockList = new()
@@ -281,12 +280,18 @@ public class LayoutRenderer
             FillType = SKPathFillType.Winding
         };
 
-        foreach(var block in positions)
+        foreach (var block in positions)
         {
-            var screenPos = block;
-            var size = 1;
+            var centerX = Math.Abs(block.X + 0.5f);
+            var centerY = Math.Abs(block.Y + 0.5f);
+            
+            if (centerX <= limitX && centerY <= limitY)
+            {
+                var screenPos = block;
+                var size = 1;
 
-            blockList.AddRect(SKRect.Create(screenPos.X, screenPos.Y, size, size));
+                blockList.AddRect(SKRect.Create(screenPos.X, screenPos.Y, size, size));
+            } 
         }
 
         blockList.Close();

@@ -12,7 +12,6 @@ public class SchematicMaker
             (short)(layout.Height * scale));
 
         AddEdgesToSchematic(schematic, layout, scale, schematic.Height, layout.LaneWidth);
-        //AddNodesToSchematic(schematic, layout, scale, schematic.Height);
 
         return schematic;
     }
@@ -38,13 +37,15 @@ public class SchematicMaker
 
             foreach (var block in blocksInside)
             {
+                var (x, z) = GetSchematicPosition(block, layout.Width, layout.Height, scale);
+
+                if (x < 0 || x >= schematic.Width || z < 0 || z >= schematic.Length)
+                    continue;
+
                 // TODO: Stack layers inside schematic
                 for (int i = 0; i < height; i++)
                 {
-                    var (x, z) = GetSchematicPosition(block, layout.Width, layout.Height, scale);
                     int blockId = 1;
-
-
                     if (i < 2)
                         blockId = 7;
 
@@ -55,15 +56,6 @@ public class SchematicMaker
 
         // TODO: Find and fill missing corner polygons
     }
-
-    //private static void AddNodesToSchematic(Schematic schematic, Layout layout, int scale, int height)
-    //{
-    //    foreach (var node in layout.Graph.Nodes)
-    //    {
-    //        var (x, z) = GetSchematicPosition(node.Position, layout.Width, layout.Height, scale);
-    //        schematic.SetBlock(x, height - 1, z, 7);
-    //    }
-    //}
 
     private static (int x, int z) GetSchematicPosition(Vector2 position, int width, int height, int scale)
     {
