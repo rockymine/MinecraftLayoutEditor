@@ -64,6 +64,8 @@
              @onkeyup="OnKeyUp"
              tabindex="0"
              @onmousedown="OnMouseDown"
+             @onkeyup:preventDefault=true
+             @onkeydown:preventDefault=true
              @onmousedown:preventDefault=true>
             <SKGLView @ref="Canvas"
                       OnPaintSurface="OnPaintSurface"

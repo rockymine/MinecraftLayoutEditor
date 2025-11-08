@@ -50,6 +50,7 @@ public partial class Home : ComponentBase
         if (!firstRender)
             return;
 
+        await _canvasContainer.FocusAsync();
         await JSRuntime.InvokeAsync<object>("init", DotNetObjectReference.Create(this));
         await JSRuntime.InvokeVoidAsync("initResizeObserver", DotNetObjectReference.Create(this));
 
@@ -151,6 +152,8 @@ public partial class Home : ComponentBase
 
     private async Task OnMouseDown(MouseEventArgs e)
     {
+        await _canvasContainer.FocusAsync();
+        
         if (e.Button == 1)
         {
             PanStartPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
@@ -413,7 +416,7 @@ public partial class Home : ComponentBase
         {
             var (blocks, spawn, worldName) = await WorldImporter.ImportWorld(files);
 
-            _layout.Graph.Clear();
+            await OnClearLayout();
 
             foreach (var b in blocks)
             {
