@@ -275,7 +275,7 @@ public class LayoutRenderer
     
     private void RenderBlocks(SKSurface surface, List<Vector2> positions, RenderingOptions options)
     {
-        var blockPaint = GetPaint(options.CellFillStyle, SKPaintStyle.Fill, 1f);
+        var blockPaint = GetPaint(options.CellFillStyle, SKPaintStyle.Stroke, 1f);
         SKPath blockList = new()
         {
             FillType = SKPathFillType.Winding
