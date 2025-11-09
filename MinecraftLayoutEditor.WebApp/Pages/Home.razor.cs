@@ -427,7 +427,7 @@ public partial class Home : ComponentBase
 
         try
         {
-            var (blocks, spawn, worldName) = await WorldImporter.ImportWorld(files);
+            var (blocks, spawn, worldName, map) = await WorldImporter.ImportWorld(files);
             _map.Name = worldName;
 
             if (blocks.Count > 0)
@@ -445,7 +445,16 @@ public partial class Home : ComponentBase
 
                 await OnFitMap();
                 await Render(RenderTrigger.WorldImport);
-            }            
+            }
+
+            if (map != null)
+            {
+                Console.WriteLine($"Map '{map.Name}' with {map.Regions.Items.Count} regions loaded.");
+            }
+            else
+            {
+                Console.WriteLine("No map.xml found.");
+            }
         }
         catch (Exception ex)
         {

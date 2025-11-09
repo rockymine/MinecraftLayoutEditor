@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MinecraftLayoutEditor.Logic\MinecraftLayoutEditor.Logic.csproj" />
+    <ProjectReference Include="..\MinecraftLayoutEditor.XML\MinecraftLayoutEditor.XML.csproj" />
   </ItemGroup>
 
 </Project>
