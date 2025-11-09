@@ -428,21 +428,24 @@ public partial class Home : ComponentBase
         try
         {
             var (blocks, spawn, worldName) = await WorldImporter.ImportWorld(files);
-
-            await OnClearMap();
-
-            foreach (var b in blocks)
-            {
-                var pos = new Vector2((float)(b.X), (float)(b.Z));
-                _map.Blocks.Add(pos);
-            }
-
             _map.Name = worldName;
-            _map.Width = (int)(blocks.Max(b => Math.Abs(b.X)) * 2) + 64;
-            _map.Height = (int)(blocks.Max(b => Math.Abs(b.Z)) * 2) + 64;
 
-            await OnFitMap();
-            await Render(RenderTrigger.WorldImport);
+            if (blocks.Count > 0)
+            {
+                await OnClearMap();
+
+                foreach (var b in blocks)
+                {
+                    var pos = new Vector2(b.X, b.Z);
+                    _map.Blocks.Add(pos);
+                }
+
+                _map.Width = (blocks.Max(b => Math.Abs(b.X)) * 2) + 64;
+                _map.Height = (blocks.Max(b => Math.Abs(b.Z)) * 2) + 64;
+
+                await OnFitMap();
+                await Render(RenderTrigger.WorldImport);
+            }            
         }
         catch (Exception ex)
         {
