@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering;
 
-public class LayoutRenderer
+public class MapRenderer
 {
     public float CanvasWidth { get; private set; }
     public float CanvasHeight { get; private set; }
@@ -15,7 +15,7 @@ public class LayoutRenderer
     private SKMatrix SKWorldToScreen;
     private readonly Dictionary<(SKColor, SKPaintStyle, float), SKPaint> _paintCache = [];
 
-    public LayoutRenderer()
+    public MapRenderer()
     {
         UpdateTRS(new Vector2(25, 25), 20f);
     }
@@ -55,45 +55,45 @@ public class LayoutRenderer
         SKWorldToScreen.TransY = translation.Y;
     }
 
-    public void Render(SKSurface surface, Logic.Layout layout,
+    public void Render(SKSurface surface, Map map,
         Node? hoveredNode, Node? selectedNode, RenderingOptions options)
     {
         var canvas = surface.Canvas;
         canvas.Save();
         canvas.Concat(in SKWorldToScreen);
 
-        var uniqueEdges = layout.Graph.GetUniqueEdges();
-        var limitX = (int)(layout.Width / 2f);
-        var limitY = (int)(layout.Height / 2f);
+        var uniqueEdges = map.Graph.GetUniqueEdges();
+        var limitX = (int)(map.Width / 2f);
+        var limitY = (int)(map.Height / 2f);
 
-        RenderBackground(surface, layout);
-        RenderGrid(surface, layout, options);
-        RenderBlocks(surface, layout.Blocks, options, limitX, limitY);
-        RenderMirrorAxis(surface, layout, options);
-        RenderEdges(surface, uniqueEdges, options, layout.LaneWidth, limitX, limitY);
-        RenderNodes(surface, layout.Graph.Nodes, hoveredNode, selectedNode, options);
+        RenderBackground(surface, map);
+        RenderGrid(surface, map, options);
+        RenderBlocks(surface, map.Blocks, options, limitX, limitY);
+        RenderMirrorAxis(surface, map, options);
+        RenderEdges(surface, uniqueEdges, options, map.LaneWidth, limitX, limitY);
+        RenderNodes(surface, map.Graph.Nodes, hoveredNode, selectedNode, options);
 
         canvas.Restore();
     }
 
-    private void RenderBackground(SKSurface surface, Logic.Layout layout)
+    private void RenderBackground(SKSurface surface, Map map)
     {
-        var layoutRect = SKRect.Create(-layout.Width / 2f, -layout.Height / 2f, layout.Width, layout.Height);
+        var mapRect = SKRect.Create(-map.Width / 2f, -map.Height / 2f, map.Width, map.Height);
         var backdropPaint = GetPaint(SKColors.White, SKPaintStyle.Fill, 1f);
-        surface.Canvas.DrawRect(layoutRect, backdropPaint);
+        surface.Canvas.DrawRect(mapRect, backdropPaint);
     }
 
-    private void RenderGrid(SKSurface surface, Logic.Layout layout, RenderingOptions options)
+    private void RenderGrid(SKSurface surface, Map map, RenderingOptions options)
     {
         // Render grid cells
         var gridLineStyle = GetGridLineStyle(options);
         var paint = GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, gridLineStyle.LineWidth);
         using var gridPath = new SKPath();
 
-        float left = -layout.Width / 2f;
-        float right = layout.Width / 2f;
-        float bottom = -layout.Height / 2f;
-        float top = layout.Height / 2f;
+        float left = -map.Width / 2f;
+        float right = map.Width / 2f;
+        float bottom = -map.Height / 2f;
+        float top = map.Height / 2f;
 
         const float epsilon = 0.001f;
         var chunkSize = 16;
@@ -124,25 +124,25 @@ public class LayoutRenderer
 
         // Render grid box
         var gridBoxPaint = GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, options.GridBorderLineWidth);
-        var origin = new Vector2(-layout.Width / 2f, -layout.Height / 2f);
-        surface.Canvas.DrawRect(origin.X, origin.Y, layout.Width, 
-            layout.Height, gridBoxPaint);
+        var origin = new Vector2(-map.Width / 2f, -map.Height / 2f);
+        surface.Canvas.DrawRect(origin.X, origin.Y, map.Width, 
+            map.Height, gridBoxPaint);
     }
 
-    private void RenderMirrorAxis(SKSurface surface, Logic.Layout layout, RenderingOptions options)
+    private void RenderMirrorAxis(SKSurface surface, Map map, RenderingOptions options)
     {
-        if (layout.Symmetry == null || !layout.MirrorEnabled)
+        if (map.Symmetry == null || !map.MirrorEnabled)
             return;
 
         // Render mirror line
         var mirrorLineStyle = GetMirrorLineStyle(options);
         var mirrorLinePaint = GetPaint(mirrorLineStyle.StrokeStyle, SKPaintStyle.Stroke, mirrorLineStyle.LineWidth);
-        var start = layout.Symmetry.GetStartPointWorld(layout);
-        var end = layout.Symmetry.GetEndPointWorld(layout);
+        var start = map.Symmetry.GetStartPointWorld(map);
+        var end = map.Symmetry.GetEndPointWorld(map);
         surface.Canvas.DrawLine(start.X, start.Y, end.X, end.Y, mirrorLinePaint);
 
         // Render rotation point
-        if (layout.Symmetry.RotationDeg == 180)
+        if (map.Symmetry.RotationDeg == 180)
         {
             var mirrorPointStyle = GetMirrorPointStyle(options);
             var mirrorPointPaint = GetPaint(mirrorPointStyle.FillStyle, SKPaintStyle.Fill, mirrorPointStyle.LineWidth);

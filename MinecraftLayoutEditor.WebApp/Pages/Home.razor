@@ -10,19 +10,19 @@
 
 <div class="layout">
     <div class="sidebar">
-        <LayoutSettings @bind-Name="_layout.Name"
-                        @bind-Width="_layout.Width"
-                        @bind-Height="_layout.Height"
-                        @bind-LaneWidth="_layout.LaneWidth"
-                        @bind-Thickness="_layout.Thickness"
-                        @bind-SelectedNodeType="_layout.SelectedNodeType"
+        <MapSettings @bind-Name="_map.Name"
+                        @bind-Width="_map.Width"
+                        @bind-Height="_map.Height"
+                        @bind-LaneWidth="_map.LaneWidth"
+                        @bind-Thickness="_map.Thickness"
+                        @bind-SelectedNodeType="_map.SelectedNodeType"
                         SettingsChanged="OnSettingsChanged" />
-        <button type="button" class="btn btn-primary" @onclick="OnSchematicCreate" disabled="@(!_layout.Graph.Nodes.Any())">
+        <button type="button" class="btn btn-primary" @onclick="OnSchematicCreate" disabled="@(!_map.Graph.Nodes.Any())">
             Generate Schematic
         </button>
-        <MirrorControls @bind-MirrorEnabled="_layout.MirrorEnabled"
-                        @bind-RotationDeg="_layout.Symmetry.RotationDeg"
-                        @bind-IsHorizontal="_layout.Symmetry.IsHorizontal"
+        <MirrorControls @bind-MirrorEnabled="_map.MirrorEnabled"
+                        @bind-RotationDeg="_map.Symmetry.RotationDeg"
+                        @bind-IsHorizontal="_map.Symmetry.IsHorizontal"
                         SettingsChanged="OnSettingsChanged" />
 
         <VisualizationControls @bind-ShowBlocksEnabled="_renderingOptions.ShowBlocksEnabled"
@@ -44,14 +44,14 @@
             <!-- History controls -->
             <HistoryControls CanUndo="@(_historyStack?.CanUndo ?? false)"
                              CanRedo="@(_historyStack?.CanRedo ?? false)"
-                             CanClear="@(_layout.Graph.Nodes.Any())"
-                             OnClearLayout="OnClearLayout"
+                             CanClear="@(_map.Graph.Nodes.Any())"
+                             OnClearMap="OnClearMap"
                              OnUndo="OnUndo"
                              OnRedo="OnRedo" />
             <!-- View controls -->
-            <ViewControls MirrorEnabled="@(_layout.MirrorEnabled)"
+            <ViewControls MirrorEnabled="@(_map.MirrorEnabled)"
                           OnResetView="OnResetView"
-                          OnFitLayout="OnFitLayout"
+                          OnFitMap="OnFitMap"
                           OnFitTeam="OnFitTeam" />
         </div>
         <!-- Canvas -->

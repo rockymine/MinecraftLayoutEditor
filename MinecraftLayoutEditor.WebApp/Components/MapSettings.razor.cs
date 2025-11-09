@@ -3,7 +3,7 @@ using MinecraftLayoutEditor.Logic;
 
 namespace MinecraftLayoutEditor.WebApp.Components;
 
-public partial class LayoutSettings
+public partial class MapSettings
 {
     [Parameter]
     public EventCallback SettingsChanged { get; set; }

@@ -2,11 +2,11 @@
 
 namespace MinecraftLayoutEditor.Logic
 {
-    public static class LayoutFactory
+    public static class MapFactory
     {
-        public static Layout Empty(int width, int height, int laneWidth, int thickness)
+        public static Map Empty(int width, int height, int laneWidth, int thickness)
         {
-            var layout = new Layout
+            var map = new Map
             {
                 Width = width,
                 Height = height,
@@ -20,12 +20,12 @@ namespace MinecraftLayoutEditor.Logic
                 }
             };
 
-            return layout;
+            return map;
         }
 
-        public static Layout PerformanceTestLayout(int numEdges = 20, int edgeLength = 200, int laneWidth = 10)
+        public static Map Performance(int numEdges = 20, int edgeLength = 200, int laneWidth = 10)
         {
-            var layout = Empty(edgeLength + 10, numEdges * 20 + 10, laneWidth, 10);  // Adjust dimensions to fit
+            var map = Empty(edgeLength + 10, numEdges * 20 + 10, laneWidth, 10);  // Adjust dimensions to fit
 
             for (int i = 0; i < numEdges; i++)
             {
@@ -34,8 +34,8 @@ namespace MinecraftLayoutEditor.Logic
                 var n1 = new Node(new Vector2(-edgeLength / 2f + 0.5f, y)) { Type = Node.NodeType.Undefined };
                 var n2 = new Node(new Vector2(edgeLength / 2f - 0.5f, y)) { Type = Node.NodeType.Undefined };
 
-                layout.Graph.AddNode(n1);
-                layout.Graph.AddNode(n2);
+                map.Graph.AddNode(n1);
+                map.Graph.AddNode(n2);
 
                 var e = new Edge(n1, n2) { Type = Edge.EdgeType.Walkable };
                 n1.Edges.Add(e);
@@ -43,7 +43,7 @@ namespace MinecraftLayoutEditor.Logic
             }
 
             // Add some cross-connections for complexity (vertical short edges)
-            var nodes = layout.Graph.Nodes.ToList();  // Assuming even numEdges for pairing
+            var nodes = map.Graph.Nodes.ToList();  // Assuming even numEdges for pairing
             for (int i = 0; i < numEdges - 1; i += 2)
             {
                 // Connect left nodes vertically
@@ -52,9 +52,9 @@ namespace MinecraftLayoutEditor.Logic
                 Connect(nodes[i + numEdges], nodes[i + numEdges + 1], Edge.EdgeType.Bridgeable);
             }
 
-            layout.CalculateEdgeBlocks();  // Precompute for perf testing
+            map.CalculateEdgeBlocks();  // Precompute for perf testing
 
-            return layout;
+            return map;
 
             static void Connect(Node a, Node b, Edge.EdgeType type)
             {

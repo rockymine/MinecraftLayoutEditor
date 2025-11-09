@@ -12,13 +12,13 @@ public partial class HistoryControls
     public bool CanClear { get; set; }
 
     [Parameter] 
-    public EventCallback OnClearLayout { get; set; }
+    public EventCallback OnClearMap { get; set; }
     [Parameter] 
     public EventCallback OnUndo { get; set; }
     [Parameter] 
     public EventCallback OnRedo { get; set; }
 
-    private Task Clear() => OnClearLayout.InvokeAsync();
+    private Task Clear() => OnClearMap.InvokeAsync();
     private Task Undo() => OnUndo.InvokeAsync();
     private Task Redo() => OnRedo.InvokeAsync();
 }

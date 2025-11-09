@@ -17,8 +17,8 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 public partial class Home : ComponentBase
 {
     private SKGLView Canvas;
-    private readonly Logic.Layout _layout = LayoutFactory.Empty(192,96,10,10);
-    private readonly LayoutRenderer _renderer = new();
+    private readonly Map _map = MapFactory.Empty(192,96,10,10);
+    private readonly MapRenderer _renderer = new();
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
     private Node? SelectedNode;
@@ -42,7 +42,7 @@ public partial class Home : ComponentBase
     {
         args.Surface.Canvas.Clear(SKColors.LightGray);
 
-        _renderer.Render(args.Surface, _layout, HoveredNode, SelectedNode, _renderingOptions);
+        _renderer.Render(args.Surface, _map, HoveredNode, SelectedNode, _renderingOptions);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -83,15 +83,15 @@ public partial class Home : ComponentBase
         await Render(RenderTrigger.SettingsChanged);
     }
 
-    private async Task OnClearLayout()
+    private async Task OnClearMap()
     {
         SelectedNode = null;
         HoveredNode = null;
 
-        _layout.Graph.Clear();
+        _map.Graph.Clear();
         _historyStack = new HistoryStack();
 
-        await Render(RenderTrigger.LayoutCleared);
+        await Render(RenderTrigger.MapCleared);
     }
 
     private async Task OnUndo()
@@ -114,7 +114,7 @@ public partial class Home : ComponentBase
             return;
         
         var action = new RemoveNodeAction(
-                _layout.Graph,
+                _map.Graph,
                 SelectedNode
                 );
 
@@ -124,7 +124,7 @@ public partial class Home : ComponentBase
 
     private async Task OnSchematicCreate()
     {
-        var schematic = SchematicMaker.FromLayout(_layout);
+        var schematic = SchematicMaker.FromMap(_map);
         var fileName = $"{schematic.Name}.schematic";
 
         await BlazorDownloadFileService.DownloadFile(fileName, schematic.Save(),
@@ -163,21 +163,21 @@ public partial class Home : ComponentBase
     private async Task HandleLeftClick(Vector2 worldPos)
     {
         // Add node
-        if (HoveredNode == null && _layout.Contains(worldPos))
+        if (HoveredNode == null && _map.Contains(worldPos))
         {
             var pos = new Vector2(float.Floor(worldPos.X) + 0.5f, float.Floor(worldPos.Y) + 0.5f);
-            var closestNode = _layout.Graph.GetClosestNode(pos);
+            var closestNode = _map.Graph.GetClosestNode(pos);
 
             // Check if a node already exists at the given position
             if (closestNode != null && Vector2.DistanceSquared(closestNode.Position, pos) < 1)
                 return;
 
             var action = new AddNodeAction(
-                _layout.Graph,
+                _map.Graph,
                 worldPos,
-                _layout.SelectedNodeType,
-                _layout.Symmetry,
-                _layout.MirrorEnabled
+                _map.SelectedNodeType,
+                _map.Symmetry,
+                _map.MirrorEnabled
                 );
 
             _historyStack?.ExecuteAction(action);
@@ -199,13 +199,13 @@ public partial class Home : ComponentBase
             {
                 // Add or delete edge
                 var action = new AddOrRemoveEdgeAction(
-                    _layout.Graph,
+                    _map.Graph,
                     HoveredNode,
                     SelectedNode
                     );
 
                 _historyStack?.ExecuteAction(action);
-                _layout.CalculateEdgeBlocks();
+                _map.CalculateEdgeBlocks();
                 SelectedNode = null;
             }
 
@@ -215,19 +215,19 @@ public partial class Home : ComponentBase
 
     private async Task HandleRightClick(Vector2 worldPos)
     {
-        Node? closestNode = _layout.Graph.GetClosestNode(worldPos);
+        Node? closestNode = _map.Graph.GetClosestNode(worldPos);
         var threshhold = 2f;
 
         // Delete node
         if (HoveredNode != null)
         {
             var action = new RemoveNodeAction(
-                _layout.Graph,
+                _map.Graph,
                 HoveredNode
                 );
 
             _historyStack?.ExecuteAction(action);
-            _layout.CalculateEdgeBlocks();
+            _map.CalculateEdgeBlocks();
 
             if (SelectedNode == HoveredNode)
                 SelectedNode = null;
@@ -247,7 +247,7 @@ public partial class Home : ComponentBase
     private async Task OnMouseMove(MouseEventArgs e)
     {
         Vector2 cursorPosition = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
-        Node? closestNode = _layout.Graph.GetClosestNode(cursorPosition);
+        Node? closestNode = _map.Graph.GetClosestNode(cursorPosition);
 
         var prevHovered = HoveredNode;
 
@@ -291,22 +291,22 @@ public partial class Home : ComponentBase
 
         if (e.Key == "ArrowUp")
         {
-            _layout.MoveNode(SelectedNode, new Vector2(0, -1));
+            _map.MoveNode(SelectedNode, new Vector2(0, -1));
             nodeMoved = true;
         }
         else if (e.Key == "ArrowDown")
         {
-            _layout.MoveNode(SelectedNode, new Vector2(0, 1));
+            _map.MoveNode(SelectedNode, new Vector2(0, 1));
             nodeMoved = true;
         }
         else if (e.Key == "ArrowLeft")
         {
-            _layout.MoveNode(SelectedNode, new Vector2(-1, 0));
+            _map.MoveNode(SelectedNode, new Vector2(-1, 0));
             nodeMoved = true;
         }
         else if (e.Key == "ArrowRight")
         {
-            _layout.MoveNode(SelectedNode, new Vector2(1, 0));
+            _map.MoveNode(SelectedNode, new Vector2(1, 0));
             nodeMoved = true;
         }
 
@@ -352,15 +352,15 @@ public partial class Home : ComponentBase
         await Render(RenderTrigger.ViewReset);
     }
 
-    public async Task OnFitLayout()
+    public async Task OnFitMap()
     {
-        if (_layout.Width <= 0 || _layout.Height <= 0)
+        if (_map.Width <= 0 || _map.Height <= 0)
             return;
 
         var maxCanvas = float.Max(_renderer.CanvasWidth, _renderer.CanvasHeight);
-        var maxLayout = float.Max(_layout.Width, _layout.Height);
+        var maxMap = float.Max(_map.Width, _map.Height);
 
-        var newScale = (maxCanvas / maxLayout) * 0.98f;
+        var newScale = (maxCanvas / maxMap) * 0.98f;
 
         var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
 
@@ -374,16 +374,16 @@ public partial class Home : ComponentBase
     // TODO: Differentiate between vertical and horizontal mirror line
     public async Task OnFitTeam()
     {
-        if (_layout.Width <= 0 || _layout.Height <= 0)
+        if (_map.Width <= 0 || _map.Height <= 0)
             return;
 
         // Horizontal only
-        var halfH = _layout.Height / 2f;
+        var halfH = _map.Height / 2f;
         
         var topCenter = new Vector2(0, halfH / 2f);
 
         float scaleX = _renderer.CanvasWidth / halfH;
-        float scaleY = _renderer.CanvasHeight / _layout.Width;
+        float scaleY = _renderer.CanvasHeight / _map.Width;
         float newScale = float.Min(scaleX, scaleY) * 0.98f;
 
         var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
@@ -397,13 +397,13 @@ public partial class Home : ComponentBase
 
     private float CalculateMinZoom()
     {
-        if (_layout.Width <= 0 || _layout.Height <= 0)
+        if (_map.Width <= 0 || _map.Height <= 0)
             return 1f;
 
         var maxCanvas = float.Max(_renderer.CanvasWidth, _renderer.CanvasHeight);
-        var maxLayout = float.Max(_layout.Width, _layout.Height);
+        var maxMap = float.Max(_map.Width, _map.Height);
 
-        return (maxCanvas / maxLayout) * 0.8f;
+        return (maxCanvas / maxMap) * 0.8f;
     }
 
     private async Task LoadWorldFiles(InputFileChangeEventArgs e)
@@ -416,19 +416,19 @@ public partial class Home : ComponentBase
         {
             var (blocks, spawn, worldName) = await WorldImporter.ImportWorld(files);
 
-            await OnClearLayout();
+            await OnClearMap();
 
             foreach (var b in blocks)
             {
                 var pos = new Vector2((float)(b.X), (float)(b.Z));
-                _layout.Blocks.Add(pos);
+                _map.Blocks.Add(pos);
             }
 
-            _layout.Name = worldName;
-            _layout.Width = (int)(blocks.Max(b => Math.Abs(b.X)) * 2) + 64;
-            _layout.Height = (int)(blocks.Max(b => Math.Abs(b.Z)) * 2) + 64;
+            _map.Name = worldName;
+            _map.Width = (int)(blocks.Max(b => Math.Abs(b.X)) * 2) + 64;
+            _map.Height = (int)(blocks.Max(b => Math.Abs(b.Z)) * 2) + 64;
 
-            await OnFitLayout();
+            await OnFitMap();
             await Render(RenderTrigger.WorldImport);
         }
         catch (Exception ex)

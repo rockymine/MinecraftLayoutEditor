@@ -121,7 +121,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         EdgeRemoved,
         Undo,
         Redo,
-        LayoutCleared,
+        MapCleared,
         ViewReset,
         ViewFit,
         WorldImport

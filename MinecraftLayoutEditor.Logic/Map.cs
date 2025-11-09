@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace MinecraftLayoutEditor.Logic;
 
-public class Layout
+public class Map
 {
     public Graph Graph { get; set; } = new Graph();
     public string Name { get; set; } = "layout";
