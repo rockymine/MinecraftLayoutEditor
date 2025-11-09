@@ -122,7 +122,6 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         Undo,
         Redo,
         MapCleared,
-        ViewReset,
         ViewFit,
         WorldImport
     }
