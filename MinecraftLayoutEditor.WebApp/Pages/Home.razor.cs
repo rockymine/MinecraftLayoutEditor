@@ -7,8 +7,10 @@ using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
+using SharpNBT;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
+using System;
 using System.Drawing;
 using System.Numerics;
 
@@ -26,7 +28,7 @@ public partial class Home : ComponentBase
     private float CanvasWidth => _renderer.CanvasWidth;
     private float CanvasHeight => _renderer.CanvasHeight;
 
-    private float MaxZoom => 200f;
+    private float MaxZoom => CalculateMaxZoom();
     private float MinZoom => CalculateMinZoom();
 
     private string CursorClass => (PanStartPosition != null) ? "grab" : "default";
@@ -346,53 +348,64 @@ public partial class Home : ComponentBase
         await Render(RenderTrigger.Zoom);
     }
 
-    private async Task OnResetView()
-    {
-        _renderer.UpdateTRS(new Vector2(25, 25), 20f);
-        await Render(RenderTrigger.ViewReset);
-    }
-
     public async Task OnFitMap()
     {
         if (_map.Width <= 0 || _map.Height <= 0)
             return;
 
-        var maxCanvas = float.Max(_renderer.CanvasWidth, _renderer.CanvasHeight);
-        var maxMap = float.Max(_map.Width, _map.Height);
-
-        var newScale = (maxCanvas / maxMap) * 0.98f;
-
         var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
+        var newTranslation = canvasCenter;
 
-        // Center on world (0,0)
-        var newTranslation = canvasCenter;  // Since world center is 0, no offset needed
+        _renderer.UpdateTRS(newTranslation, MinZoom);
+        await Render(RenderTrigger.ViewFit);
+    }
+
+    public async Task OnFitTeam()
+    {
+        if (_map.Width <= 0 || _map.Height <= 0 || _map.Symmetry == null)
+            return;
+
+        var horizontal = _map.Symmetry.IsHorizontal;
+
+        float halfW = _map.Width / 2f;
+        float halfH = _map.Height / 2f;
+
+        Vector2 mapHalfCenter;
+        float scaleX, scaleY;
+
+        // Horizontal mirror line
+        if (horizontal)
+        {
+            mapHalfCenter = new Vector2(0, -halfH / 2f);
+            scaleX = _renderer.CanvasWidth / _map.Width;
+            scaleY = _renderer.CanvasHeight / halfH;
+        }
+        // Vertical mirror line
+        else
+        {
+            mapHalfCenter = new Vector2(halfW / 2f, 0);
+            scaleX = _renderer.CanvasWidth / halfW;
+            scaleY = _renderer.CanvasHeight / _map.Height;
+        }
+
+        var newScale = float.Min(scaleX, scaleY) * 0.98f;
+        
+        var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
+        var newTranslation = canvasCenter - mapHalfCenter * newScale;
 
         _renderer.UpdateTRS(newTranslation, newScale);
         await Render(RenderTrigger.ViewFit);
     }
 
-    // TODO: Differentiate between vertical and horizontal mirror line
-    public async Task OnFitTeam()
+    private float CalculateMaxZoom()
     {
         if (_map.Width <= 0 || _map.Height <= 0)
-            return;
+            return 1f;
 
-        // Horizontal only
-        var halfH = _map.Height / 2f;
-        
-        var topCenter = new Vector2(0, halfH / 2f);
+        float scaleX = _renderer.CanvasWidth / 16f;
+        float scaleY = _renderer.CanvasHeight / 16f;
 
-        float scaleX = _renderer.CanvasWidth / halfH;
-        float scaleY = _renderer.CanvasHeight / _map.Width;
-        float newScale = float.Min(scaleX, scaleY) * 0.98f;
-
-        var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
-
-        // Center on world topCenter
-        var newTranslation = canvasCenter - topCenter * newScale;
-
-        _renderer.UpdateTRS(newTranslation, newScale);
-        await Render(RenderTrigger.ViewFit);
+        return float.Min(scaleX, scaleY) * 0.98f;
     }
 
     private float CalculateMinZoom()
@@ -400,10 +413,10 @@ public partial class Home : ComponentBase
         if (_map.Width <= 0 || _map.Height <= 0)
             return 1f;
 
-        var maxCanvas = float.Max(_renderer.CanvasWidth, _renderer.CanvasHeight);
-        var maxMap = float.Max(_map.Width, _map.Height);
+        float scaleX = _renderer.CanvasWidth / _map.Width;
+        float scaleY = _renderer.CanvasHeight / _map.Height;
 
-        return (maxCanvas / maxMap) * 0.8f;
+        return float.Min(scaleX, scaleY) * 0.98f;
     }
 
     private async Task LoadWorldFiles(InputFileChangeEventArgs e)
