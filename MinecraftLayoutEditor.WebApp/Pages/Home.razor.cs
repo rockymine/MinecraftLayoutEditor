@@ -7,6 +7,7 @@ using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
+using MinecraftLayoutEditor.XML;
 using SharpNBT;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
@@ -24,6 +25,7 @@ public partial class Home : ComponentBase
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
     private Node? SelectedNode;
+    private MapElement? _uploadedMap;
     private ElementReference _canvasContainer;
     private float CanvasWidth => _renderer.CanvasWidth;
     private float CanvasHeight => _renderer.CanvasHeight;
@@ -44,7 +46,7 @@ public partial class Home : ComponentBase
     {
         args.Surface.Canvas.Clear(SKColors.LightGray);
 
-        _renderer.Render(args.Surface, _map, HoveredNode, SelectedNode, _renderingOptions);
+        _renderer.Render(args.Surface, _map, HoveredNode, SelectedNode, _renderingOptions, _uploadedMap);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -449,6 +451,7 @@ public partial class Home : ComponentBase
 
             if (map != null)
             {
+                _uploadedMap = map;
                 Console.WriteLine($"Map '{map.Name}' with {map.Regions.Items.Count} regions loaded.");
             }
             else

@@ -12,9 +12,10 @@ public class RegionsElement
     [XmlElement("sphere", typeof(SphereRegion))]
     [XmlElement("circle", typeof(CircleRegion))]
     [XmlElement("block", typeof(BlockRegion))]
+    [XmlElement("point", typeof(PointRegion))]
     [XmlElement("union", typeof(UnionRegion))]
     [XmlElement("negative", typeof(NegativeRegion))]
-    public List<RegionsElement> Items { get; set; } = [];
+    public List<Region> Items { get; set; } = [];
 }
 
 [XmlInclude(typeof(UnionRegion))]
@@ -24,13 +25,14 @@ public class RegionsElement
 [XmlInclude(typeof(SphereRegion))]
 [XmlInclude(typeof(CircleRegion))]
 [XmlInclude(typeof(BlockRegion))]
+[XmlInclude(typeof(PointRegion))]
 public abstract class Region
 {
     [XmlAttribute("id")]
     public string Id { get; set; } = "";
 }
 
-public class RectangleRegion : RegionsElement
+public class RectangleRegion : Region
 {
     [XmlIgnore]
     public Vector2 Min { get; set; }
@@ -65,7 +67,7 @@ public class RectangleRegion : RegionsElement
     }
 }
 
-public class CylinderRegion : RegionsElement
+public class CylinderRegion : Region
 {
     [XmlIgnore]
     public Vector3 Base { get; set; }
@@ -91,7 +93,7 @@ public class CylinderRegion : RegionsElement
     public float Height { get; set; }
 }
 
-public class SphereRegion : RegionsElement
+public class SphereRegion : Region
 {
     [XmlIgnore]
     public Vector3 Origin { get; set; }
@@ -114,7 +116,7 @@ public class SphereRegion : RegionsElement
     public float Radius { get; set; }
 }
 
-public class CircleRegion : RegionsElement
+public class CircleRegion : Region
 {
     [XmlIgnore]
     public Vector2 Center { get; set; }
@@ -136,7 +138,7 @@ public class CircleRegion : RegionsElement
     public float Radius { get; set; }
 }
 
-public class BlockRegion : RegionsElement
+public class BlockRegion : Region
 {
     [XmlIgnore]
     public Vector3 Block { get; set; }
@@ -156,26 +158,48 @@ public class BlockRegion : RegionsElement
     }
 }
 
-public class UnionRegion : RegionsElement
+public class PointRegion : Region
 {
-    [XmlElement("rectangle", typeof(RectangleRegion))]
-    [XmlElement("cylinder", typeof(CylinderRegion))]
-    [XmlElement("sphere", typeof(SphereRegion))]
-    [XmlElement("circle", typeof(CircleRegion))]
-    [XmlElement("block", typeof(BlockRegion))]
-    [XmlElement("union", typeof(UnionRegion))]
-    [XmlElement("negative", typeof(NegativeRegion))]
-    public List<RegionsElement> Children { get; set; } = [];
+    [XmlIgnore]
+    public Vector3 Point { get; set; }
+
+    [XmlText]
+    public string PointText
+    {
+        get => string.Format(CultureInfo.InvariantCulture, "{0},{1},{2}", Point.X, Point.Y, Point.Z);
+        set
+        {
+            var parts = value.Split(",");
+            Point = new Vector3(
+                float.Parse(parts[0], CultureInfo.InvariantCulture),
+                float.Parse(parts[1], CultureInfo.InvariantCulture),
+                float.Parse(parts[2], CultureInfo.InvariantCulture));
+        }
+    }
 }
 
-public class NegativeRegion : RegionsElement
+public class UnionRegion : Region
 {
     [XmlElement("rectangle", typeof(RectangleRegion))]
     [XmlElement("cylinder", typeof(CylinderRegion))]
     [XmlElement("sphere", typeof(SphereRegion))]
     [XmlElement("circle", typeof(CircleRegion))]
     [XmlElement("block", typeof(BlockRegion))]
+    [XmlElement("point", typeof(PointRegion))]
     [XmlElement("union", typeof(UnionRegion))]
     [XmlElement("negative", typeof(NegativeRegion))]
-    public List<RegionsElement> Children { get; set; } = [];
+    public List<Region> Children { get; set; } = [];
+}
+
+public class NegativeRegion : Region
+{
+    [XmlElement("rectangle", typeof(RectangleRegion))]
+    [XmlElement("cylinder", typeof(CylinderRegion))]
+    [XmlElement("sphere", typeof(SphereRegion))]
+    [XmlElement("circle", typeof(CircleRegion))]
+    [XmlElement("block", typeof(BlockRegion))]
+    [XmlElement("point", typeof(PointRegion))]
+    [XmlElement("union", typeof(UnionRegion))]
+    [XmlElement("negative", typeof(NegativeRegion))]
+    public List<Region> Children { get; set; } = [];
 }
