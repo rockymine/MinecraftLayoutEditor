@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-using System.Numerics;
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 
 namespace MinecraftLayoutEditor.XML;
 

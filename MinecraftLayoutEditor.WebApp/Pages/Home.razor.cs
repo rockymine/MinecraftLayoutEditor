@@ -8,10 +8,8 @@ using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
 using MinecraftLayoutEditor.XML;
-using SharpNBT;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
-using System;
 using System.Drawing;
 using System.Numerics;
 
@@ -19,6 +17,7 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 
 public partial class Home : ComponentBase
 {
+    private EditorMode _currentMode = EditorMode.Layout;
     private SKGLView Canvas;
     private readonly Map _map = MapFactory.Empty(192,96,10,10);
     private readonly MapRenderer _renderer = new();
@@ -85,6 +84,11 @@ public partial class Home : ComponentBase
     private async Task OnSettingsChanged()
     {
         await Render(RenderTrigger.SettingsChanged);
+    }
+
+    private void OnChangeEditingMode(EditorMode newMode)
+    {
+        _currentMode = newMode;
     }
 
     private async Task OnClearMap()

@@ -1,0 +1,15 @@
+﻿@using MinecraftLayoutEditor.Logic;
+
+<div class="editing-mode-switch flex gap-2">
+    <button type="button"
+            class="btn @(EditorMode == EditorMode.Layout ? "btn-primary" : "btn-stroked")"
+            @onclick="() => ChangeMode(EditorMode.Layout)">
+        Layout
+    </button>
+
+    <button type="button"
+            class="btn @(EditorMode == EditorMode.XML ? "btn-primary" : "btn-stroked")"
+            @onclick="() => ChangeMode(EditorMode.XML)">
+        XML
+    </button>
+</div>
