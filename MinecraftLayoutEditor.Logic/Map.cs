@@ -11,8 +11,6 @@ public class Map
     public int Height { get; set; }
     public int LaneWidth { get; set; }
     public int Thickness { get; set; }
-    public List<Team> Teams { get; set; } = [];
-    public string Author { get; set; } = "";
     public List<Vector2> Blocks { get; set; } = [];
 
     public SymmetryAxis? Symmetry { get; set; }
@@ -20,31 +18,6 @@ public class Map
     // move to ui only
     public bool MirrorEnabled { get; set; }
     public Node.NodeType SelectedNodeType { get; set; } = Node.NodeType.Undefined;
-
-    public Vector2 MirrorPosition(Vector2 pos, SymmetryAxis axis)
-    {
-        if (axis.RotationDeg != 0)
-        {
-            return Rotation.RotateAboutOrigin(pos, Vector2.Zero, axis.RotationDeg * float.Pi / 180);
-        }
-
-        if (axis.IsHorizontal)
-        {
-            var isAboveAxis = pos.Y < axis.Offset;
-            var distToAxis = Math.Abs(pos.Y - axis.Offset);
-
-            return isAboveAxis ? new Vector2(pos.X, axis.Offset + distToAxis)
-                : new Vector2(pos.X, axis.Offset - distToAxis);
-        } 
-        else
-        {
-            var isLeftOfAxis = pos.X < axis.Offset;
-            var distToAxis = Math.Abs(pos.X - axis.Offset);
-
-            return isLeftOfAxis ? new Vector2(axis.Offset + distToAxis, pos.Y)
-                : new Vector2(axis.Offset - distToAxis, pos.Y);
-        }
-    }
 
     public bool Contains(Vector2 pos)
     {
@@ -63,7 +36,7 @@ public class Map
         
         if (MirrorEnabled && node.MirrorRef != null && Symmetry != null)
         {
-            var mirrorRefPosition = MirrorPosition(node.Position, Symmetry);
+            var mirrorRefPosition = Rotation.MirrorPosition(node.Position, Symmetry);
             node.MirrorRef.Position = mirrorRefPosition;
         }
     }
