@@ -137,15 +137,16 @@ public class MapRenderer
 
     private void RenderRectangleRegion(SKSurface surface, RectangleRegion region, RenderingOptions options)
     {
-        Console.WriteLine($"<rectangle id=\"{region.Id}\" min=\"{region.MinString}\" max=\"{region.MaxString}\"/>");
         var paint = GetPaint(SKColors.Purple, SKPaintStyle.Stroke, 1f);
 
-        // Create rectangle from Min and Max
+        var width = region.Max.X - region.Min.X;
+        var height = region.Max.Y - region.Min.Y;
+
         var rect = SKRect.Create(
             region.Min.X,
             region.Min.Y,
-            region.Max.X - region.Min.X,  // width
-            region.Max.Y - region.Min.Y   // height
+            width,
+            height
         );
 
         surface.Canvas.DrawRect(rect, paint);
@@ -159,26 +160,21 @@ public class MapRenderer
 
     private void RenderCylinderRegion(SKSurface surface, CylinderRegion region, RenderingOptions options)
     {
-        Console.WriteLine($"<cylinder id=\"{region.Id}\" base=\"{region.BaseText}\" radius=\"{region.Radius}\" height=\"{region.Height}\"/>");
         var paint = GetPaint(SKColors.Blue, SKPaintStyle.Stroke, 1f);
         surface.Canvas.DrawCircle(region.Base.X, region.Base.Z, region.Radius, paint);
     }
 
     private void RenderPointRegion(SKSurface surface, PointRegion region, RenderingOptions options)
     {
-        Console.WriteLine($"<point id=\"{region.Id}\">{region.PointText}</point>");
         var paint = GetPaint(SKColors.Blue, SKPaintStyle.Fill, 0.5f);
         surface.Canvas.DrawCircle(region.Point.X, region.Point.Z, 0.5f, paint);
-        Console.WriteLine($"Point drawn at {region.Point.X},{region.Point.Z}");
     }
 
     private void RenderBlockRegion(SKSurface surface, BlockRegion region, RenderingOptions options)
     {
-        Console.WriteLine($"<block id=\"{region.Id}\">{region.BlockText}</point>");
         var paint = GetPaint(SKColors.Blue, SKPaintStyle.Fill, 1f);
         var blockRect = SKRect.Create(region.Block.X, region.Block.Z, 1f, 1f);
         surface.Canvas.DrawRect(blockRect, paint);
-        Console.WriteLine($"Block drawn at {region.Block.X},{region.Block.Z}");
     }
 
     private void RenderBackground(SKSurface surface, Map map)
