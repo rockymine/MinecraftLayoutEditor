@@ -1,5 +1,6 @@
 ﻿using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.Geometry;
+using MinecraftLayoutEditor.XML;
 using SkiaSharp;
 using System.Numerics;
 
@@ -56,7 +57,7 @@ public class MapRenderer
     }
 
     public void Render(SKSurface surface, Map map,
-        Node? hoveredNode, Node? selectedNode, RenderingOptions options)
+        Node? hoveredNode, Node? selectedNode, RenderingOptions options, MapElement? uploadedMap)
     {
         var canvas = surface.Canvas;
         canvas.Save();
@@ -72,8 +73,112 @@ public class MapRenderer
         RenderMirrorAxis(surface, map, options);
         RenderEdges(surface, uniqueEdges, options, map.LaneWidth, limitX, limitY);
         RenderNodes(surface, map.Graph.Nodes, hoveredNode, selectedNode, options);
+        RenderRegions(surface, uploadedMap, options);
 
         canvas.Restore();
+    }
+
+    private void RenderRegions(SKSurface surface, MapElement uploadedMap, RenderingOptions options)
+    {
+        if (uploadedMap == null)
+            return;
+
+        foreach (var region in uploadedMap.Regions.Items)
+        {
+            Console.WriteLine(region.Id);
+            RenderRegion(surface, region, options);
+        }
+    }
+
+    private void RenderRegion(SKSurface surface, Region region, RenderingOptions options)
+    {
+        switch (region) { 
+            case RectangleRegion rectangleRegion:
+                RenderRectangleRegion(surface, rectangleRegion, options);
+                break;
+            case CircleRegion circleRegion:
+                RenderCircleRegion(surface, circleRegion, options);
+                break;
+            case CylinderRegion cylinderRegion:
+                RenderCylinderRegion(surface, cylinderRegion, options);
+                break;
+            case BlockRegion blockRegion:
+                RenderBlockRegion(surface, blockRegion, options);
+                break;
+            case PointRegion pointRegion:
+                RenderPointRegion(surface, pointRegion, options);
+                break;
+            case UnionRegion unionRegion:
+                Console.WriteLine($"Processing union region: {unionRegion.Id} with {unionRegion.Children.Count} children");
+                RenderUnionRegion(surface, unionRegion, options);
+                break;
+            case NegativeRegion negativeRegion:
+                Console.WriteLine($"Processing negative region: {negativeRegion.Id} with {negativeRegion.Children.Count} children");
+                RenderNegativeRegion(surface, negativeRegion, options);
+                break;
+        }
+    }
+
+    private void RenderUnionRegion(SKSurface surface, UnionRegion region, RenderingOptions options)
+    {
+        foreach (var childRegion in region.Children)
+        {
+            RenderRegion(surface, childRegion, options);
+        }
+    }
+
+    private void RenderNegativeRegion(SKSurface surface, NegativeRegion region, RenderingOptions options)
+    {
+        foreach (var childRegion in region.Children)
+        {
+            RenderRegion(surface, childRegion, options);
+        }
+    }
+
+    private void RenderRectangleRegion(SKSurface surface, RectangleRegion region, RenderingOptions options)
+    {
+        Console.WriteLine($"<rectangle id=\"{region.Id}\" min=\"{region.MinString}\" max=\"{region.MaxString}\"/>");
+        var paint = GetPaint(SKColors.Purple, SKPaintStyle.Stroke, 1f);
+
+        // Create rectangle from Min and Max
+        var rect = SKRect.Create(
+            region.Min.X,
+            region.Min.Y,
+            region.Max.X - region.Min.X,  // width
+            region.Max.Y - region.Min.Y   // height
+        );
+
+        surface.Canvas.DrawRect(rect, paint);
+    }
+
+    private void RenderCircleRegion(SKSurface surface, CircleRegion region, RenderingOptions options)
+    {
+        var paint = GetPaint(SKColors.Blue, SKPaintStyle.Stroke, 1f);
+        surface.Canvas.DrawCircle(region.Center.X, region.Center.Y, region.Radius, paint);
+    }
+
+    private void RenderCylinderRegion(SKSurface surface, CylinderRegion region, RenderingOptions options)
+    {
+        Console.WriteLine($"<cylinder id=\"{region.Id}\" base=\"{region.BaseText}\" radius=\"{region.Radius}\" height=\"{region.Height}\"/>");
+        var paint = GetPaint(SKColors.Blue, SKPaintStyle.Stroke, 1f);
+        surface.Canvas.DrawCircle(region.Base.X, region.Base.Z, region.Radius, paint);
+    }
+
+    private void RenderPointRegion(SKSurface surface, PointRegion region, RenderingOptions options)
+    {
+        Console.WriteLine($"<point id=\"{region.Id}\">{region.PointText}</point>");
+        var paint = GetPaint(SKColors.Blue, SKPaintStyle.Fill, 0.5f);
+        surface.Canvas.DrawCircle(region.Point.X, region.Point.Z, 0.5f, paint);
+        Console.WriteLine($"Point drawn at {region.Point.X},{region.Point.Z}");
+    }
+
+    private void RenderBlockRegion(SKSurface surface, BlockRegion region, RenderingOptions options)
+    {
+        Console.WriteLine($"<block id=\"{region.Id}\">{region.BlockText}</point>");
+        var paint = GetPaint(SKColors.Blue, SKPaintStyle.Fill, 1f);
+        var blockRect = SKRect.Create(region.Block.X, region.Block.Z, 1f, 1f);
+        surface.Canvas.DrawRect(blockRect, paint);
+        Console.WriteLine($"Block drawn at {region.Block.X},{region.Block.Z}");
     }
 
     private void RenderBackground(SKSurface surface, Map map)

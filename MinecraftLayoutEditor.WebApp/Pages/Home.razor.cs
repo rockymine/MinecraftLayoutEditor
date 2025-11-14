@@ -7,10 +7,9 @@ using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
-using SharpNBT;
+using MinecraftLayoutEditor.XML;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
-using System;
 using System.Drawing;
 using System.Numerics;
 
@@ -18,12 +17,14 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 
 public partial class Home : ComponentBase
 {
+    private EditorMode _currentMode = EditorMode.Layout;
     private SKGLView Canvas;
     private readonly Map _map = MapFactory.Empty(192,96,10,10);
     private readonly MapRenderer _renderer = new();
     private readonly RenderingOptions _renderingOptions = new();
     private Node? HoveredNode;
     private Node? SelectedNode;
+    private MapElement? _uploadedMap;
     private ElementReference _canvasContainer;
     private float CanvasWidth => _renderer.CanvasWidth;
     private float CanvasHeight => _renderer.CanvasHeight;
@@ -44,7 +45,7 @@ public partial class Home : ComponentBase
     {
         args.Surface.Canvas.Clear(SKColors.LightGray);
 
-        _renderer.Render(args.Surface, _map, HoveredNode, SelectedNode, _renderingOptions);
+        _renderer.Render(args.Surface, _map, HoveredNode, SelectedNode, _renderingOptions, _uploadedMap);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -83,6 +84,11 @@ public partial class Home : ComponentBase
     private async Task OnSettingsChanged()
     {
         await Render(RenderTrigger.SettingsChanged);
+    }
+
+    private void OnChangeEditingMode(EditorMode newMode)
+    {
+        _currentMode = newMode;
     }
 
     private async Task OnClearMap()
@@ -427,7 +433,7 @@ public partial class Home : ComponentBase
 
         try
         {
-            var (blocks, spawn, worldName) = await WorldImporter.ImportWorld(files);
+            var (blocks, spawn, worldName, map) = await WorldImporter.ImportWorld(files);
             _map.Name = worldName;
 
             if (blocks.Count > 0)
@@ -445,7 +451,17 @@ public partial class Home : ComponentBase
 
                 await OnFitMap();
                 await Render(RenderTrigger.WorldImport);
-            }            
+            }
+
+            if (map != null)
+            {
+                _uploadedMap = map;
+                Console.WriteLine($"Map '{map.Name}' with {map.Regions.Items.Count} regions loaded.");
+            }
+            else
+            {
+                Console.WriteLine("No map.xml found.");
+            }
         }
         catch (Exception ex)
         {

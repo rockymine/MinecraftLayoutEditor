@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
+using MinecraftLayoutEditor.XML;
 using SharpNBT;
 using System.Buffers.Binary;
 using System.IO.Compression;
@@ -52,14 +53,16 @@ public static class WorldImporter
 {
     private const int SECTOR_BYTES = 4096;
 
-    public static async Task<(List<BlockPos> blocks, Vector2 spawn, string worldName)> ImportWorld(IBrowserFile[] files)
+    public static async Task<(List<BlockPos> blocks, Vector2 spawn, string worldName, MapElement? map)> ImportWorld(IBrowserFile[] files)
     {
         var mcaFiles = files.Where(f => f.Name.EndsWith(".mca")).ToArray();
         var levelDatFile = files.FirstOrDefault(f => f.Name == "level.dat");
+        var xmlFile = files.FirstOrDefault(f => f.Name == "map.xml");
 
         var blocks = new List<BlockPos>();
         Vector2 spawn = Vector2.Zero;
         string worldName = "Unknown";
+        MapElement? map = null;
 
         // Parse level.dat
         if (levelDatFile != null)
@@ -77,9 +80,25 @@ public static class WorldImporter
             }
         }
 
+        // Parse .xml file
+        if (xmlFile != null)
+        {
+            Console.WriteLine("xml file not null");
+            try
+            {
+                await using var stream = xmlFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                map = await XMLImporter.LoadFromStream(stream);
+                Console.WriteLine($"Loaded XML map: {map.Name} (proto {map.Proto})");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"map.xml: {ex.Message}");
+            }
+        }
+
         // Parse .mca files
         if (mcaFiles.Length == 0)
-            return (blocks, spawn, worldName);
+            return (blocks, spawn, worldName, map);
 
         foreach (var mcaFile in mcaFiles)
         {
@@ -93,11 +112,11 @@ public static class WorldImporter
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to parse {mcaFile.Name}: {ex.Message}");
+                throw new Exception($"Failed to parse {mcaFile.Name}: {ex.Message}");
             }
         }
 
-        return (blocks, spawn, worldName);
+        return (blocks, spawn, worldName, map);
     }
 
     /// <summary>
