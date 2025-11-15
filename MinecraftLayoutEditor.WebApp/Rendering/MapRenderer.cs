@@ -7,23 +7,25 @@ using System.Numerics;
 namespace MinecraftLayoutEditor.WebApp.Rendering;
 
 public class MapRenderer
-{
+{  
     public float CanvasWidth { get; private set; }
     public float CanvasHeight { get; private set; }
     public Vector2 CameraPosition { get; private set; }
-    public float Scale { get; private set; } = 1f;
+    public RenderContext RenderContext { get; set; }
+    public List<IRenderable> renderables = [];
 
     private SKMatrix SKWorldToScreen;
     private readonly Dictionary<(SKColor, SKPaintStyle, float), SKPaint> _paintCache = [];
 
-    public MapRenderer()
+    public MapRenderer(RenderContext renderContext)
     {
-        UpdateTRS(new Vector2(25, 25), 20f);
+        RenderContext = renderContext;
+        UpdateTRS(new Vector2(25, 25));
     }
 
     public SKPaint GetPaint(SKColor color, SKPaintStyle style, float lineWidth)
     {
-        var adjustedWidth = (style == SKPaintStyle.Stroke) ? lineWidth / Math.Max(Scale, 0.001f) : lineWidth;
+        var adjustedWidth = (style == SKPaintStyle.Stroke) ? lineWidth / Math.Max(RenderContext.Scale, 0.001f) : lineWidth;
 
         var key = (color, style, adjustedWidth);
         if (!_paintCache.TryGetValue(key, out var paint))
@@ -46,12 +48,14 @@ public class MapRenderer
         CanvasHeight = height;
     }
 
-    public void UpdateTRS(Vector2 translation, float scale)
+    public void UpdateTRS(Vector2 translation)
     {
-        Scale = scale;
+        Console.WriteLine($"Scale: {RenderContext.Scale}");
+        Console.WriteLine($"Translation: { translation }");
+        
         CameraPosition = translation;
 
-        SKWorldToScreen = SKMatrix.CreateScale(scale, scale);
+        SKWorldToScreen = SKMatrix.CreateScale(RenderContext.Scale, RenderContext.Scale);
         SKWorldToScreen.TransX = translation.X;
         SKWorldToScreen.TransY = translation.Y;
     }
@@ -76,6 +80,16 @@ public class MapRenderer
         RenderRegions(surface, uploadedMap, options);
 
         canvas.Restore();
+    }
+
+    public void Render()
+    {
+        RenderContext.Surface!.Canvas.SetMatrix(SKWorldToScreen);
+        
+        foreach (var renderable in renderables)
+        {
+            renderable.Render(RenderContext);
+        }
     }
 
     private void RenderRegions(SKSurface surface, MapElement uploadedMap, RenderingOptions options)
@@ -417,7 +431,7 @@ public class MapRenderer
     }
 
     public Vector2 ScreenToWorldPos(Vector2 screen)
-        => new((screen.X - CameraPosition.X) / Scale, (screen.Y - CameraPosition.Y) / Scale);
+        => new((screen.X - CameraPosition.X) / RenderContext.Scale, (screen.Y - CameraPosition.Y) / RenderContext.Scale);
 
     private static RenderStyle GetMirrorLineStyle(RenderingOptions options)
     {

@@ -7,9 +7,11 @@ using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
+using MinecraftLayoutEditor.WebApp.Rendering.Renderers;
 using MinecraftLayoutEditor.XML;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
+using System.Diagnostics;
 using System.Drawing;
 using System.Numerics;
 
@@ -20,14 +22,12 @@ public partial class Home : ComponentBase
     private EditorMode _currentMode = EditorMode.Layout;
     private SKGLView Canvas;
     private readonly Map _map = MapFactory.Empty(192,96,10,10);
-    private readonly MapRenderer _renderer = new();
+    private MapRenderer? _renderer;
     private readonly RenderingOptions _renderingOptions = new();
-    private Node? HoveredNode;
-    private Node? SelectedNode;
     private MapElement? _uploadedMap;
     private ElementReference _canvasContainer;
-    private float CanvasWidth => _renderer.CanvasWidth;
-    private float CanvasHeight => _renderer.CanvasHeight;
+    private float CanvasWidth => _renderer?.CanvasWidth ?? throw new UnreachableException();
+    private float CanvasHeight => _renderer?.CanvasHeight ?? throw new UnreachableException();
 
     private float MaxZoom => CalculateMaxZoom();
     private float MinZoom => CalculateMinZoom();
@@ -41,11 +41,21 @@ public partial class Home : ComponentBase
     [Inject]
     public required IJSRuntime JSRuntime { get; init; }
 
+
+    private RenderContext? _renderContext;
+    private readonly PaintCache _paintCache = new();
+
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
     {
         args.Surface.Canvas.Clear(SKColors.LightGray);
 
-        _renderer.Render(args.Surface, _map, HoveredNode, SelectedNode, _renderingOptions, _uploadedMap);
+        if (_renderContext == null || _renderer == null)
+            return;
+
+        _renderContext.Update(args.Surface);
+        _renderer.Render();
+
+        //_renderer.Render(args.Surface, _map, HoveredNode, SelectedNode, _renderingOptions, _uploadedMap);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -73,12 +83,22 @@ public partial class Home : ComponentBase
         _renderer.Resize(size.Width, size.Height);
         // keep the same world-center after resize
         var center = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
-        _renderer.UpdateTRS(center, _renderer.Scale);
+
+        _renderer.UpdateTRS(center);
     }
 
     protected override void OnInitialized()
     {
         _historyStack = new HistoryStack();
+
+        _renderContext = new RenderContext(
+            _map, _renderingOptions, 
+            _uploadedMap, _paintCache);
+
+        _renderer = new MapRenderer(_renderContext);
+
+        _renderer.renderables.Add(new BackgroundRenderer());
+        _renderer.renderables.Add(new GridRenderer());
     }
 
     private async Task OnSettingsChanged()
@@ -93,8 +113,8 @@ public partial class Home : ComponentBase
 
     private async Task OnClearMap()
     {
-        SelectedNode = null;
-        HoveredNode = null;
+        _renderContext.SelectedNode = null;
+        _renderContext.HoveredNode = null;
 
         _map.Graph.Clear();
         _historyStack = new HistoryStack();
@@ -105,25 +125,25 @@ public partial class Home : ComponentBase
     private async Task OnUndo()
     {
         _historyStack?.Undo();
-        SelectedNode = null;
+        _renderContext.SelectedNode = null;
         await Render(RenderTrigger.Undo);
     }
 
     private async Task OnRedo()
     {
         _historyStack?.Redo();
-        SelectedNode = null;
+        _renderContext.SelectedNode = null;
         await Render(RenderTrigger.Redo);
     }
 
     private async Task OnDeleteNode()
     {
-        if (SelectedNode == null)
+        if (_renderContext.SelectedNode == null)
             return;
         
         var action = new RemoveNodeAction(
                 _map.Graph,
-                SelectedNode
+                 _renderContext.SelectedNode
                 );
 
         _historyStack?.ExecuteAction(action);
@@ -171,7 +191,7 @@ public partial class Home : ComponentBase
     private async Task HandleLeftClick(Vector2 worldPos)
     {
         // Add node
-        if (HoveredNode == null && _map.Contains(worldPos))
+        if (_renderContext.HoveredNode == null && _map.Contains(worldPos))
         {
             var pos = new Vector2(float.Floor(worldPos.X) + 0.5f, float.Floor(worldPos.Y) + 0.5f);
             var closestNode = _map.Graph.GetClosestNode(pos);
@@ -192,29 +212,29 @@ public partial class Home : ComponentBase
             await Render(RenderTrigger.NodeAdded);
         }
         // Select node
-        else if (HoveredNode != null)
+        else if (_renderContext.HoveredNode != null)
         {
-            if (SelectedNode == null)
+            if (_renderContext.SelectedNode == null)
             {
-                SelectedNode = HoveredNode;
+                _renderContext.SelectedNode = _renderContext.HoveredNode;
             }
             // Deselect node
-            else if (SelectedNode == HoveredNode)
+            else if (_renderContext.SelectedNode == _renderContext.HoveredNode)
             {
-                SelectedNode = null;
+                _renderContext.SelectedNode = null;
             }
             else
             {
                 // Add or delete edge
                 var action = new AddOrRemoveEdgeAction(
                     _map.Graph,
-                    HoveredNode,
-                    SelectedNode
+                     _renderContext.HoveredNode,
+                     _renderContext.SelectedNode
                     );
 
                 _historyStack?.ExecuteAction(action);
                 _map.CalculateEdgeBlocks();
-                SelectedNode = null;
+                _renderContext.SelectedNode = null;
             }
 
             await Render(RenderTrigger.EdgeRemoved);
@@ -227,27 +247,27 @@ public partial class Home : ComponentBase
         var threshhold = 2f;
 
         // Delete node
-        if (HoveredNode != null)
+        if (_renderContext.HoveredNode != null)
         {
             var action = new RemoveNodeAction(
                 _map.Graph,
-                HoveredNode
+                 _renderContext.HoveredNode
                 );
 
             _historyStack?.ExecuteAction(action);
             _map.CalculateEdgeBlocks();
 
-            if (SelectedNode == HoveredNode)
-                SelectedNode = null;
+            if (_renderContext.SelectedNode == _renderContext.HoveredNode)
+                _renderContext.SelectedNode = null;
 
-            HoveredNode = null;
+            _renderContext.HoveredNode = null;
             await Render(RenderTrigger.NodeRemoved);
         }
         // Deselect node
-        else if (SelectedNode != null && closestNode != null
+        else if (_renderContext.SelectedNode != null && closestNode != null
             && Vector2.Distance(worldPos, closestNode.Position) >= threshhold)
         {
-            SelectedNode = null;
+            _renderContext.SelectedNode = null;
             await Render(RenderTrigger.NodeDeselected);
         }
     }
@@ -257,17 +277,17 @@ public partial class Home : ComponentBase
         Vector2 cursorPosition = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
         Node? closestNode = _map.Graph.GetClosestNode(cursorPosition);
 
-        var prevHovered = HoveredNode;
+        var prevHovered = _renderContext.HoveredNode;
 
         if (closestNode != null)
         {
             var threshhold = 0.4f;
             var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
 
-            HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
+            _renderContext.HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
         }
 
-        if (prevHovered != HoveredNode)
+        if (prevHovered != _renderContext.HoveredNode)
             await Render(RenderTrigger.NodeHover);
     }
 
@@ -281,7 +301,7 @@ public partial class Home : ComponentBase
         var deltaPan = PanStartPosition.Value - panEndPosition;
         PanStartPosition = panEndPosition;
 
-        _renderer.UpdateTRS(_renderer.CameraPosition - deltaPan, _renderer.Scale);
+        _renderer.UpdateTRS(_renderer.CameraPosition - deltaPan);
         await Render(RenderTrigger.Pan);
     }
 
@@ -292,29 +312,29 @@ public partial class Home : ComponentBase
 
     public async Task OnKeyUp(KeyboardEventArgs e)
     {
-        if (SelectedNode == null)
+        if (_renderContext.SelectedNode == null)
             return;
 
         bool nodeMoved = false;
 
         if (e.Key == "ArrowUp")
         {
-            _map.MoveNode(SelectedNode, new Vector2(0, -1));
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(0, -1));
             nodeMoved = true;
         }
         else if (e.Key == "ArrowDown")
         {
-            _map.MoveNode(SelectedNode, new Vector2(0, 1));
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(0, 1));
             nodeMoved = true;
         }
         else if (e.Key == "ArrowLeft")
         {
-            _map.MoveNode(SelectedNode, new Vector2(-1, 0));
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(-1, 0));
             nodeMoved = true;
         }
         else if (e.Key == "ArrowRight")
         {
-            _map.MoveNode(SelectedNode, new Vector2(1, 0));
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(1, 0));
             nodeMoved = true;
         }
 
@@ -334,22 +354,23 @@ public partial class Home : ComponentBase
         float newScale;
         if (deltaY < 0)
         {
-            newScale = _renderer.Scale * 1.6f;
+            newScale = _renderContext.Scale * 1.6f;
         }
         else
         {
-            newScale = _renderer.Scale / 1.6f;
+            newScale = _renderContext.Scale / 1.6f;
         }
 
         newScale = float.Clamp(newScale, MinZoom, MaxZoom);
 
-        if (Math.Abs(newScale - _renderer.Scale) < 0.001f)
+        if (Math.Abs(newScale - _renderContext.Scale) < 0.001f)
             return;
 
         // Calculate new translation to keep cursor world pos at cursor screen pos
         var newTranslation = relativeCursorPos - worldPosBeforeZoom * newScale;
 
-        _renderer.UpdateTRS(newTranslation, newScale);
+        _renderContext.Scale = newScale;
+        _renderer.UpdateTRS(newTranslation);
 
         await Render(RenderTrigger.Zoom);
     }
@@ -362,7 +383,8 @@ public partial class Home : ComponentBase
         var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
         var newTranslation = canvasCenter;
 
-        _renderer.UpdateTRS(newTranslation, MinZoom);
+        _renderContext.Scale = MinZoom;
+        _renderer.UpdateTRS(newTranslation);
         await Render(RenderTrigger.ViewFit);
     }
 
@@ -399,7 +421,8 @@ public partial class Home : ComponentBase
         var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
         var newTranslation = canvasCenter - mapHalfCenter * newScale;
 
-        _renderer.UpdateTRS(newTranslation, newScale);
+        _renderContext.Scale = newScale;
+        _renderer.UpdateTRS(newTranslation);
         await Render(RenderTrigger.ViewFit);
     }
 

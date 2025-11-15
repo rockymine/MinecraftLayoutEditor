@@ -32,7 +32,7 @@
                                 @bind-ShowBoundingBoxEnabled="_renderingOptions.ShowBoundingBoxEnabled"
                                 SettingsChanged="OnSettingsChanged" />
         <!-- Node information -->
-        <NodeInformation SelectedNode="SelectedNode"
+        <NodeInformation SelectedNode="_renderContext.SelectedNode"
                             OnDeleteNode="OnDeleteNode" />
         <!-- Canvas controls -->
         <CanvasControlsHelp />
