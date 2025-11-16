@@ -101,7 +101,7 @@ public partial class Home : ComponentBase
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
     {
-        args.Surface.Canvas.Clear(SKColors.Black);
+        args.Surface.Canvas.Clear(SKColors.LightGray);
 
         if (_renderContext == null || _renderer == null)
             return;
