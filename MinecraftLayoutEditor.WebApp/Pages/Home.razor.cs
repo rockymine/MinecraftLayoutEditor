@@ -356,16 +356,7 @@ public partial class Home : ComponentBase
         var relativeCursorPos = new Vector2((float)offsetX, (float)offsetY);
         var worldPosBeforeZoom = _viewport.ScreenToWorldPos(relativeCursorPos);
 
-        float newScale;
-        if (deltaY < 0)
-        {
-            newScale = _viewport.Scale * 1.6f;
-        }
-        else
-        {
-            newScale = _viewport.Scale / 1.6f;
-        }
-
+        float newScale = deltaY < 0 ? _viewport.Scale * 1.6f : _viewport.Scale / 1.6f;
         newScale = float.Clamp(newScale, MinZoom, MaxZoom);
 
         if (Math.Abs(newScale - _viewport.Scale) < 0.001f)
