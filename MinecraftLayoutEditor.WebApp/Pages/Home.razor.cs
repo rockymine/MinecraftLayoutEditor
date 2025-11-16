@@ -36,6 +36,7 @@ public partial class Home : ComponentBase
 
     private EditorMode _currentMode = EditorMode.Layout;
     private Vector2? _panStartPosition;
+    private Vector2 _pendingFirstRegionPos = default!;
 
     private float CanvasWidth => _viewport.CanvasWidth;
     private float CanvasHeight => _viewport.CanvasHeight;
@@ -292,53 +293,80 @@ public partial class Home : ComponentBase
     private void HandleLeftClick(Vector2 worldPos)
     {
         // Add node
-        if (_renderContext.HoveredNode == null && _map.Contains(worldPos))
+        if (_currentMode == EditorMode.Layout)
         {
-            var pos = new Vector2(float.Floor(worldPos.X) + 0.5f, float.Floor(worldPos.Y) + 0.5f);
-            var closestNode = _map.Graph.GetClosestNode(pos);
 
-            // Check if a node already exists at the given position
-            if (closestNode != null && Vector2.DistanceSquared(closestNode.Position, pos) < 1)
-                return;
+            if (_renderContext.HoveredNode == null && _map.Contains(worldPos))
+            {
+                var pos = new Vector2(float.Floor(worldPos.X) + 0.5f, float.Floor(worldPos.Y) + 0.5f);
+                var closestNode = _map.Graph.GetClosestNode(pos);
 
-            var action = new AddNodeAction(
-                _map.Graph,
-                worldPos,
-                _map.SelectedNodeType,
-                _map.Symmetry,
-                _map.MirrorEnabled
-                );
+                // Check if a node already exists at the given position
+                if (closestNode != null && Vector2.DistanceSquared(closestNode.Position, pos) < 1)
+                    return;
 
-            _historyStack?.ExecuteAction(action);
-            Render(RenderTrigger.NodeAdded);
-        }
-        // Select node
-        else if (_renderContext.HoveredNode != null)
-        {
-            if (_renderContext.SelectedNode == null)
-            {
-                _renderContext.SelectedNode = _renderContext.HoveredNode;
-            }
-            // Deselect node
-            else if (_renderContext.SelectedNode == _renderContext.HoveredNode)
-            {
-                _renderContext.SelectedNode = null;
-            }
-            else
-            {
-                // Add or delete edge
-                var action = new AddOrRemoveEdgeAction(
+                var action = new AddNodeAction(
                     _map.Graph,
-                     _renderContext.HoveredNode,
-                     _renderContext.SelectedNode
+                    worldPos,
+                    _map.SelectedNodeType,
+                    _map.Symmetry,
+                    _map.MirrorEnabled
                     );
 
                 _historyStack?.ExecuteAction(action);
-                _map.CalculateEdgeBlocks();
-                _renderContext.SelectedNode = null;
+                Render(RenderTrigger.NodeAdded);
             }
+            // Select node
+            else if (_renderContext.HoveredNode != null)
+            {
+                if (_renderContext.SelectedNode == null)
+                {
+                    _renderContext.SelectedNode = _renderContext.HoveredNode;
+                }
+                // Deselect node
+                else if (_renderContext.SelectedNode == _renderContext.HoveredNode)
+                {
+                    _renderContext.SelectedNode = null;
+                }
+                else
+                {
+                    // Add or delete edge
+                    var action = new AddOrRemoveEdgeAction(
+                        _map.Graph,
+                         _renderContext.HoveredNode,
+                         _renderContext.SelectedNode
+                        );
 
-            Render(RenderTrigger.EdgeRemoved);
+                    _historyStack?.ExecuteAction(action);
+                    _map.CalculateEdgeBlocks();
+                    _renderContext.SelectedNode = null;
+                }
+
+                Render(RenderTrigger.EdgeRemoved);
+            }
+        }
+
+        if (_currentMode == EditorMode.XML)
+        {
+            if (_pendingFirstRegionPos == default)
+            {
+                _pendingFirstRegionPos = new Vector2(float.Floor(worldPos.X), float.Floor(worldPos.Y));
+                return;
+            }
+            else
+            {
+                var secondRegionPos = new Vector2(float.Floor(worldPos.X), float.Floor(worldPos.Y));
+
+                _renderContext.EnsureMapElement();
+                var action = new AddRectangleRegionAction(
+                    _renderContext.MapElement, 
+                    _pendingFirstRegionPos, 
+                    secondRegionPos);
+
+                _historyStack?.ExecuteAction(action);
+                _pendingFirstRegionPos = default;
+                Render(RenderTrigger.RegionAdded);
+            }
         }
     }
 
@@ -352,7 +380,7 @@ public partial class Home : ComponentBase
         {
             var action = new RemoveNodeAction(
                 _map.Graph,
-                 _renderContext.HoveredNode
+                    _renderContext.HoveredNode
                 );
 
             _historyStack?.ExecuteAction(action);

@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MinecraftLayoutEditor.XML\MinecraftLayoutEditor.XML.csproj" />
+  </ItemGroup>
+
 </Project>

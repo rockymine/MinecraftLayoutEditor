@@ -11,7 +11,7 @@ public class RenderContext
     public RenderingOptions Options { get; }
     public Node? SelectedNode { get; set; }
     public Node? HoveredNode { get; set; }
-    public MapElement? MapElement { get; set; }
+    public MapElement MapElement { get; private set; } = null!;
     public PaintCache Cache { get; }
     public Viewport Viewport { get; set; }
 
@@ -34,6 +34,18 @@ public class RenderContext
 
     public void RegisterMapElement(MapElement mapElement)
     {
-        MapElement = mapElement;
+        MapElement = mapElement ?? throw new ArgumentNullException(nameof(mapElement));
+    }
+
+    public void EnsureMapElement()
+    {
+        MapElement ??= new MapElement()
+        {
+            Proto = "1.5.0",
+            Name = "Untitled Map",
+            Version = "1.0.0",
+            Gamemode = "ctw",
+            MaxBuildHeight = 100
+        };
     }
 }
