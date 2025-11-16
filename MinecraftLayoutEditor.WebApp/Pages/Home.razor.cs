@@ -10,7 +10,6 @@ using MinecraftLayoutEditor.WebApp.Rendering;
 using MinecraftLayoutEditor.WebApp.Rendering.Renderers;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
-using System.Diagnostics;
 using System.Drawing;
 using System.Numerics;
 
