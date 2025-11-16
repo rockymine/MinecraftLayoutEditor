@@ -18,37 +18,50 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 
 public partial class Home : ComponentBase
 {
-    private EditorMode _currentMode = EditorMode.Layout;
-    private SKGLView Canvas;
-    private readonly Map _map = MapFactory.Empty(192,96,10,10);
-    private MapRenderer? _renderer;
-    private ElementReference _canvasContainer;
-    private float CanvasWidth => _viewport?.CanvasWidth ?? throw new UnreachableException();
-    private float CanvasHeight => _viewport?.CanvasHeight ?? throw new UnreachableException();
-
-    private string CursorClass => (PanStartPosition != null) ? "grab" : "default";
-    private HistoryStack? _historyStack;
-    private Vector2? PanStartPosition;
-
     [Inject]
     public required IBlazorDownloadFileService BlazorDownloadFileService { get; init; }
     [Inject]
     public required IJSRuntime JSRuntime { get; init; }
 
-    private RenderContext? _renderContext;
+    private readonly Map _map = MapFactory.Empty(192, 96, 10, 10);
+    private HistoryStack? _historyStack;
+
     private Viewport? _viewport;
+    private RenderContext? _renderContext;
+    private MapRenderer? _renderer;
     private readonly PaintCache _paintCache = new();
     private readonly RenderingOptions _renderingOptions = new();
+    private SKGLView Canvas;
 
-    private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
+    private ElementReference _canvasContainer;
+
+    private EditorMode _currentMode = EditorMode.Layout;
+    private Vector2? PanStartPosition;
+
+    private float CanvasWidth => _viewport?.CanvasWidth ?? throw new UnreachableException();
+    private float CanvasHeight => _viewport?.CanvasHeight ?? throw new UnreachableException();
+    private string CursorClass => (PanStartPosition != null) ? "grab" : "default";
+
+    protected override void OnInitialized()
     {
-        args.Surface.Canvas.Clear(SKColors.Black);
+        _historyStack = new HistoryStack();
+        _viewport = new Viewport();
 
-        if (_renderContext == null || _renderer == null)
-            return;
+        _renderContext = new RenderContext(
+            _map, _renderingOptions,
+            _viewport, _paintCache);
 
-        _renderContext.RegisterSurface(args.Surface);
-        _renderer.Render();
+        _renderer = new MapRenderer(_renderContext);
+
+        _renderer.renderables.Add(new BackgroundRenderer());
+        _renderer.renderables.Add(new GridRenderer());
+        _renderer.renderables.Add(new MirrorAxisRenderer());
+        _renderer.renderables.Add(new NodeRenderer());
+        _renderer.renderables.Add(new EdgeRenderer());
+        _renderer.renderables.Add(new MapBlocksRenderer());
+        _renderer.renderables.Add(new RegionRenderer());
+        _renderer.renderables.Add(new EdgeBoundingBoxRenderer());
+        _renderer.renderables.Add(new EdgeBlocksRenderer());
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -81,36 +94,48 @@ public partial class Home : ComponentBase
         _viewport.UpdateTRS(_viewport.Center);
     }
 
-    protected override void OnInitialized()
+    private async Task Render(RenderTrigger trigger)
     {
-        _historyStack = new HistoryStack();
-        _viewport = new Viewport();
-
-        _renderContext = new RenderContext(
-            _map, _renderingOptions,
-            _viewport, _paintCache);
-
-        _renderer = new MapRenderer(_renderContext);
-
-        _renderer.renderables.Add(new BackgroundRenderer());
-        _renderer.renderables.Add(new GridRenderer());
-        _renderer.renderables.Add(new MirrorAxisRenderer());
-        _renderer.renderables.Add(new NodeRenderer());
-        _renderer.renderables.Add(new EdgeRenderer());
-        _renderer.renderables.Add(new MapBlocksRenderer());
-        _renderer.renderables.Add(new RegionRenderer());
-        _renderer.renderables.Add(new EdgeBoundingBoxRenderer());
-        _renderer.renderables.Add(new EdgeBlocksRenderer());
+        Canvas.Invalidate();
     }
 
-    private async Task OnSettingsChanged()
+    private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
     {
-        await Render(RenderTrigger.SettingsChanged);
+        args.Surface.Canvas.Clear(SKColors.Black);
+
+        if (_renderContext == null || _renderer == null)
+            return;
+
+        _renderContext.RegisterSurface(args.Surface);
+        _renderer.Render();
+    }
+
+    public async Task OnFitMap()
+    {
+        if (_map.Width <= 0 || _map.Height <= 0)
+            return;
+
+        _viewport.FitToContent(_map.Width, _map.Height);
+        await Render(RenderTrigger.ViewFit);
+    }
+
+    public async Task OnFitTeam()
+    {
+        if (_map.Width <= 0 || _map.Height <= 0 || _map.Symmetry == null)
+            return;
+
+        _viewport.FitToSection(_map.Width, _map.Height, _map.Symmetry.IsHorizontal);
+        await Render(RenderTrigger.ViewFit);
     }
 
     private void OnChangeEditingMode(EditorMode newMode)
     {
         _currentMode = newMode;
+    }
+
+    private async Task OnSettingsChanged()
+    {
+        await Render(RenderTrigger.SettingsChanged);
     }
 
     private async Task OnClearMap()
@@ -138,6 +163,15 @@ public partial class Home : ComponentBase
         await Render(RenderTrigger.Redo);
     }
 
+    private async Task OnSchematicCreate()
+    {
+        var schematic = SchematicMaker.FromMap(_map);
+        var fileName = $"{schematic.Name}.schematic";
+
+        await BlazorDownloadFileService.DownloadFile(fileName, schematic.Save(),
+            "application/octet-stream");
+    }
+
     private async Task OnDeleteNode()
     {
         if (_renderContext.SelectedNode == null)
@@ -152,13 +186,14 @@ public partial class Home : ComponentBase
         await Render(RenderTrigger.NodeRemoved);
     }
 
-    private async Task OnSchematicCreate()
+    private async Task OnMouseDown(MouseEventArgs e)
     {
-        var schematic = SchematicMaker.FromMap(_map);
-        var fileName = $"{schematic.Name}.schematic";
+        await _canvasContainer.FocusAsync();
 
-        await BlazorDownloadFileService.DownloadFile(fileName, schematic.Save(),
-            "application/octet-stream");
+        if (e.Button == 1)
+        {
+            PanStartPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
+        }
     }
 
     private async Task OnMouseUp(MouseEventArgs e)
@@ -180,14 +215,80 @@ public partial class Home : ComponentBase
         }
     }
 
-    private async Task OnMouseDown(MouseEventArgs e)
+    private async Task OnMouseMove(MouseEventArgs e)
     {
-        await _canvasContainer.FocusAsync();
-        
-        if (e.Button == 1)
+        Vector2 cursorPosition = _viewport.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
+        Node? closestNode = _map.Graph.GetClosestNode(cursorPosition);
+
+        var prevHovered = _renderContext.HoveredNode;
+
+        if (closestNode != null)
         {
-            PanStartPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
+            var threshhold = 0.4f;
+            var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
+
+            _renderContext.HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
         }
+
+        if (prevHovered != _renderContext.HoveredNode)
+            await Render(RenderTrigger.NodeHover);
+    }
+
+    [JSInvokable]
+    public async ValueTask JSOnMouseMove(int mouseX, int mouseY)
+    {
+        if (PanStartPosition == null)
+            return;
+
+        var panEndPosition = new Vector2(mouseX, mouseY);
+        var deltaPan = PanStartPosition.Value - panEndPosition;
+        PanStartPosition = panEndPosition;
+
+        _viewport.UpdateTRS(_viewport.CameraPosition - deltaPan);
+        await Render(RenderTrigger.Pan);
+    }
+
+
+
+    public async Task OnKeyUp(KeyboardEventArgs e)
+    {
+        if (_renderContext.SelectedNode == null)
+            return;
+
+        bool nodeMoved = false;
+
+        if (e.Key == "ArrowUp")
+        {
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(0, -1));
+            nodeMoved = true;
+        }
+        else if (e.Key == "ArrowDown")
+        {
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(0, 1));
+            nodeMoved = true;
+        }
+        else if (e.Key == "ArrowLeft")
+        {
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(-1, 0));
+            nodeMoved = true;
+        }
+        else if (e.Key == "ArrowRight")
+        {
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(1, 0));
+            nodeMoved = true;
+        }
+
+        if (nodeMoved)
+            await Render(RenderTrigger.NodeMoved);
+    }
+
+    [JSInvokable]
+    public async ValueTask JSOnWheel(double deltaY, double offsetX, double offsetY)
+    {
+        var cursorPos = new Vector2((float)offsetX, (float)offsetY);
+
+        if (_viewport.TryZoom(deltaY, cursorPos, _map.Width, _map.Height))
+            await Render(RenderTrigger.Zoom);
     }
 
     private async Task HandleLeftClick(Vector2 worldPos)
@@ -272,103 +373,6 @@ public partial class Home : ComponentBase
             _renderContext.SelectedNode = null;
             await Render(RenderTrigger.NodeDeselected);
         }
-    }
-
-    private async Task OnMouseMove(MouseEventArgs e)
-    {
-        Vector2 cursorPosition = _viewport.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
-        Node? closestNode = _map.Graph.GetClosestNode(cursorPosition);
-
-        var prevHovered = _renderContext.HoveredNode;
-
-        if (closestNode != null)
-        {
-            var threshhold = 0.4f;
-            var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
-
-            _renderContext.HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
-        }
-
-        if (prevHovered != _renderContext.HoveredNode)
-            await Render(RenderTrigger.NodeHover);
-    }
-
-    [JSInvokable]
-    public async ValueTask JSOnMouseMove(int mouseX, int mouseY)
-    {
-        if (PanStartPosition == null)
-            return;
-
-        var panEndPosition = new Vector2(mouseX, mouseY);
-        var deltaPan = PanStartPosition.Value - panEndPosition;
-        PanStartPosition = panEndPosition;
-
-        _viewport.UpdateTRS(_viewport.CameraPosition - deltaPan);
-        await Render(RenderTrigger.Pan);
-    }
-
-    private async Task Render(RenderTrigger trigger)
-    {
-        Canvas.Invalidate();
-    }
-
-    public async Task OnKeyUp(KeyboardEventArgs e)
-    {
-        if (_renderContext.SelectedNode == null)
-            return;
-
-        bool nodeMoved = false;
-
-        if (e.Key == "ArrowUp")
-        {
-            _map.MoveNode(_renderContext.SelectedNode, new Vector2(0, -1));
-            nodeMoved = true;
-        }
-        else if (e.Key == "ArrowDown")
-        {
-            _map.MoveNode(_renderContext.SelectedNode, new Vector2(0, 1));
-            nodeMoved = true;
-        }
-        else if (e.Key == "ArrowLeft")
-        {
-            _map.MoveNode(_renderContext.SelectedNode, new Vector2(-1, 0));
-            nodeMoved = true;
-        }
-        else if (e.Key == "ArrowRight")
-        {
-            _map.MoveNode(_renderContext.SelectedNode, new Vector2(1, 0));
-            nodeMoved = true;
-        }
-
-        if (nodeMoved)
-            await Render(RenderTrigger.NodeMoved);
-    }
-
-    [JSInvokable]
-    public async ValueTask JSOnWheel(double deltaY, double offsetX, double offsetY)
-    {
-        var cursorPos = new Vector2((float)offsetX, (float)offsetY);
-        
-        if (_viewport.TryZoom(deltaY,cursorPos,_map.Width,_map.Height))
-            await Render(RenderTrigger.Zoom);
-    }
-
-    public async Task OnFitMap()
-    {
-        if (_map.Width <= 0 || _map.Height <= 0)
-            return;
-
-        _viewport.FitToContent(_map.Width, _map.Height);
-        await Render(RenderTrigger.ViewFit);
-    }
-
-    public async Task OnFitTeam()
-    {
-        if (_map.Width <= 0 || _map.Height <= 0 || _map.Symmetry == null)
-            return;
-
-        _viewport.FitToSection(_map.Width, _map.Height, _map.Symmetry.IsHorizontal);
-        await Render(RenderTrigger.ViewFit);
     }
 
     private async Task LoadWorldFiles(InputFileChangeEventArgs e)
