@@ -85,4 +85,26 @@ public class Viewport
         var newTranslation = Center - mapHalfCenter * Scale;
         UpdateTRS(newTranslation);
     }
+
+    public bool TryZoom(double deltaY, Vector2 cursorPos, float width, float height, float minSize = 16f)
+    {
+        if (deltaY == 0)
+            return false;
+
+        var worldPosBeforeZoom = ScreenToWorldPos(cursorPos);
+        float newScale = deltaY < 0 ? Scale * 1.6f : Scale / 1.6f;
+        var minZoom = CalculateMinZoom(width, height);
+        var maxZoom = CalculateMaxZoom();
+        newScale = float.Clamp(newScale, minZoom, maxZoom);
+
+        if (Math.Abs(newScale - Scale) < 0.001f)
+            return false;
+
+        // Keep cursor position
+        var newTranslation = cursorPos - worldPosBeforeZoom * newScale;
+
+        Scale = newScale;
+        UpdateTRS(newTranslation);
+        return true;
+    }
 }

@@ -350,25 +350,10 @@ public partial class Home : ComponentBase
     [JSInvokable]
     public async ValueTask JSOnWheel(double deltaY, double offsetX, double offsetY)
     {
-        if (deltaY == 0)
-            return;
-
-        var relativeCursorPos = new Vector2((float)offsetX, (float)offsetY);
-        var worldPosBeforeZoom = _viewport.ScreenToWorldPos(relativeCursorPos);
-
-        float newScale = deltaY < 0 ? _viewport.Scale * 1.6f : _viewport.Scale / 1.6f;
-        newScale = float.Clamp(newScale, MinZoom, MaxZoom);
-
-        if (Math.Abs(newScale - _viewport.Scale) < 0.001f)
-            return;
-
-        // Calculate new translation to keep cursor world pos at cursor screen pos
-        var newTranslation = relativeCursorPos - worldPosBeforeZoom * newScale;
-
-        _viewport.Scale = newScale;
-        _viewport.UpdateTRS(newTranslation);
-
-        await Render(RenderTrigger.Zoom);
+        var cursorPos = new Vector2((float)offsetX, (float)offsetY);
+        
+        if (_viewport.TryZoom(deltaY,cursorPos,_map.Width,_map.Height))
+            await Render(RenderTrigger.Zoom);
     }
 
     public async Task OnFitMap()
