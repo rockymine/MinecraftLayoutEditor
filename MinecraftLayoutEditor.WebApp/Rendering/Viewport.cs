@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using MinecraftLayoutEditor.Logic;
+using SkiaSharp;
 using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering;
@@ -49,5 +50,39 @@ public class Viewport
         float scaleX = CanvasWidth / 16f;
         float scaleY = CanvasHeight / 16f;
         return float.Min(scaleX, scaleY) * 0.98f;
+    }
+
+    public void FitToContent(float width, float height)
+    {
+        Scale = CalculateMinZoom(width, height);
+        UpdateTRS(Center);
+    }
+
+    public void FitToSection(float width, float height, bool horizontalSplit)
+    {
+        float halfW = width / 2f;
+        float halfH = height / 2f;
+
+        Vector2 mapHalfCenter;
+        float scaleX, scaleY;
+
+        // Horizontal mirror
+        if (horizontalSplit)
+        {
+            mapHalfCenter = new Vector2(0, -halfH / 2f);
+            scaleX = CanvasWidth / width;
+            scaleY = CanvasHeight / halfH;
+        }
+        // Vertical mirror
+        else
+        {
+            mapHalfCenter = new Vector2(halfW / 2f, 0);
+            scaleX = CanvasWidth / halfW;
+            scaleY = CanvasHeight / height;
+        }
+
+        Scale = float.Min(scaleX, scaleY) * 0.98f;
+        var newTranslation = Center - mapHalfCenter * Scale;
+        UpdateTRS(newTranslation);
     }
 }

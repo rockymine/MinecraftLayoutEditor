@@ -385,8 +385,7 @@ public partial class Home : ComponentBase
         if (_map.Width <= 0 || _map.Height <= 0)
             return;
 
-        _viewport.Scale = MinZoom;
-        _viewport.UpdateTRS(_viewport.Center);
+        _viewport.FitToContent(_map.Width, _map.Height);
         await Render(RenderTrigger.ViewFit);
     }
 
@@ -395,36 +394,7 @@ public partial class Home : ComponentBase
         if (_map.Width <= 0 || _map.Height <= 0 || _map.Symmetry == null)
             return;
 
-        var horizontal = _map.Symmetry.IsHorizontal;
-
-        float halfW = _map.Width / 2f;
-        float halfH = _map.Height / 2f;
-
-        Vector2 mapHalfCenter;
-        float scaleX, scaleY;
-
-        // Horizontal mirror line
-        if (horizontal)
-        {
-            mapHalfCenter = new Vector2(0, -halfH / 2f);
-            scaleX = _viewport.CanvasWidth / _map.Width;
-            scaleY = _viewport.CanvasHeight / halfH;
-        }
-        // Vertical mirror line
-        else
-        {
-            mapHalfCenter = new Vector2(halfW / 2f, 0);
-            scaleX = _viewport.CanvasWidth / halfW;
-            scaleY = _viewport.CanvasHeight / _map.Height;
-        }
-
-        var newScale = float.Min(scaleX, scaleY) * 0.98f;
-        
-        var canvasCenter = new Vector2(_viewport.CanvasWidth / 2f, _viewport.CanvasHeight / 2f);
-        var newTranslation = canvasCenter - mapHalfCenter * newScale;
-
-        _viewport.Scale = newScale;
-        _viewport.UpdateTRS(newTranslation);
+        _viewport.FitToSection(_map.Width, _map.Height, _map.Symmetry.IsHorizontal);
         await Render(RenderTrigger.ViewFit);
     }
 
