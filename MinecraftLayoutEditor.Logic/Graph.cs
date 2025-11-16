@@ -4,8 +4,9 @@ namespace MinecraftLayoutEditor.Logic;
 
 public class Graph
 {
-    private List<Node> _nodes = [];
+    private readonly List<Node> _nodes = [];
     public IReadOnlyList<Node> Nodes => _nodes;
+    public HashSet<Edge> Edges => GetUniqueEdges();
 
     public Node? GetClosestNode(Vector2 pos)
     {
@@ -28,7 +29,7 @@ public class Graph
         return closestNode;
     }
 
-    public HashSet<Edge> GetUniqueEdges()
+    private HashSet<Edge> GetUniqueEdges()
     {
         var uniqueEdges = new HashSet<Edge>();
         foreach (var node in _nodes)

@@ -9,10 +9,8 @@ public class EdgeBoundingBoxRenderer : IRenderable
     {
         if (!context.Options.ShowBoundingBoxEnabled)
             return;
-        
-        var uniqueEdges = context.Map.Graph.GetUniqueEdges();
 
-        foreach (var uniqueEdge in uniqueEdges)
+        foreach (var uniqueEdge in context.Map.Graph.Edges)
         {
 
             var corners = Rectangle.FindRectCorners(uniqueEdge.Node1.Position, uniqueEdge.Node2.Position, context.Map.LaneWidth);

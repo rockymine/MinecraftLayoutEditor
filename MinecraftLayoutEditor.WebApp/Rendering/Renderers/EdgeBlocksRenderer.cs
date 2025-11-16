@@ -8,10 +8,8 @@ public class EdgeBlocksRenderer : IRenderable
     {
         if (!context.Options.ShowBlocksEnabled) 
             return;
-        
-        var uniqueEdges = context.Map.Graph.GetUniqueEdges();
 
-        foreach (var edge in uniqueEdges)
+        foreach (var edge in context.Map.Graph.Edges)
         {
             var blockPaint = context.Cache.GetPaint(context.Options.CellFillStyle, SKPaintStyle.Stroke, 1f, context.Viewport.Scale);
             SKPath blockList = new()

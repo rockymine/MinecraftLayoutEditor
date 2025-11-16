@@ -6,9 +6,7 @@ public class EdgeRenderer : IRenderable
 {
     public void Render(RenderContext context)
     {
-        var uniqueEdges = context.Map.Graph.GetUniqueEdges();
-
-        foreach (var edge in uniqueEdges)
+        foreach (var edge in context.Map.Graph.Edges)
         {
             var style = context.Options.GetStyle(edge.Type.ToString().ToLower());
             var p0 = edge.Node1.Position;
