@@ -9,7 +9,7 @@ public class GridRenderer : IRenderable
     {
         // Render grid cells
         var gridLineStyle = context.Options.GetStyle("gridLineStyle");
-        var paint = context.Cache.GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, gridLineStyle.LineWidth, context.Scale);
+        var paint = context.Cache.GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, gridLineStyle.LineWidth, context.Viewport.Scale);
         using var gridPath = new SKPath();
 
         float left = -context.Map.Width / 2f;
@@ -45,7 +45,7 @@ public class GridRenderer : IRenderable
         context.Surface.Canvas.DrawPath(gridPath, paint);
 
         // Render grid box
-        var gridBoxPaint = context.Cache.GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, context.Options.GridBorderLineWidth, context.Scale);
+        var gridBoxPaint = context.Cache.GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, context.Options.GridBorderLineWidth, context.Viewport.Scale);
         var origin = new Vector2(-context.Map.Width / 2f, -context.Map.Height / 2f);
         context.Surface.Canvas.DrawRect(origin.X, origin.Y, context.Map.Width,
             context.Map.Height, gridBoxPaint);

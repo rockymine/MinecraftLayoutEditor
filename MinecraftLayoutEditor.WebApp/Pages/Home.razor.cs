@@ -8,7 +8,6 @@ using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
 using MinecraftLayoutEditor.WebApp.Rendering.Renderers;
-using MinecraftLayoutEditor.XML;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
 using System.Diagnostics;
@@ -23,11 +22,9 @@ public partial class Home : ComponentBase
     private SKGLView Canvas;
     private readonly Map _map = MapFactory.Empty(192,96,10,10);
     private MapRenderer? _renderer;
-    private readonly RenderingOptions _renderingOptions = new();
-    private MapElement? _uploadedMap;
     private ElementReference _canvasContainer;
-    private float CanvasWidth => _renderer?.CanvasWidth ?? throw new UnreachableException();
-    private float CanvasHeight => _renderer?.CanvasHeight ?? throw new UnreachableException();
+    private float CanvasWidth => _viewport?.CanvasWidth ?? throw new UnreachableException();
+    private float CanvasHeight => _viewport?.CanvasHeight ?? throw new UnreachableException();
 
     private float MaxZoom => CalculateMaxZoom();
     private float MinZoom => CalculateMinZoom();
@@ -41,21 +38,20 @@ public partial class Home : ComponentBase
     [Inject]
     public required IJSRuntime JSRuntime { get; init; }
 
-
     private RenderContext? _renderContext;
+    private Viewport? _viewport;
     private readonly PaintCache _paintCache = new();
+    private readonly RenderingOptions _renderingOptions = new();
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
     {
-        args.Surface.Canvas.Clear(SKColors.LightGray);
+        args.Surface.Canvas.Clear(SKColors.Black);
 
         if (_renderContext == null || _renderer == null)
             return;
 
         _renderContext.RegisterSurface(args.Surface);
         _renderer.Render();
-
-        //_renderer.Render(args.Surface, _map, HoveredNode, SelectedNode, _renderingOptions, _uploadedMap);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -74,26 +70,28 @@ public partial class Home : ComponentBase
     public async Task OnBrowserResize()
     {
         await ResizeCanvas();
+
+        if (_viewport.Scale == 1f)
+            await OnFitMap();
+
         await Render(RenderTrigger.Initial);
     }
 
     private async Task ResizeCanvas()
     {
         var size = await JSRuntime.InvokeAsync<Size>("getElementClientSize", _canvasContainer);
-        _renderer.Resize(size.Width, size.Height);
-        // keep the same world-center after resize
-        var center = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
-
-        _renderer.UpdateTRS(center);
+        _viewport.Resize(size.Width, size.Height);
+        _viewport.UpdateTRS(_viewport.Center);
     }
 
     protected override void OnInitialized()
     {
         _historyStack = new HistoryStack();
+        _viewport = new Viewport();
 
         _renderContext = new RenderContext(
-            _map, _renderingOptions, 
-            _paintCache);
+            _map, _renderingOptions,
+            _viewport, _paintCache);
 
         _renderer = new MapRenderer(_renderContext);
 
@@ -168,7 +166,7 @@ public partial class Home : ComponentBase
 
     private async Task OnMouseUp(MouseEventArgs e)
     {
-        Vector2 clickedAt = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX,
+        Vector2 clickedAt = _viewport.ScreenToWorldPos(new Vector2((float)e.OffsetX,
             (float)e.OffsetY));
 
         if (e.Button == 0)
@@ -281,7 +279,7 @@ public partial class Home : ComponentBase
 
     private async Task OnMouseMove(MouseEventArgs e)
     {
-        Vector2 cursorPosition = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
+        Vector2 cursorPosition = _viewport.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
         Node? closestNode = _map.Graph.GetClosestNode(cursorPosition);
 
         var prevHovered = _renderContext.HoveredNode;
@@ -308,7 +306,7 @@ public partial class Home : ComponentBase
         var deltaPan = PanStartPosition.Value - panEndPosition;
         PanStartPosition = panEndPosition;
 
-        _renderer.UpdateTRS(_renderer.CameraPosition - deltaPan);
+        _viewport.UpdateTRS(_viewport.CameraPosition - deltaPan);
         await Render(RenderTrigger.Pan);
     }
 
@@ -356,28 +354,28 @@ public partial class Home : ComponentBase
             return;
 
         var relativeCursorPos = new Vector2((float)offsetX, (float)offsetY);
-        var worldPosBeforeZoom = _renderer.ScreenToWorldPos(relativeCursorPos);
+        var worldPosBeforeZoom = _viewport.ScreenToWorldPos(relativeCursorPos);
 
         float newScale;
         if (deltaY < 0)
         {
-            newScale = _renderContext.Scale * 1.6f;
+            newScale = _viewport.Scale * 1.6f;
         }
         else
         {
-            newScale = _renderContext.Scale / 1.6f;
+            newScale = _viewport.Scale / 1.6f;
         }
 
         newScale = float.Clamp(newScale, MinZoom, MaxZoom);
 
-        if (Math.Abs(newScale - _renderContext.Scale) < 0.001f)
+        if (Math.Abs(newScale - _viewport.Scale) < 0.001f)
             return;
 
         // Calculate new translation to keep cursor world pos at cursor screen pos
         var newTranslation = relativeCursorPos - worldPosBeforeZoom * newScale;
 
-        _renderContext.Scale = newScale;
-        _renderer.UpdateTRS(newTranslation);
+        _viewport.Scale = newScale;
+        _viewport.UpdateTRS(newTranslation);
 
         await Render(RenderTrigger.Zoom);
     }
@@ -387,11 +385,8 @@ public partial class Home : ComponentBase
         if (_map.Width <= 0 || _map.Height <= 0)
             return;
 
-        var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
-        var newTranslation = canvasCenter;
-
-        _renderContext.Scale = MinZoom;
-        _renderer.UpdateTRS(newTranslation);
+        _viewport.Scale = MinZoom;
+        _viewport.UpdateTRS(_viewport.Center);
         await Render(RenderTrigger.ViewFit);
     }
 
@@ -412,24 +407,24 @@ public partial class Home : ComponentBase
         if (horizontal)
         {
             mapHalfCenter = new Vector2(0, -halfH / 2f);
-            scaleX = _renderer.CanvasWidth / _map.Width;
-            scaleY = _renderer.CanvasHeight / halfH;
+            scaleX = _viewport.CanvasWidth / _map.Width;
+            scaleY = _viewport.CanvasHeight / halfH;
         }
         // Vertical mirror line
         else
         {
             mapHalfCenter = new Vector2(halfW / 2f, 0);
-            scaleX = _renderer.CanvasWidth / halfW;
-            scaleY = _renderer.CanvasHeight / _map.Height;
+            scaleX = _viewport.CanvasWidth / halfW;
+            scaleY = _viewport.CanvasHeight / _map.Height;
         }
 
         var newScale = float.Min(scaleX, scaleY) * 0.98f;
         
-        var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
+        var canvasCenter = new Vector2(_viewport.CanvasWidth / 2f, _viewport.CanvasHeight / 2f);
         var newTranslation = canvasCenter - mapHalfCenter * newScale;
 
-        _renderContext.Scale = newScale;
-        _renderer.UpdateTRS(newTranslation);
+        _viewport.Scale = newScale;
+        _viewport.UpdateTRS(newTranslation);
         await Render(RenderTrigger.ViewFit);
     }
 
@@ -438,8 +433,8 @@ public partial class Home : ComponentBase
         if (_map.Width <= 0 || _map.Height <= 0)
             return 1f;
 
-        float scaleX = _renderer.CanvasWidth / 16f;
-        float scaleY = _renderer.CanvasHeight / 16f;
+        float scaleX = _viewport.CanvasWidth / 16f;
+        float scaleY = _viewport.CanvasHeight / 16f;
 
         return float.Min(scaleX, scaleY) * 0.98f;
     }
@@ -449,8 +444,8 @@ public partial class Home : ComponentBase
         if (_map.Width <= 0 || _map.Height <= 0)
             return 1f;
 
-        float scaleX = _renderer.CanvasWidth / _map.Width;
-        float scaleY = _renderer.CanvasHeight / _map.Height;
+        float scaleX = _viewport.CanvasWidth / _map.Width;
+        float scaleY = _viewport.CanvasHeight / _map.Height;
 
         return float.Min(scaleX, scaleY) * 0.98f;
     }
@@ -485,7 +480,6 @@ public partial class Home : ComponentBase
 
             if (map != null)
             {
-                _uploadedMap = map;
                 _renderContext.RegisterMapElement(map);
                 Console.WriteLine($"Map '{map.Name}' with {map.Regions.Items.Count} regions loaded.");
             }

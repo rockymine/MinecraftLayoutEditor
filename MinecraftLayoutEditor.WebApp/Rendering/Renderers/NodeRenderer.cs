@@ -57,8 +57,8 @@ public class NodeRenderer : IRenderable
 
     private void RenderCircleNode(RenderContext context, Vector2 screenPos, RenderStyle style)
     {
-        var circleFillPaint = context.Cache.GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth, context.Scale);
-        var circleStrokePaint = context.Cache.GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth, context.Scale);
+        var circleFillPaint = context.Cache.GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth, context.Viewport.Scale);
+        var circleStrokePaint = context.Cache.GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth, context.Viewport.Scale);
 
         context.Surface.Canvas.DrawCircle(screenPos.X, screenPos.Y, style.Radius, circleFillPaint);
         context.Surface.Canvas.DrawCircle(screenPos.X, screenPos.Y, style.Radius, circleStrokePaint);
@@ -69,8 +69,8 @@ public class NodeRenderer : IRenderable
         var size = style.Radius * (float)Math.Sqrt(Math.PI / 4);
         var topLeft = screenPos - new Vector2(size, size);
 
-        var squareFillPaint = context.Cache.GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth, context.Scale);
-        var squareStrokePaint = context.Cache.GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth, context.Scale);
+        var squareFillPaint = context.Cache.GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth, context.Viewport.Scale);
+        var squareStrokePaint = context.Cache.GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth, context.Viewport.Scale);
 
         context.Surface.Canvas.DrawRect(topLeft.X, topLeft.Y, size * 2, size * 2, squareFillPaint);
         context.Surface.Canvas.DrawRect(topLeft.X, topLeft.Y, size * 2, size * 2, squareStrokePaint);
@@ -85,8 +85,8 @@ public class NodeRenderer : IRenderable
         var right = new Vector2(screenPos.X + size, screenPos.Y);
         var bottom = new Vector2(screenPos.X, screenPos.Y + size);
 
-        var diamondFillPaint = context.Cache.GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth, context.Scale);
-        var diamondStrokePaint = context.Cache.GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth, context.Scale);
+        var diamondFillPaint = context.Cache.GetPaint(style.FillStyle, SKPaintStyle.Fill, style.LineWidth, context.Viewport.Scale);
+        var diamondStrokePaint = context.Cache.GetPaint(style.StrokeStyle, SKPaintStyle.Stroke, style.LineWidth, context.Viewport.Scale);
 
         SKPath diamond = new();
         diamond.MoveTo(left.X, left.Y);

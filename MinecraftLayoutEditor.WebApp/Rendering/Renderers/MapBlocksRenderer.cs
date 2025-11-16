@@ -7,7 +7,7 @@ public class MapBlocksRenderer : IRenderable
 {
     public void Render(RenderContext context)
     {
-        var blockPaint = context.Cache.GetPaint(context.Options.CellFillStyle, SKPaintStyle.Stroke, 1f, context.Scale);
+        var blockPaint = context.Cache.GetPaint(context.Options.CellFillStyle, SKPaintStyle.Stroke, 1f, context.Viewport.Scale);
         SKPath blockList = new()
         {
             FillType = SKPathFillType.Winding
