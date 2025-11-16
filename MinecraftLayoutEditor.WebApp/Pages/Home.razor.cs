@@ -7,7 +7,7 @@ using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
 using MinecraftLayoutEditor.WebApp.Rendering;
-using MinecraftLayoutEditor.XML;
+using MinecraftLayoutEditor.WebApp.Rendering.Renderers;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
 using System.Drawing;
@@ -17,35 +17,50 @@ namespace MinecraftLayoutEditor.WebApp.Pages;
 
 public partial class Home : ComponentBase
 {
-    private EditorMode _currentMode = EditorMode.Layout;
-    private SKGLView Canvas;
-    private readonly Map _map = MapFactory.Empty(192,96,10,10);
-    private readonly MapRenderer _renderer = new();
-    private readonly RenderingOptions _renderingOptions = new();
-    private Node? HoveredNode;
-    private Node? SelectedNode;
-    private MapElement? _uploadedMap;
-    private ElementReference _canvasContainer;
-    private float CanvasWidth => _renderer.CanvasWidth;
-    private float CanvasHeight => _renderer.CanvasHeight;
-
-    private float MaxZoom => CalculateMaxZoom();
-    private float MinZoom => CalculateMinZoom();
-
-    private string CursorClass => (PanStartPosition != null) ? "grab" : "default";
-    private HistoryStack? _historyStack;
-    private Vector2? PanStartPosition;
-
     [Inject]
     public required IBlazorDownloadFileService BlazorDownloadFileService { get; init; }
     [Inject]
     public required IJSRuntime JSRuntime { get; init; }
 
-    private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
-    {
-        args.Surface.Canvas.Clear(SKColors.LightGray);
+    private readonly Map _map = MapFactory.Empty(192, 96, 10, 10);
+    private HistoryStack _historyStack = default!;
 
-        _renderer.Render(args.Surface, _map, HoveredNode, SelectedNode, _renderingOptions, _uploadedMap);
+    private Viewport _viewport = default!;
+    private RenderContext _renderContext = default!;
+    private MapRenderer _renderer = default!;
+    private readonly PaintCache _paintCache = new();
+    private readonly RenderingOptions _renderingOptions = new();
+    private SKGLView _canvas = default!;
+
+    private ElementReference _canvasContainer;
+
+    private EditorMode _currentMode = EditorMode.Layout;
+    private Vector2? _panStartPosition;
+
+    private float CanvasWidth => _viewport.CanvasWidth;
+    private float CanvasHeight => _viewport.CanvasHeight;
+    private string CursorClass => (_panStartPosition != null) ? "grab" : "default";
+
+    protected override void OnInitialized()
+    {
+        _historyStack = new HistoryStack();
+        _viewport = new Viewport();
+
+        _renderContext = new RenderContext(
+            _map, _renderingOptions,
+            _viewport, _paintCache);
+
+        _renderer = new MapRenderer(_renderContext);
+
+        _renderer.renderables.Add(new BackgroundRenderer());
+        _renderer.renderables.Add(new GridRenderer());
+        _renderer.renderables.Add(new MirrorAxisRenderer());
+        _renderer.renderables.Add(new NodeRenderer());
+        _renderer.renderables.Add(new EdgeRenderer());
+        _renderer.renderables.Add(new MapBlocksRenderer());
+        _renderer.renderables.Add(new RegionRenderer());
+        _renderer.renderables.Add(new EdgeBoundingBoxRenderer());
+        _renderer.renderables.Add(new EdgeBlocksRenderer());
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -57,33 +72,60 @@ public partial class Home : ComponentBase
         await JSRuntime.InvokeAsync<object>("init", DotNetObjectReference.Create(this));
         await JSRuntime.InvokeVoidAsync("initResizeObserver", DotNetObjectReference.Create(this));
 
-        await Render(RenderTrigger.Initial);
+        Render(RenderTrigger.Initial);
     }
 
     [JSInvokable]
     public async Task OnBrowserResize()
     {
         await ResizeCanvas();
-        await Render(RenderTrigger.Initial);
+
+        if (_viewport.Scale == 1f)
+            OnFitMap();
+
+        Render(RenderTrigger.Initial);
     }
 
     private async Task ResizeCanvas()
     {
         var size = await JSRuntime.InvokeAsync<Size>("getElementClientSize", _canvasContainer);
-        _renderer.Resize(size.Width, size.Height);
-        // keep the same world-center after resize
-        var center = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
-        _renderer.UpdateTRS(center, _renderer.Scale);
+        _viewport.Resize(size.Width, size.Height);
+        _viewport.UpdateTRS(_viewport.Center);
     }
 
-    protected override void OnInitialized()
+    private void Render(RenderTrigger trigger)
     {
-        _historyStack = new HistoryStack();
+        if (OperatingSystem.IsBrowser())
+            _canvas.Invalidate();
     }
 
-    private async Task OnSettingsChanged()
+    private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
     {
-        await Render(RenderTrigger.SettingsChanged);
+        args.Surface.Canvas.Clear(SKColors.LightGray);
+
+        if (_renderContext == null || _renderer == null)
+            return;
+
+        _renderContext.RegisterSurface(args.Surface);
+        _renderer.Render();
+    }
+
+    public void OnFitMap()
+    {
+        if (_map.Width <= 0 || _map.Height <= 0)
+            return;
+
+        _viewport.FitToContent(_map.Width, _map.Height);
+        Render(RenderTrigger.ViewFit);
+    }
+
+    public void OnFitTeam()
+    {
+        if (_map.Width <= 0 || _map.Height <= 0 || _map.Symmetry == null)
+            return;
+
+        _viewport.FitToSection(_map.Width, _map.Height, _map.Symmetry.IsHorizontal);
+        Render(RenderTrigger.ViewFit);
     }
 
     private void OnChangeEditingMode(EditorMode newMode)
@@ -91,43 +133,34 @@ public partial class Home : ComponentBase
         _currentMode = newMode;
     }
 
-    private async Task OnClearMap()
+    private void OnSettingsChanged()
     {
-        SelectedNode = null;
-        HoveredNode = null;
+        Render(RenderTrigger.SettingsChanged);
+    }
+
+    private void OnClearMap()
+    {
+        _renderContext.SelectedNode = null;
+        _renderContext.HoveredNode = null;
 
         _map.Graph.Clear();
         _historyStack = new HistoryStack();
 
-        await Render(RenderTrigger.MapCleared);
+        Render(RenderTrigger.MapCleared);
     }
 
-    private async Task OnUndo()
+    private void OnUndo()
     {
         _historyStack?.Undo();
-        SelectedNode = null;
-        await Render(RenderTrigger.Undo);
+        _renderContext.SelectedNode = null;
+        Render(RenderTrigger.Undo);
     }
 
-    private async Task OnRedo()
+    private void OnRedo()
     {
         _historyStack?.Redo();
-        SelectedNode = null;
-        await Render(RenderTrigger.Redo);
-    }
-
-    private async Task OnDeleteNode()
-    {
-        if (SelectedNode == null)
-            return;
-        
-        var action = new RemoveNodeAction(
-                _map.Graph,
-                SelectedNode
-                );
-
-        _historyStack?.ExecuteAction(action);
-        await Render(RenderTrigger.NodeRemoved);
+        _renderContext.SelectedNode = null;
+        Render(RenderTrigger.Redo);
     }
 
     private async Task OnSchematicCreate()
@@ -139,39 +172,127 @@ public partial class Home : ComponentBase
             "application/octet-stream");
     }
 
-    private async Task OnMouseUp(MouseEventArgs e)
+    private void OnDeleteNode()
     {
-        Vector2 clickedAt = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX,
-            (float)e.OffsetY));
+        if (_renderContext.SelectedNode == null)
+            return;
+        
+        var action = new RemoveNodeAction(
+                _map.Graph,
+                 _renderContext.SelectedNode
+                );
 
-        if (e.Button == 0)
-        {
-            await HandleLeftClick(clickedAt);
-        }
-        else if (e.Button == 1)
-        {
-            PanStartPosition = null;
-        }
-        else if (e.Button == 2)
-        {
-            await HandleRightClick(clickedAt);
-        }
+        _historyStack?.ExecuteAction(action);
+        Render(RenderTrigger.NodeRemoved);
     }
 
     private async Task OnMouseDown(MouseEventArgs e)
     {
         await _canvasContainer.FocusAsync();
-        
+
         if (e.Button == 1)
         {
-            PanStartPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
+            _panStartPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
         }
     }
 
-    private async Task HandleLeftClick(Vector2 worldPos)
+    private void OnMouseUp(MouseEventArgs e)
+    {
+        Vector2 clickedAt = _viewport.ScreenToWorldPos(new Vector2((float)e.OffsetX,
+            (float)e.OffsetY));
+
+        if (e.Button == 0)
+        {
+            HandleLeftClick(clickedAt);
+        }
+        else if (e.Button == 1)
+        {
+            _panStartPosition = null;
+        }
+        else if (e.Button == 2)
+        {
+            HandleRightClick(clickedAt);
+        }
+    }
+
+    private void OnMouseMove(MouseEventArgs e)
+    {
+        Vector2 cursorPosition = _viewport.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
+        Node? closestNode = _map.Graph.GetClosestNode(cursorPosition);
+
+        var prevHovered = _renderContext.HoveredNode;
+
+        if (closestNode != null)
+        {
+            var threshhold = 0.4f;
+            var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
+
+            _renderContext.HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
+        }
+
+        if (prevHovered != _renderContext.HoveredNode)
+            Render(RenderTrigger.NodeHover);
+    }
+
+    [JSInvokable]
+    public void JSOnMouseMove(int mouseX, int mouseY)
+    {
+        if (_panStartPosition == null)
+            return;
+
+        var panEndPosition = new Vector2(mouseX, mouseY);
+        var deltaPan = _panStartPosition.Value - panEndPosition;
+        _panStartPosition = panEndPosition;
+
+        _viewport.UpdateTRS(_viewport.CameraPosition - deltaPan);
+        Render(RenderTrigger.Pan);
+    }
+
+    public void OnKeyUp(KeyboardEventArgs e)
+    {
+        if (_renderContext.SelectedNode == null)
+            return;
+
+        bool nodeMoved = false;
+
+        if (e.Key == "ArrowUp")
+        {
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(0, -1));
+            nodeMoved = true;
+        }
+        else if (e.Key == "ArrowDown")
+        {
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(0, 1));
+            nodeMoved = true;
+        }
+        else if (e.Key == "ArrowLeft")
+        {
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(-1, 0));
+            nodeMoved = true;
+        }
+        else if (e.Key == "ArrowRight")
+        {
+            _map.MoveNode(_renderContext.SelectedNode, new Vector2(1, 0));
+            nodeMoved = true;
+        }
+
+        if (nodeMoved)
+            Render(RenderTrigger.NodeMoved);
+    }
+
+    [JSInvokable]
+    public void JSOnWheel(double deltaY, double offsetX, double offsetY)
+    {
+        var cursorPos = new Vector2((float)offsetX, (float)offsetY);
+
+        if (_viewport.TryZoom(deltaY, cursorPos, _map.Width, _map.Height))
+            Render(RenderTrigger.Zoom);
+    }
+
+    private void HandleLeftClick(Vector2 worldPos)
     {
         // Add node
-        if (HoveredNode == null && _map.Contains(worldPos))
+        if (_renderContext.HoveredNode == null && _map.Contains(worldPos))
         {
             var pos = new Vector2(float.Floor(worldPos.X) + 0.5f, float.Floor(worldPos.Y) + 0.5f);
             var closestNode = _map.Graph.GetClosestNode(pos);
@@ -189,240 +310,67 @@ public partial class Home : ComponentBase
                 );
 
             _historyStack?.ExecuteAction(action);
-            await Render(RenderTrigger.NodeAdded);
+            Render(RenderTrigger.NodeAdded);
         }
         // Select node
-        else if (HoveredNode != null)
+        else if (_renderContext.HoveredNode != null)
         {
-            if (SelectedNode == null)
+            if (_renderContext.SelectedNode == null)
             {
-                SelectedNode = HoveredNode;
+                _renderContext.SelectedNode = _renderContext.HoveredNode;
             }
             // Deselect node
-            else if (SelectedNode == HoveredNode)
+            else if (_renderContext.SelectedNode == _renderContext.HoveredNode)
             {
-                SelectedNode = null;
+                _renderContext.SelectedNode = null;
             }
             else
             {
                 // Add or delete edge
                 var action = new AddOrRemoveEdgeAction(
                     _map.Graph,
-                    HoveredNode,
-                    SelectedNode
+                     _renderContext.HoveredNode,
+                     _renderContext.SelectedNode
                     );
 
                 _historyStack?.ExecuteAction(action);
                 _map.CalculateEdgeBlocks();
-                SelectedNode = null;
+                _renderContext.SelectedNode = null;
             }
 
-            await Render(RenderTrigger.EdgeRemoved);
+            Render(RenderTrigger.EdgeRemoved);
         }
     }
 
-    private async Task HandleRightClick(Vector2 worldPos)
+    private void HandleRightClick(Vector2 worldPos)
     {
         Node? closestNode = _map.Graph.GetClosestNode(worldPos);
         var threshhold = 2f;
 
         // Delete node
-        if (HoveredNode != null)
+        if (_renderContext.HoveredNode != null)
         {
             var action = new RemoveNodeAction(
                 _map.Graph,
-                HoveredNode
+                 _renderContext.HoveredNode
                 );
 
             _historyStack?.ExecuteAction(action);
             _map.CalculateEdgeBlocks();
 
-            if (SelectedNode == HoveredNode)
-                SelectedNode = null;
+            if (_renderContext.SelectedNode == _renderContext.HoveredNode)
+                _renderContext.SelectedNode = null;
 
-            HoveredNode = null;
-            await Render(RenderTrigger.NodeRemoved);
+            _renderContext.HoveredNode = null;
+            Render(RenderTrigger.NodeRemoved);
         }
         // Deselect node
-        else if (SelectedNode != null && closestNode != null
+        else if (_renderContext.SelectedNode != null && closestNode != null
             && Vector2.Distance(worldPos, closestNode.Position) >= threshhold)
         {
-            SelectedNode = null;
-            await Render(RenderTrigger.NodeDeselected);
+            _renderContext.SelectedNode = null;
+            Render(RenderTrigger.NodeDeselected);
         }
-    }
-
-    private async Task OnMouseMove(MouseEventArgs e)
-    {
-        Vector2 cursorPosition = _renderer.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
-        Node? closestNode = _map.Graph.GetClosestNode(cursorPosition);
-
-        var prevHovered = HoveredNode;
-
-        if (closestNode != null)
-        {
-            var threshhold = 0.4f;
-            var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
-
-            HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
-        }
-
-        if (prevHovered != HoveredNode)
-            await Render(RenderTrigger.NodeHover);
-    }
-
-    [JSInvokable]
-    public async ValueTask JSOnMouseMove(int mouseX, int mouseY)
-    {
-        if (PanStartPosition == null)
-            return;
-
-        var panEndPosition = new Vector2(mouseX, mouseY);
-        var deltaPan = PanStartPosition.Value - panEndPosition;
-        PanStartPosition = panEndPosition;
-
-        _renderer.UpdateTRS(_renderer.CameraPosition - deltaPan, _renderer.Scale);
-        await Render(RenderTrigger.Pan);
-    }
-
-    private async Task Render(RenderTrigger trigger)
-    {
-        Canvas.Invalidate();
-    }
-
-    public async Task OnKeyUp(KeyboardEventArgs e)
-    {
-        if (SelectedNode == null)
-            return;
-
-        bool nodeMoved = false;
-
-        if (e.Key == "ArrowUp")
-        {
-            _map.MoveNode(SelectedNode, new Vector2(0, -1));
-            nodeMoved = true;
-        }
-        else if (e.Key == "ArrowDown")
-        {
-            _map.MoveNode(SelectedNode, new Vector2(0, 1));
-            nodeMoved = true;
-        }
-        else if (e.Key == "ArrowLeft")
-        {
-            _map.MoveNode(SelectedNode, new Vector2(-1, 0));
-            nodeMoved = true;
-        }
-        else if (e.Key == "ArrowRight")
-        {
-            _map.MoveNode(SelectedNode, new Vector2(1, 0));
-            nodeMoved = true;
-        }
-
-        if (nodeMoved)
-            await Render(RenderTrigger.NodeMoved);
-    }
-
-    [JSInvokable]
-    public async ValueTask JSOnWheel(double deltaY, double offsetX, double offsetY)
-    {
-        if (deltaY == 0)
-            return;
-
-        var relativeCursorPos = new Vector2((float)offsetX, (float)offsetY);
-        var worldPosBeforeZoom = _renderer.ScreenToWorldPos(relativeCursorPos);
-
-        float newScale;
-        if (deltaY < 0)
-        {
-            newScale = _renderer.Scale * 1.6f;
-        }
-        else
-        {
-            newScale = _renderer.Scale / 1.6f;
-        }
-
-        newScale = float.Clamp(newScale, MinZoom, MaxZoom);
-
-        if (Math.Abs(newScale - _renderer.Scale) < 0.001f)
-            return;
-
-        // Calculate new translation to keep cursor world pos at cursor screen pos
-        var newTranslation = relativeCursorPos - worldPosBeforeZoom * newScale;
-
-        _renderer.UpdateTRS(newTranslation, newScale);
-
-        await Render(RenderTrigger.Zoom);
-    }
-
-    public async Task OnFitMap()
-    {
-        if (_map.Width <= 0 || _map.Height <= 0)
-            return;
-
-        var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
-        var newTranslation = canvasCenter;
-
-        _renderer.UpdateTRS(newTranslation, MinZoom);
-        await Render(RenderTrigger.ViewFit);
-    }
-
-    public async Task OnFitTeam()
-    {
-        if (_map.Width <= 0 || _map.Height <= 0 || _map.Symmetry == null)
-            return;
-
-        var horizontal = _map.Symmetry.IsHorizontal;
-
-        float halfW = _map.Width / 2f;
-        float halfH = _map.Height / 2f;
-
-        Vector2 mapHalfCenter;
-        float scaleX, scaleY;
-
-        // Horizontal mirror line
-        if (horizontal)
-        {
-            mapHalfCenter = new Vector2(0, -halfH / 2f);
-            scaleX = _renderer.CanvasWidth / _map.Width;
-            scaleY = _renderer.CanvasHeight / halfH;
-        }
-        // Vertical mirror line
-        else
-        {
-            mapHalfCenter = new Vector2(halfW / 2f, 0);
-            scaleX = _renderer.CanvasWidth / halfW;
-            scaleY = _renderer.CanvasHeight / _map.Height;
-        }
-
-        var newScale = float.Min(scaleX, scaleY) * 0.98f;
-        
-        var canvasCenter = new Vector2(_renderer.CanvasWidth / 2f, _renderer.CanvasHeight / 2f);
-        var newTranslation = canvasCenter - mapHalfCenter * newScale;
-
-        _renderer.UpdateTRS(newTranslation, newScale);
-        await Render(RenderTrigger.ViewFit);
-    }
-
-    private float CalculateMaxZoom()
-    {
-        if (_map.Width <= 0 || _map.Height <= 0)
-            return 1f;
-
-        float scaleX = _renderer.CanvasWidth / 16f;
-        float scaleY = _renderer.CanvasHeight / 16f;
-
-        return float.Min(scaleX, scaleY) * 0.98f;
-    }
-
-    private float CalculateMinZoom()
-    {
-        if (_map.Width <= 0 || _map.Height <= 0)
-            return 1f;
-
-        float scaleX = _renderer.CanvasWidth / _map.Width;
-        float scaleY = _renderer.CanvasHeight / _map.Height;
-
-        return float.Min(scaleX, scaleY) * 0.98f;
     }
 
     private async Task LoadWorldFiles(InputFileChangeEventArgs e)
@@ -438,7 +386,7 @@ public partial class Home : ComponentBase
 
             if (blocks.Count > 0)
             {
-                await OnClearMap();
+                OnClearMap();
 
                 foreach (var b in blocks)
                 {
@@ -449,13 +397,13 @@ public partial class Home : ComponentBase
                 _map.Width = (blocks.Max(b => Math.Abs(b.X)) * 2) + 64;
                 _map.Height = (blocks.Max(b => Math.Abs(b.Z)) * 2) + 64;
 
-                await OnFitMap();
-                await Render(RenderTrigger.WorldImport);
+                OnFitMap();
+                Render(RenderTrigger.WorldImport);
             }
 
             if (map != null)
             {
-                _uploadedMap = map;
+                _renderContext.RegisterMapElement(map);
                 Console.WriteLine($"Map '{map.Name}' with {map.Regions.Items.Count} regions loaded.");
             }
             else

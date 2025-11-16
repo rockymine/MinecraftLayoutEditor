@@ -32,7 +32,7 @@
                                 @bind-ShowBoundingBoxEnabled="_renderingOptions.ShowBoundingBoxEnabled"
                                 SettingsChanged="OnSettingsChanged" />
         <!-- Node information -->
-        <NodeInformation SelectedNode="SelectedNode"
+        <NodeInformation SelectedNode="_renderContext.SelectedNode"
                             OnDeleteNode="OnDeleteNode" />
         <!-- Canvas controls -->
         <CanvasControlsHelp />
@@ -69,7 +69,7 @@
              @onkeyup:preventDefault=true
              @onkeydown:preventDefault=true
              @onmousedown:preventDefault=true>
-            <SKGLView @ref="Canvas"
+            <SKGLView @ref="_canvas"
                       OnPaintSurface="OnPaintSurface"
                       Width="@CanvasWidth"
                       Height="@CanvasHeight"
