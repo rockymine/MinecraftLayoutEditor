@@ -11,21 +11,28 @@ public class RenderContext
     public RenderingOptions Options { get; }
     public Node? SelectedNode { get; set; }
     public Node? HoveredNode { get; set; }
-    public MapElement? MapElement { get; }
+    public MapElement? MapElement { get; set; }
     public float Scale { get; set; } = 1f;
     public PaintCache Cache { get; }
 
+    public int LimitX => (int)(Map.Width / 2f);
+    public int LimitY => (int)(Map.Height / 2f);
+
     public RenderContext(Map map, RenderingOptions options, 
-        MapElement mapElement, PaintCache cache )
+        PaintCache cache )
     {
         Map = map;
         Options = options;
-        MapElement = mapElement;
         Cache = cache;
     }
 
-    public void Update(SKSurface surface)
+    public void RegisterSurface(SKSurface surface)
     {
         Surface = surface;
+    }
+
+    public void RegisterMapElement(MapElement mapElement)
+    {
+        MapElement = mapElement;
     }
 }

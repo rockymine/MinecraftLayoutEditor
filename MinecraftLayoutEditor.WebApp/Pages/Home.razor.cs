@@ -52,7 +52,7 @@ public partial class Home : ComponentBase
         if (_renderContext == null || _renderer == null)
             return;
 
-        _renderContext.Update(args.Surface);
+        _renderContext.RegisterSurface(args.Surface);
         _renderer.Render();
 
         //_renderer.Render(args.Surface, _map, HoveredNode, SelectedNode, _renderingOptions, _uploadedMap);
@@ -93,12 +93,19 @@ public partial class Home : ComponentBase
 
         _renderContext = new RenderContext(
             _map, _renderingOptions, 
-            _uploadedMap, _paintCache);
+            _paintCache);
 
         _renderer = new MapRenderer(_renderContext);
 
         _renderer.renderables.Add(new BackgroundRenderer());
         _renderer.renderables.Add(new GridRenderer());
+        _renderer.renderables.Add(new MirrorAxisRenderer());
+        _renderer.renderables.Add(new NodeRenderer());
+        _renderer.renderables.Add(new EdgeRenderer());
+        _renderer.renderables.Add(new MapBlocksRenderer());
+        _renderer.renderables.Add(new RegionRenderer());
+        _renderer.renderables.Add(new EdgeBoundingBoxRenderer());
+        _renderer.renderables.Add(new EdgeBlocksRenderer());
     }
 
     private async Task OnSettingsChanged()
@@ -479,6 +486,7 @@ public partial class Home : ComponentBase
             if (map != null)
             {
                 _uploadedMap = map;
+                _renderContext.RegisterMapElement(map);
                 Console.WriteLine($"Map '{map.Name}' with {map.Regions.Items.Count} regions loaded.");
             }
             else
