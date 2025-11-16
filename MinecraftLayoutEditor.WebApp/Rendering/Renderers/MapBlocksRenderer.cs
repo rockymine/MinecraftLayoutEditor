@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-using SkiaSharp;
+﻿using SkiaSharp;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering.Renderers;
 

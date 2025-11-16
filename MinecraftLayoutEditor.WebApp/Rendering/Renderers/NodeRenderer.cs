@@ -1,8 +1,6 @@
-﻿using Microsoft.Extensions.Options;
-using MinecraftLayoutEditor.Logic;
+﻿using MinecraftLayoutEditor.Logic;
 using SkiaSharp;
 using System.Numerics;
-using static SharpNBT.TagBuilder;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering.Renderers;
 

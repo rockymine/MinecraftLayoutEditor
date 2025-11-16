@@ -26,9 +26,6 @@ public partial class Home : ComponentBase
     private float CanvasWidth => _viewport?.CanvasWidth ?? throw new UnreachableException();
     private float CanvasHeight => _viewport?.CanvasHeight ?? throw new UnreachableException();
 
-    private float MaxZoom => _viewport.CalculateMaxZoom();
-    private float MinZoom => _viewport.CalculateMinZoom(_map.Width, _map.Height);
-
     private string CursorClass => (PanStartPosition != null) ? "grab" : "default";
     private HistoryStack? _historyStack;
     private Vector2? PanStartPosition;

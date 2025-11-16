@@ -1,7 +1,5 @@
-﻿using Microsoft.Extensions.Options;
-using MinecraftLayoutEditor.XML;
+﻿using MinecraftLayoutEditor.XML;
 using SkiaSharp;
-using static SharpNBT.TagBuilder;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering.Renderers;
 

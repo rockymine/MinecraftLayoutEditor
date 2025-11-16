@@ -1,5 +1,4 @@
-﻿using MinecraftLayoutEditor.Logic;
-using SkiaSharp;
+﻿using SkiaSharp;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering.Renderers;
 
