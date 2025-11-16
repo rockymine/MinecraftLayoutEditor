@@ -96,7 +96,8 @@ public partial class Home : ComponentBase
 
     private void Render(RenderTrigger trigger)
     {
-       _canvas.Invalidate();
+        if (OperatingSystem.IsBrowser())
+            _canvas.Invalidate();
     }
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
