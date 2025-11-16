@@ -24,23 +24,23 @@ public partial class Home : ComponentBase
     public required IJSRuntime JSRuntime { get; init; }
 
     private readonly Map _map = MapFactory.Empty(192, 96, 10, 10);
-    private HistoryStack? _historyStack;
+    private HistoryStack _historyStack = default!;
 
-    private Viewport? _viewport;
-    private RenderContext? _renderContext;
-    private MapRenderer? _renderer;
+    private Viewport _viewport = default!;
+    private RenderContext _renderContext = default!;
+    private MapRenderer _renderer = default!;
     private readonly PaintCache _paintCache = new();
     private readonly RenderingOptions _renderingOptions = new();
-    private SKGLView Canvas;
+    private SKGLView _canvas = default!;
 
     private ElementReference _canvasContainer;
 
     private EditorMode _currentMode = EditorMode.Layout;
-    private Vector2? PanStartPosition;
+    private Vector2? _panStartPosition;
 
     private float CanvasWidth => _viewport?.CanvasWidth ?? throw new UnreachableException();
     private float CanvasHeight => _viewport?.CanvasHeight ?? throw new UnreachableException();
-    private string CursorClass => (PanStartPosition != null) ? "grab" : "default";
+    private string CursorClass => (_panStartPosition != null) ? "grab" : "default";
 
     protected override void OnInitialized()
     {
@@ -96,7 +96,7 @@ public partial class Home : ComponentBase
 
     private async Task Render(RenderTrigger trigger)
     {
-        Canvas.Invalidate();
+       _canvas.Invalidate();
     }
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs args)
@@ -192,7 +192,7 @@ public partial class Home : ComponentBase
 
         if (e.Button == 1)
         {
-            PanStartPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
+            _panStartPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
         }
     }
 
@@ -207,7 +207,7 @@ public partial class Home : ComponentBase
         }
         else if (e.Button == 1)
         {
-            PanStartPosition = null;
+            _panStartPosition = null;
         }
         else if (e.Button == 2)
         {
@@ -237,12 +237,12 @@ public partial class Home : ComponentBase
     [JSInvokable]
     public async ValueTask JSOnMouseMove(int mouseX, int mouseY)
     {
-        if (PanStartPosition == null)
+        if (_panStartPosition == null)
             return;
 
         var panEndPosition = new Vector2(mouseX, mouseY);
-        var deltaPan = PanStartPosition.Value - panEndPosition;
-        PanStartPosition = panEndPosition;
+        var deltaPan = _panStartPosition.Value - panEndPosition;
+        _panStartPosition = panEndPosition;
 
         _viewport.UpdateTRS(_viewport.CameraPosition - deltaPan);
         await Render(RenderTrigger.Pan);
