@@ -38,8 +38,8 @@ public partial class Home : ComponentBase
     private EditorMode _currentMode = EditorMode.Layout;
     private Vector2? _panStartPosition;
 
-    private float CanvasWidth => _viewport?.CanvasWidth ?? throw new UnreachableException();
-    private float CanvasHeight => _viewport?.CanvasHeight ?? throw new UnreachableException();
+    private float CanvasWidth => _viewport.CanvasWidth;
+    private float CanvasHeight => _viewport.CanvasHeight;
     private string CursorClass => (_panStartPosition != null) ? "grab" : "default";
 
     protected override void OnInitialized()
