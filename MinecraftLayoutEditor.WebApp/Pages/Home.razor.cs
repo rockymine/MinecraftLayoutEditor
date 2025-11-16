@@ -26,8 +26,8 @@ public partial class Home : ComponentBase
     private float CanvasWidth => _viewport?.CanvasWidth ?? throw new UnreachableException();
     private float CanvasHeight => _viewport?.CanvasHeight ?? throw new UnreachableException();
 
-    private float MaxZoom => CalculateMaxZoom();
-    private float MinZoom => CalculateMinZoom();
+    private float MaxZoom => _viewport.CalculateMaxZoom();
+    private float MinZoom => _viewport.CalculateMinZoom(_map.Width, _map.Height);
 
     private string CursorClass => (PanStartPosition != null) ? "grab" : "default";
     private HistoryStack? _historyStack;
@@ -426,28 +426,6 @@ public partial class Home : ComponentBase
         _viewport.Scale = newScale;
         _viewport.UpdateTRS(newTranslation);
         await Render(RenderTrigger.ViewFit);
-    }
-
-    private float CalculateMaxZoom()
-    {
-        if (_map.Width <= 0 || _map.Height <= 0)
-            return 1f;
-
-        float scaleX = _viewport.CanvasWidth / 16f;
-        float scaleY = _viewport.CanvasHeight / 16f;
-
-        return float.Min(scaleX, scaleY) * 0.98f;
-    }
-
-    private float CalculateMinZoom()
-    {
-        if (_map.Width <= 0 || _map.Height <= 0)
-            return 1f;
-
-        float scaleX = _viewport.CanvasWidth / _map.Width;
-        float scaleY = _viewport.CanvasHeight / _map.Height;
-
-        return float.Min(scaleX, scaleY) * 0.98f;
     }
 
     private async Task LoadWorldFiles(InputFileChangeEventArgs e)

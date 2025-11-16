@@ -28,5 +28,26 @@ public class Viewport
     }
 
     public Vector2 ScreenToWorldPos(Vector2 screen)
-        => new((screen.X - CameraPosition.X) / Scale, (screen.Y - CameraPosition.Y) / Scale);
+    {
+        var worldPosX = (screen.X - CameraPosition.X) / Scale;
+        var worldPosY = (screen.Y - CameraPosition.Y) / Scale;
+        return new(worldPosX, worldPosY);
+    }
+
+    public float CalculateMinZoom(float width, float height)
+    {
+        if (width <= 0 || height <= 0) 
+            return 1f;
+
+        float scaleX = CanvasWidth / width;
+        float scaleY = CanvasHeight / height;
+        return float.Min(scaleX, scaleY) * 0.98f;
+    }
+
+    public float CalculateMaxZoom()
+    {
+        float scaleX = CanvasWidth / 16f;
+        float scaleY = CanvasHeight / 16f;
+        return float.Min(scaleX, scaleY) * 0.98f;
+    }
 }
