@@ -6,6 +6,9 @@ public class EdgeBlocksRenderer : IRenderable
 {
     public void Render(RenderContext context)
     {
+        if (!context.Options.ShowBlocksEnabled) 
+            return;
+        
         var uniqueEdges = context.Map.Graph.GetUniqueEdges();
 
         foreach (var edge in uniqueEdges)

@@ -8,6 +8,9 @@ public class EdgeBoundingBoxRenderer : IRenderable
 {
     public void Render(RenderContext context)
     {
+        if (!context.Options.ShowBoundingBoxEnabled)
+            return;
+        
         var uniqueEdges = context.Map.Graph.GetUniqueEdges();
 
         foreach (var uniqueEdge in uniqueEdges)
