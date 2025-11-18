@@ -12,6 +12,7 @@ using SkiaSharp;
 using SkiaSharp.Views.Blazor;
 using System.Drawing;
 using System.Numerics;
+using MinecraftLayoutEditor.XML;
 
 namespace MinecraftLayoutEditor.WebApp.Pages;
 
@@ -134,6 +135,17 @@ public partial class Home : ComponentBase
         _currentMode = newMode;
     }
 
+    private void OnChangeRegionType(RegionType regionType)
+    {
+        _renderContext.SelectedRegionType = regionType;
+    }
+
+    private void OnRegionFocused(Region region)
+    {
+        _renderContext.HoveredRegion = region;
+        Render(RenderTrigger.RegionHover);
+    }
+
     private void OnSettingsChanged()
     {
         Render(RenderTrigger.SettingsChanged);
@@ -219,20 +231,37 @@ public partial class Home : ComponentBase
     private void OnMouseMove(MouseEventArgs e)
     {
         Vector2 cursorPosition = _viewport.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
-        Node? closestNode = _map.Graph.GetClosestNode(cursorPosition);
 
-        var prevHovered = _renderContext.HoveredNode;
-
-        if (closestNode != null)
+        if (_currentMode == EditorMode.Layout)
         {
-            var threshhold = 0.4f;
-            var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
+            Node? closestNode = _map.Graph.GetClosestNode(cursorPosition);
 
-            _renderContext.HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
+            var prevHovered = _renderContext.HoveredNode;
+
+            if (closestNode != null)
+            {
+                var threshhold = 0.4f;
+                var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
+
+                _renderContext.HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
+            }
+
+            if (prevHovered != _renderContext.HoveredNode)
+                Render(RenderTrigger.NodeHover);
+
         }
 
-        if (prevHovered != _renderContext.HoveredNode)
-            Render(RenderTrigger.NodeHover);
+        if (_currentMode == EditorMode.XML)
+        {
+            var previous = _renderContext.HoveredRegion;
+
+            _renderContext.HoveredRegion = _renderContext.GetRegionContaining(cursorPosition);
+
+            if (previous != _renderContext.HoveredRegion)
+            {
+                Render(RenderTrigger.RegionHover);
+            }
+        }
     }
 
     [JSInvokable]
@@ -350,20 +379,35 @@ public partial class Home : ComponentBase
         {
             if (_pendingFirstRegionPos == default)
             {
-                _pendingFirstRegionPos = new Vector2(float.Floor(worldPos.X), float.Floor(worldPos.Y));
-                return;
+                // First click — set center for both rectangle and circle
+                _pendingFirstRegionPos = new Vector2(MathF.Floor(worldPos.X), MathF.Floor(worldPos.Y));
+
+                // Only Rectangle needs second point, Circle also needs second point for radius
+                // So do nothing here except store first point
             }
             else
             {
-                var secondRegionPos = new Vector2(float.Floor(worldPos.X), float.Floor(worldPos.Y));
+                // Second click
+                var secondPos = new Vector2(MathF.Floor(worldPos.X), MathF.Floor(worldPos.Y));
 
                 _renderContext.EnsureMapElement();
-                var action = new AddRectangleRegionAction(
-                    _renderContext.MapElement, 
-                    _pendingFirstRegionPos, 
-                    secondRegionPos);
 
-                _historyStack?.ExecuteAction(action);
+                switch (_renderContext.SelectedRegionType)
+                {
+                    case RegionType.Rectangle:
+                        var actionRect = new AddRectangleRegionAction(
+                            _renderContext.MapElement, _pendingFirstRegionPos, secondPos);
+                        _historyStack?.ExecuteAction(actionRect);
+                        break;
+
+                    case RegionType.Circle:
+                        var center = _pendingFirstRegionPos;
+                        var radius = (int)Math.Floor(Vector2.Distance(center, secondPos));
+                        var actionCircle = new AddCircleRegionAction(_renderContext.MapElement, center, radius);
+                        _historyStack?.ExecuteAction(actionCircle);
+                        break;
+                }
+
                 _pendingFirstRegionPos = default;
                 Render(RenderTrigger.RegionAdded);
             }

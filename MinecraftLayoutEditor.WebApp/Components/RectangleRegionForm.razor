@@ -1,0 +1,45 @@
+﻿<div class="settings-group">
+    <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" class="form-control" @bind="RectangleRegion.Id" @bind:after="OnNameChanged" />
+    </div>
+    <div class="row">
+        <div class="form-group">
+            <label for="minX">MinX</label>
+            <input name="minX"
+                   type="number"
+                   step="1"
+                   value="@RectangleRegion.Min.X"
+                   @onfocus="() => HandleFocus()"
+                   @onchange="e => UpdateMinX(RectangleRegion, e)" />
+        </div>
+        <div class="form-group">
+            <label for="minY">MinY</label>
+            <input name="minY" type="number"
+                   step="1"
+                   value="@RectangleRegion.Min.Y"
+                   @onchange="e => UpdateMinY(RectangleRegion, e)" />
+        </div>
+    </div>
+    <div class="row">
+        <div class="form-group">
+            <label for="maxX">MaxX</label>
+            <input name="maxX" type="number"
+                   step="1"
+                   value="@RectangleRegion.Max.X"
+                   @onchange="e => UpdateMaxX(RectangleRegion, e)" />
+        </div>
+        <div class="form-group">
+            <label for="maxY">MaxY</label>
+            <input name="maxY" type="number"
+                   step="1"
+                   value="@RectangleRegion.Max.Y"
+                   @onchange="e => UpdateMaxY(RectangleRegion, e)" />
+        </div>
+    </div>
+    <button type="button"
+            class="btn btn-full"
+            @onclick="DeleteRegion">
+        Delete
+    </button>
+</div>

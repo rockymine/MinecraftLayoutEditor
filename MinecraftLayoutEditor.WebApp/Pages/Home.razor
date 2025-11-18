@@ -13,33 +13,47 @@
     <div class="sidebar">
         <EditingModeSwitch EditorMode="_currentMode"
             OnChangeMode="OnChangeEditingMode" />
-        <MapSettings @bind-Name="_map.Name"
-                        @bind-Width="_map.Width"
-                        @bind-Height="_map.Height"
-                        @bind-LaneWidth="_map.LaneWidth"
-                        @bind-Thickness="_map.Thickness"
-                        @bind-SelectedNodeType="_map.SelectedNodeType"
-                        SettingsChanged="OnSettingsChanged" />
-        <button type="button" class="btn btn-primary" @onclick="OnSchematicCreate" disabled="@(!_map.Graph.Nodes.Any())">
-            Generate Schematic
-        </button>
-        <MirrorControls @bind-MirrorEnabled="_map.MirrorEnabled"
-                        @bind-RotationDeg="_map.Symmetry.RotationDeg"
-                        @bind-IsHorizontal="_map.Symmetry.IsHorizontal"
-                        SettingsChanged="OnSettingsChanged" />
 
-        <VisualizationControls @bind-ShowBlocksEnabled="_renderingOptions.ShowBlocksEnabled"
-                                @bind-ShowBoundingBoxEnabled="_renderingOptions.ShowBoundingBoxEnabled"
-                                SettingsChanged="OnSettingsChanged" />
-        <!-- Node information -->
-        <NodeInformation SelectedNode="_renderContext.SelectedNode"
-                            OnDeleteNode="OnDeleteNode" />
-        <!-- Canvas controls -->
-        <CanvasControlsHelp />
-        <div class="form-group">
-            <label>Import World (Region Files + level.dat)</label>
-            <InputFile OnChange="LoadWorldFiles" multiple accept=".mca,.dat,.xml" />
-        </div>
+        @if (_currentMode == EditorMode.Layout)
+        {
+            <MapSettings @bind-Name="_map.Name"
+            @bind-Width="_map.Width"
+            @bind-Height="_map.Height"
+            @bind-LaneWidth="_map.LaneWidth"
+            @bind-Thickness="_map.Thickness"
+            @bind-SelectedNodeType="_map.SelectedNodeType"
+            SettingsChanged="OnSettingsChanged" />
+            <button type="button" class="btn btn-primary" @onclick="OnSchematicCreate" disabled="@(!_map.Graph.Nodes.Any())">
+                Generate Schematic
+            </button>
+            <MirrorControls @bind-MirrorEnabled="_map.MirrorEnabled"
+            @bind-RotationDeg="_map.Symmetry.RotationDeg"
+            @bind-IsHorizontal="_map.Symmetry.IsHorizontal"
+            SettingsChanged="OnSettingsChanged" />
+
+            <VisualizationControls @bind-ShowBlocksEnabled="_renderingOptions.ShowBlocksEnabled"
+            @bind-ShowBoundingBoxEnabled="_renderingOptions.ShowBoundingBoxEnabled"
+            SettingsChanged="OnSettingsChanged" />
+            <!-- Node information -->
+            <NodeInformation SelectedNode="_renderContext.SelectedNode"
+            OnDeleteNode="OnDeleteNode" />
+            <!-- Canvas controls -->
+            <CanvasControlsHelp />
+            <div class="form-group">
+                <label>Import World (Region Files + level.dat)</label>
+                <InputFile OnChange="LoadWorldFiles" multiple accept=".mca,.dat,.xml" />
+            </div>
+        }
+
+        @if(_currentMode == EditorMode.XML)
+        {
+            <RegionTypeSwitch @bind-RegionType="_renderContext.SelectedRegionType"/>
+            @if(_renderContext.MapElement != null)
+            {
+                <MapRegionsContainer @bind-RegionsElement="_renderContext.MapElement.Regions"
+                SettingsChanged="OnSettingsChanged" RegionFocused="OnRegionFocused"/>
+            }
+        }
     </div>
 
     <div class="editor">

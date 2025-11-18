@@ -111,7 +111,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         Zoom,
         Pan,
         KeyboardMove,
-        SettingsChanged,
+        RegionsEdited,
         NodeAdded,
         NodeRemoved,
         NodeDeselected,
@@ -124,6 +124,8 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         MapCleared,
         ViewFit,
         WorldImport,
-        RegionAdded
+        RegionAdded,
+        RegionHover,
+        SettingsChanged
     }
 }

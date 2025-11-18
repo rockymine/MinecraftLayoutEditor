@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using MinecraftLayoutEditor.XML;
+using System.Numerics;
 
 namespace MinecraftLayoutEditor.Logic.Geometry
 {
@@ -20,6 +21,16 @@ namespace MinecraftLayoutEditor.Logic.Geometry
         public bool Contains(Vector2 point)
         {
             return point.X >= MinX && point.X <= MaxX && point.Y >= MinY && point.Y <= MaxY;
+        }
+
+        public static Rect FromRectangleRegion(RectangleRegion rectangle)
+        {
+            return new Rect(
+                rectangle.Min.X,
+                rectangle.Min.Y,
+                rectangle.Max.X,
+                rectangle.Max.Y
+                );
         }
     }
 }

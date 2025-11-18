@@ -1,0 +1,7 @@
+﻿@using MinecraftLayoutEditor.Logic
+<select @onchange="OnSelectionChanged" value="@RegionType" class="form-control">
+    @foreach (var value in Enum.GetValues<RegionType>())
+    {
+        <option value="@value">@value</option>
+    }
+</select>

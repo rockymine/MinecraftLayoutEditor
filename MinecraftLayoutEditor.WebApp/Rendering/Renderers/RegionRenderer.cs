@@ -12,7 +12,6 @@ public class RegionRenderer : IRenderable
 
         foreach (var region in context.MapElement.Regions.Items)
         {
-            Console.WriteLine(region.Id);
             RenderRegion(context, region);
         }
     }
@@ -64,6 +63,7 @@ public class RegionRenderer : IRenderable
     private void RenderRectangleRegion(RenderContext context, RectangleRegion region)
     {
         var paint = context.Cache.GetPaint(SKColors.Purple, SKPaintStyle.Stroke, 1f, context.Viewport.Scale);
+        var hoverPaint = context.Cache.GetPaint(SKColors.Yellow.WithAlpha(100), SKPaintStyle.StrokeAndFill, 1f, context.Viewport.Scale);
 
         var width = region.Max.X - region.Min.X;
         var height = region.Max.Y - region.Min.Y;
@@ -75,13 +75,17 @@ public class RegionRenderer : IRenderable
             height
         );
 
-        context.Surface.Canvas.DrawRect(rect, paint);
+        var finalPaint = (context.HoveredRegion == region) ? hoverPaint : paint;
+        context.Surface.Canvas.DrawRect(rect, finalPaint);
     }
 
     private void RenderCircleRegion(RenderContext context, CircleRegion region)
     {
         var paint = context.Cache.GetPaint(SKColors.Blue, SKPaintStyle.Stroke, 1f, context.Viewport.Scale);
-        context.Surface.Canvas.DrawCircle(region.Center.X, region.Center.Y, region.Radius, paint);
+        var hoverPaint = context.Cache.GetPaint(SKColors.Yellow.WithAlpha(100), SKPaintStyle.StrokeAndFill, 1f, context.Viewport.Scale);
+
+        var finalPaint = (context.HoveredRegion == region) ? hoverPaint : paint;
+        context.Surface.Canvas.DrawCircle(region.Center.X, region.Center.Y, region.Radius, finalPaint);
     }
 
     private void RenderCylinderRegion(RenderContext context, CylinderRegion region)

@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Drawing;
+using System.Globalization;
 using System.Numerics;
 using System.Xml.Serialization;
 
@@ -30,6 +31,8 @@ public abstract class Region
 {
     [XmlAttribute("id")]
     public string Id { get; set; } = "";
+
+    public abstract bool Contains(Vector2 position);
 }
 
 public class RectangleRegion : Region
@@ -65,6 +68,12 @@ public class RectangleRegion : Region
                 float.Parse(parts[1], CultureInfo.InvariantCulture));
         }
     }
+
+    public override bool Contains(Vector2 position)
+    {
+        return position.X >= Min.X && position.X <= Max.X &&
+           position.Y >= Min.Y && position.Y <= Max.Y;
+    }
 }
 
 public class CylinderRegion : Region
@@ -91,6 +100,11 @@ public class CylinderRegion : Region
 
     [XmlAttribute("height")]
     public float Height { get; set; }
+
+    public override bool Contains(Vector2 position)
+    {
+        return Vector2.Distance(new Vector2(Base.X, Base.Z), position) <= Radius;
+    }
 }
 
 public class SphereRegion : Region
@@ -114,6 +128,11 @@ public class SphereRegion : Region
 
     [XmlAttribute("radius")]
     public float Radius { get; set; }
+
+    public override bool Contains(Vector2 position)
+    {
+        return Vector2.Distance(new Vector2(Origin.X, Origin.Z), position) <= Radius;
+    }
 }
 
 public class CircleRegion : Region
@@ -136,6 +155,11 @@ public class CircleRegion : Region
 
     [XmlAttribute("radius")]
     public float Radius { get; set; }
+
+    public override bool Contains(Vector2 position)
+    {
+        return Vector2.Distance(Center, position) <= Radius;
+    }
 }
 
 public class BlockRegion : Region
@@ -155,6 +179,11 @@ public class BlockRegion : Region
                 float.Parse(parts[1], CultureInfo.InvariantCulture),
                 float.Parse(parts[2], CultureInfo.InvariantCulture));
         }
+    }
+
+    public override bool Contains(Vector2 position)
+    {
+        return Vector2.Distance(new Vector2(Block.X, Block.Z), position) <= 0.5f;
     }
 }
 
@@ -176,6 +205,11 @@ public class PointRegion : Region
                 float.Parse(parts[2], CultureInfo.InvariantCulture));
         }
     }
+
+    public override bool Contains(Vector2 position)
+    {
+        return Vector2.Distance(new Vector2(Point.X, Point.Z), position) <= 0.5f;
+    }
 }
 
 public class UnionRegion : Region
@@ -189,6 +223,11 @@ public class UnionRegion : Region
     [XmlElement("union", typeof(UnionRegion))]
     [XmlElement("negative", typeof(NegativeRegion))]
     public List<Region> Children { get; set; } = [];
+
+    public override bool Contains(Vector2 position)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 public class NegativeRegion : Region
@@ -202,4 +241,9 @@ public class NegativeRegion : Region
     [XmlElement("union", typeof(UnionRegion))]
     [XmlElement("negative", typeof(NegativeRegion))]
     public List<Region> Children { get; set; } = [];
+
+    public override bool Contains(Vector2 position)
+    {
+        throw new NotImplementedException();
+    }
 }
