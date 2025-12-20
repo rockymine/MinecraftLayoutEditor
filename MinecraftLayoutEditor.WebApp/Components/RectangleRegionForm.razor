@@ -1,45 +1,56 @@
-﻿<div class="settings-group">
-    <div class="form-group">
-        <label for="name">Name</label>
-        <input type="text" id="name" class="form-control" @bind="RectangleRegion.Id" @bind:after="OnNameChanged" />
+﻿<div class="region-card">
+    <div class="card-header">
+        <span class="region-type">Rect</span>
+        <input type="text"
+               class="id-input"
+               @bind="RectangleRegion.Id"
+               @bind:after="OnNameChanged" />
+        <button type="button"
+                class="btn-delete"
+                @onclick="DeleteRegion">
+            <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
     </div>
-    <div class="row">
-        <div class="form-group">
-            <label for="minX">MinX</label>
-            <input name="minX"
-                   type="number"
-                   step="1"
-                   value="@RectangleRegion.Min.X"
-                   @onfocus="() => HandleFocus()"
-                   @onchange="e => UpdateMinX(RectangleRegion, e)" />
+    <div class="input-grid">
+        <div class="row-2">
+            <div class="input-group">
+                <label class="input-label">Min X</label>
+                <input type="number"
+                       class="coord-input"
+                       step="1"
+                       value="@RectangleRegion.Min.X"
+                       @onfocus="() => HandleFocus()"
+                       @onchange="e => UpdateMinX(RectangleRegion, e)" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">Min Y</label>
+                <input type="number"
+                       class="coord-input"
+                       step="1"
+                       value="@RectangleRegion.Min.Y"
+                       @onfocus="() => HandleFocus()"
+                       @onchange="e => UpdateMinY(RectangleRegion, e)" />
+            </div>
         </div>
-        <div class="form-group">
-            <label for="minY">MinY</label>
-            <input name="minY" type="number"
-                   step="1"
-                   value="@RectangleRegion.Min.Y"
-                   @onchange="e => UpdateMinY(RectangleRegion, e)" />
+        <div class="row-2">
+            <div class="input-group">
+                <label class="input-label">Max X</label>
+                <input type="number"
+                       class="coord-input"
+                       step="1"
+                       value="@RectangleRegion.Max.X"
+                       @onfocus="() => HandleFocus()"
+                       @onchange="e => UpdateMaxX(RectangleRegion, e)" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">Max Y</label>
+                <input type="number"
+                       class="coord-input"
+                       step="1"
+                       value="@RectangleRegion.Max.Y"
+                       @onfocus="() => HandleFocus()"
+                       @onchange="e => UpdateMaxY(RectangleRegion, e)" />
+            </div>
         </div>
     </div>
-    <div class="row">
-        <div class="form-group">
-            <label for="maxX">MaxX</label>
-            <input name="maxX" type="number"
-                   step="1"
-                   value="@RectangleRegion.Max.X"
-                   @onchange="e => UpdateMaxX(RectangleRegion, e)" />
-        </div>
-        <div class="form-group">
-            <label for="maxY">MaxY</label>
-            <input name="maxY" type="number"
-                   step="1"
-                   value="@RectangleRegion.Max.Y"
-                   @onchange="e => UpdateMaxY(RectangleRegion, e)" />
-        </div>
-    </div>
-    <button type="button"
-            class="btn btn-full"
-            @onclick="DeleteRegion">
-        Delete
-    </button>
 </div>

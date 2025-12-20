@@ -62,8 +62,8 @@ public class RegionRenderer : IRenderable
 
     private void RenderRectangleRegion(RenderContext context, RectangleRegion region)
     {
-        var paint = context.Cache.GetPaint(SKColors.Purple, SKPaintStyle.Stroke, 1f, context.Viewport.Scale);
-        var hoverPaint = context.Cache.GetPaint(SKColors.Yellow.WithAlpha(100), SKPaintStyle.StrokeAndFill, 1f, context.Viewport.Scale);
+        var paint = context.Cache.GetPaint(SKColors.Purple, SKPaintStyle.Stroke, 2f, context.Viewport.Scale);
+        var hoverPaint = context.Cache.GetPaint(SKColors.Purple.WithAlpha(100), SKPaintStyle.Fill, 1f, context.Viewport.Scale);
 
         var width = region.Max.X - region.Min.X;
         var height = region.Max.Y - region.Min.Y;
@@ -75,17 +75,21 @@ public class RegionRenderer : IRenderable
             height
         );
 
-        var finalPaint = (context.HoveredRegion == region) ? hoverPaint : paint;
-        context.Surface.Canvas.DrawRect(rect, finalPaint);
+        if (context.HoveredRegion == region)
+            context.Surface.Canvas.DrawRect(rect, hoverPaint);
+
+        context.Surface.Canvas.DrawRect(rect, paint);
     }
 
     private void RenderCircleRegion(RenderContext context, CircleRegion region)
     {
-        var paint = context.Cache.GetPaint(SKColors.Blue, SKPaintStyle.Stroke, 1f, context.Viewport.Scale);
-        var hoverPaint = context.Cache.GetPaint(SKColors.Yellow.WithAlpha(100), SKPaintStyle.StrokeAndFill, 1f, context.Viewport.Scale);
+        var paint = context.Cache.GetPaint(SKColors.Blue, SKPaintStyle.Stroke, 2f, context.Viewport.Scale);
+        var hoverPaint = context.Cache.GetPaint(SKColors.Blue.WithAlpha(100), SKPaintStyle.Fill, 1f, context.Viewport.Scale);
+        
+        if (context.HoveredRegion == region)
+            context.Surface.Canvas.DrawCircle(region.Center.X, region.Center.Y, region.Radius, hoverPaint);
 
-        var finalPaint = (context.HoveredRegion == region) ? hoverPaint : paint;
-        context.Surface.Canvas.DrawCircle(region.Center.X, region.Center.Y, region.Radius, finalPaint);
+        context.Surface.Canvas.DrawCircle(region.Center.X, region.Center.Y, region.Radius, paint);
     }
 
     private void RenderCylinderRegion(RenderContext context, CylinderRegion region)

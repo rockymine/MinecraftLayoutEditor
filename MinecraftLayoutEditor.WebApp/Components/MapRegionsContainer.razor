@@ -13,25 +13,11 @@ else if (RegionsElement != null)
         var index = i;
         var region = RegionsElement.Items[index];
 
-        <div>
-            @if (region is RectangleRegion rectangle)
-            {
-                <RectangleRegionForm RectangleRegion="rectangle"
-                                     RectangleRegionChanged="updated => RegionsElement.Items[index] = updated"
-                                     SettingsChanged="OnRegionSettingsChanged"
-                                     OnRegionFocused="region => SetHoveredRegion(region)"
-                                     OnDelete="() => DeleteRegionAt(index)" />
-            }
-
-            @if (region is CircleRegion circle)
-            {
-                <CircleRegionForm CircleRegion="circle"
-                    CircleRegionChanged="updated => RegionsElement.Items[index] = updated"
-                    SettingsChanged="OnRegionSettingsChanged"
-                    OnRegionFocused="region => SetHoveredRegion(region)"
-                    OnDelete="() => DeleteRegionAt(index)" />
-            }
-        </div>
+        <RegionEditor Region="region"
+                      RegionChanged="updated => RegionsElement.Items[index] = updated"
+                      SettingsChanged="OnRegionSettingsChanged"
+                      OnRegionFocused="region => SetHoveredRegion(region)"
+                      OnDelete="() => DeleteRegionAt(index)" />
     }
 }
 

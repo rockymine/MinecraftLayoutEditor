@@ -224,9 +224,10 @@ public class UnionRegion : Region
     [XmlElement("negative", typeof(NegativeRegion))]
     public List<Region> Children { get; set; } = [];
 
+    // TODO
     public override bool Contains(Vector2 position)
     {
-        throw new NotImplementedException();
+        return false;
     }
 }
 
@@ -242,8 +243,9 @@ public class NegativeRegion : Region
     [XmlElement("negative", typeof(NegativeRegion))]
     public List<Region> Children { get; set; } = [];
 
+    // TODO
     public override bool Contains(Vector2 position)
     {
-        throw new NotImplementedException();
+        return false;
     }
 }

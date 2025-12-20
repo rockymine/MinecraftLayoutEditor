@@ -1,0 +1,84 @@
+﻿@using MinecraftLayoutEditor.XML
+
+<div class="region-editor">
+    @switch (Region)
+    {
+        case RectangleRegion rect:
+            <RectangleRegionForm RectangleRegion="rect"
+                                 RectangleRegionChanged="r => OnRegionChanged(r)"
+                                 SettingsChanged="SettingsChanged"
+                                 OnRegionFocused="OnRegionFocused"
+                                 OnDelete="OnDelete" />
+            break;
+
+        case CircleRegion circle:
+            <CircleRegionForm CircleRegion="circle"
+                              CircleRegionChanged="r => OnRegionChanged(r)"
+                              SettingsChanged="SettingsChanged"
+                              OnRegionFocused="OnRegionFocused"
+                              OnDelete="OnDelete" />
+            break;
+
+        @* case CylinderRegion cylinder:
+            <CylinderRegionForm CylinderRegion="cylinder"
+                                CylinderRegionChanged="r => OnRegionChanged(r)"
+                                SettingsChanged="SettingsChanged"
+                                OnRegionFocused="OnRegionFocused"
+                                OnDelete="OnDelete" />
+            break;
+
+        case SphereRegion sphere:
+            <SphereRegionForm SphereRegion="sphere"
+                              SphereRegionChanged="r => OnRegionChanged(r)"
+                              SettingsChanged="SettingsChanged"
+                              OnRegionFocused="OnRegionFocused"
+                              OnDelete="OnDelete" />
+            break;
+
+        case BlockRegion block:
+            <BlockRegionForm BlockRegion="block"
+                             BlockRegionChanged="r => OnRegionChanged(r)"
+                             SettingsChanged="SettingsChanged"
+                             OnRegionFocused="OnRegionFocused"
+                             OnDelete="OnDelete" />
+            break;
+
+        case PointRegion point:
+            <PointRegionForm PointRegion="point"
+                             PointRegionChanged="r => OnRegionChanged(r)"
+                             SettingsChanged="SettingsChanged"
+                             OnRegionFocused="OnRegionFocused"
+                             OnDelete="OnDelete" />
+            break; *@
+
+        case UnionRegion union:
+            <div class="region-group-header">Union</div>
+
+            @foreach (var child in union.Children)
+            {
+                <RegionEditor Region="child"
+                              RegionChanged="updated => ReplaceChild(union, child, updated)"
+                              SettingsChanged="SettingsChanged"
+                              OnRegionFocused="OnRegionFocused"
+                              OnDelete="() => RemoveChild(union, child)" />
+            }
+
+            break;
+
+        case NegativeRegion negative:
+            <div class="region-group-header">Negative</div>
+
+            @foreach (var child in negative.Children)
+            {
+                <RegionEditor Region="child"
+                              RegionChanged="updated => ReplaceChild(negative, child, updated)"
+                              SettingsChanged="SettingsChanged"
+                              OnRegionFocused="OnRegionFocused"
+                              OnDelete="() => RemoveChild(negative, child)" />
+            }
+
+            break;
+    }
+</div>
+
+
