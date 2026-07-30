@@ -67,6 +67,8 @@ public partial class Home : ComponentBase, IDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        _profiler.RecordComponentRender();
+
         if (!firstRender)
             return;
 
@@ -256,37 +258,47 @@ public partial class Home : ComponentBase, IDisposable
         }
     }
 
-    private void OnMouseMove(MouseEventArgs e)
-    {
-        Vector2 cursorPosition = _viewport.ScreenToWorldPos(new Vector2((float)e.OffsetX, (float)e.OffsetY));
-        Node? closestNode = _map.Graph.GetClosestNode(cursorPosition);
-
-        var prevHovered = _renderContext.HoveredNode;
-
-        if (closestNode != null)
-        {
-            var threshhold = 0.4f;
-            var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
-
-            _renderContext.HoveredNode = distanceToClosestNode <= threshhold ? closestNode : null;
-        }
-
-        if (prevHovered != _renderContext.HoveredNode)
-            Render(RenderTrigger.NodeHover);
-    }
-
+    /// <summary>
+    /// Pointer movement is handled here rather than through a Blazor @onmousemove
+    /// binding. A Blazor event handler re-renders the whole component when it returns,
+    /// which re-diffs every sidebar control even though moving the pointer changes
+    /// nothing the sidebar shows. A JSInvokable call does not, and panning and hovering
+    /// only ever need the canvas repainted.
+    /// </summary>
     [JSInvokable]
     public void JSOnMouseMove(int mouseX, int mouseY)
     {
-        if (_panStartPosition == null)
-            return;
+        var screenPosition = new Vector2(mouseX, mouseY);
+        var moved = false;
 
-        var panEndPosition = new Vector2(mouseX, mouseY);
-        var deltaPan = _panStartPosition.Value - panEndPosition;
-        _panStartPosition = panEndPosition;
+        if (_panStartPosition != null)
+        {
+            var deltaPan = _panStartPosition.Value - screenPosition;
+            _panStartPosition = screenPosition;
 
-        _viewport.UpdateTRS(_viewport.CameraPosition - deltaPan);
-        Render(RenderTrigger.Pan);
+            _viewport.UpdateTRS(_viewport.CameraPosition - deltaPan);
+            moved = true;
+        }
+
+        if (UpdateHoveredNode(_viewport.ScreenToWorldPos(screenPosition)) || moved)
+            Render(RenderTrigger.MouseMove);
+    }
+
+    /// <summary>Returns whether the hovered node changed.</summary>
+    private bool UpdateHoveredNode(Vector2 cursorPosition)
+    {
+        const float hoverRadius = 0.4f;
+
+        var previousHovered = _renderContext.HoveredNode;
+        var closestNode = _map.Graph.GetClosestNode(cursorPosition);
+
+        if (closestNode != null)
+        {
+            var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
+            _renderContext.HoveredNode = distanceToClosestNode <= hoverRadius ? closestNode : null;
+        }
+
+        return previousHovered != _renderContext.HoveredNode;
     }
 
     public void OnKeyUp(KeyboardEventArgs e)
