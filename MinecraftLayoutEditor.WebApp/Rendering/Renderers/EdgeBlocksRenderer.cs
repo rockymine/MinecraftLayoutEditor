@@ -1,38 +1,52 @@
-﻿using SkiaSharp;
+using SkiaSharp;
+using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering.Renderers;
 
-public class EdgeBlocksRenderer : IRenderable
+/// <summary>
+/// The cells covered by every edge's lane. This is the same kind of data as the
+/// imported block layer - a large set of cells that changes only when the layout does
+/// - so it is drawn through the same cached, tiled geometry rather than a second
+/// implementation of it.
+/// </summary>
+public class EdgeBlocksRenderer : IRenderable, IDisposable
 {
+    private readonly BlockGeometry _geometry = new();
+    private readonly List<Vector2> _blocks = [];
+    private int _blocksBuiltAtRevision = -1;
+
     public void Render(RenderContext context)
     {
-        if (!context.Options.ShowBlocksEnabled) 
+        if (!context.Options.ShowBlocksEnabled)
             return;
 
-        foreach (var edge in context.Map.Graph.Edges)
+        var graph = context.Map.Graph;
+
+        if (_blocksBuiltAtRevision != graph.Revision)
         {
-            var blockPaint = context.Cache.GetPaint(context.Options.CellFillStyle, SKPaintStyle.Stroke, 1f, context.Viewport.Scale);
-            SKPath blockList = new()
-            {
-                FillType = SKPathFillType.Winding
-            };
+            _blocks.Clear();
+            foreach (var edge in graph.Edges)
+                _blocks.AddRange(edge.EdgeBlocks);
 
-            foreach (var block in edge.EdgeBlocks)
-            {
-                var centerX = Math.Abs(block.X + 0.5f);
-                var centerY = Math.Abs(block.Y + 0.5f);
-
-                if (centerX <= context.LimitX && centerY <= context.LimitY)
-                {
-                    var screenPos = block;
-                    var size = 1;
-
-                    blockList.AddRect(SKRect.Create(screenPos.X, screenPos.Y, size, size));
-                }
-            }
-
-            blockList.Close();
-            context.Surface.Canvas.DrawPath(blockList, blockPaint);
+            _blocksBuiltAtRevision = graph.Revision;
         }
+
+        var blockPaint = context.Cache.GetPaint(context.Options.CellFillStyle,
+            SKPaintStyle.Stroke, 1f, context.Viewport.Scale);
+
+        _geometry.Draw(
+            context.Surface!.Canvas,
+            blockPaint,
+            _blocks,
+            graph.Revision,
+            context.Viewport.VisibleWorldRect(),
+            context.LimitX,
+            context.LimitY);
+    }
+
+    public void Dispose()
+    {
+        _geometry.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

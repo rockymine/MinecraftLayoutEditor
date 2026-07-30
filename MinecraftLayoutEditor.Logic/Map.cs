@@ -67,5 +67,7 @@ public class Map
                 }
             }
         }
+
+        Graph.MarkChanged();
     }
 }

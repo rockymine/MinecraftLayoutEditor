@@ -1,4 +1,5 @@
 using MinecraftLayoutEditor.Logic;
+using MinecraftLayoutEditor.Logic.Geometry;
 using SkiaSharp;
 using System.Numerics;
 
@@ -22,6 +23,10 @@ public class GraphGeometry : IDisposable
     private readonly Dictionary<Edge.EdgeType, SKPath> _edgePaths = [];
     private readonly Dictionary<Node.NodeType, SKPath> _nodePaths = [];
     private int _builtAtRevision = -1;
+
+    private SKPath? _laneOutlinePath;
+    private int _laneOutlineRevision = -1;
+    private int _laneOutlineWidth = -1;
 
     public void DrawEdges(RenderContext context)
     {
@@ -53,6 +58,44 @@ public class GraphGeometry : IDisposable
         // off and the geometry is identical, so the redraw covers what is underneath.
         DrawHighlight(context, context.SelectedNode, context.Options.SelectedNodeStroke);
         DrawHighlight(context, context.HoveredNode, context.Options.HoveredNodeStroke);
+    }
+
+    /// <summary>
+    /// The outline of every edge's lane. Keyed on the lane width as well as the graph,
+    /// because the width is a map setting the graph revision knows nothing about.
+    /// </summary>
+    public void DrawLaneOutlines(RenderContext context)
+    {
+        var graph = context.Map.Graph;
+        var laneWidth = context.Map.LaneWidth;
+
+        if (_laneOutlinePath == null
+            || _laneOutlineRevision != graph.Revision
+            || _laneOutlineWidth != laneWidth)
+        {
+            _laneOutlinePath?.Dispose();
+            _laneOutlinePath = new SKPath();
+
+            foreach (var edge in graph.Edges)
+            {
+                var corners = Rectangle.FindRectCorners(
+                    edge.Node1.Position, edge.Node2.Position, laneWidth);
+
+                _laneOutlinePath.MoveTo(corners.NearLeft.X, corners.NearLeft.Y);
+                _laneOutlinePath.LineTo(corners.FarLeft.X, corners.FarLeft.Y);
+                _laneOutlinePath.LineTo(corners.FarRight.X, corners.FarRight.Y);
+                _laneOutlinePath.LineTo(corners.NearRight.X, corners.NearRight.Y);
+                _laneOutlinePath.Close();
+            }
+
+            _laneOutlineRevision = graph.Revision;
+            _laneOutlineWidth = laneWidth;
+        }
+
+        var paint = context.Cache.GetPaint(context.Options.BoundingBoxLineStroke,
+            SKPaintStyle.Stroke, 1f, context.Viewport.Scale);
+
+        context.Surface!.Canvas.DrawPath(_laneOutlinePath, paint);
     }
 
     private static void DrawHighlight(RenderContext context, Node? node, SKColor strokeColor)
@@ -144,6 +187,10 @@ public class GraphGeometry : IDisposable
 
     private void DisposePaths()
     {
+        _laneOutlinePath?.Dispose();
+        _laneOutlinePath = null;
+        _laneOutlineRevision = -1;
+
         foreach (var path in _edgePaths.Values)
             path.Dispose();
 
