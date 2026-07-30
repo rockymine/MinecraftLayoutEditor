@@ -117,27 +117,4 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         public RenderStyle GetEdgeStyle(Edge.EdgeType edgeType) =>
             _edgeStyles.TryGetValue(edgeType, out var style) ? style : _fallbackStyle;
     }
-
-    public enum RenderTrigger
-    {
-        Initial,
-        MouseMove,
-        MouseClick,
-        Zoom,
-        Pan,
-        KeyboardMove,
-        SettingsChanged,
-        NodeAdded,
-        NodeRemoved,
-        NodeDeselected,
-        NodeMoved,
-        NodeHover,
-        EdgeAdded,
-        EdgeRemoved,
-        Undo,
-        Redo,
-        MapCleared,
-        ViewFit,
-        WorldImport
-    }
 }

@@ -78,7 +78,7 @@ public partial class Home : ComponentBase, IDisposable
         await JSRuntime.InvokeVoidAsync("initResizeObserver", DotNetObjectReference.Create(this));
         await JSRuntime.InvokeVoidAsync("initRenderStats", DotNetObjectReference.Create(this));
 
-        Render(RenderTrigger.Initial);
+        Render();
     }
 
     public void Dispose()
@@ -127,7 +127,7 @@ public partial class Home : ComponentBase, IDisposable
         if (_viewport.Scale == 1f)
             OnFitMap();
 
-        Render(RenderTrigger.Initial);
+        Render();
     }
 
     private async Task ResizeCanvas()
@@ -137,7 +137,12 @@ public partial class Home : ComponentBase, IDisposable
         _viewport.UpdateTRS(_viewport.Center);
     }
 
-    private void Render(RenderTrigger trigger)
+    /// <summary>
+    /// Asks for the canvas to be repainted. Repeated calls before the next animation
+    /// frame collapse into a single paint, which SKGLView already handles, so callers
+    /// do not need to coordinate.
+    /// </summary>
+    private void Render()
     {
         if (OperatingSystem.IsBrowser())
             _canvas.Invalidate();
@@ -160,7 +165,7 @@ public partial class Home : ComponentBase, IDisposable
             return;
 
         _viewport.FitToContent(_map.Width, _map.Height);
-        Render(RenderTrigger.ViewFit);
+        Render();
     }
 
     public void OnFitTeam()
@@ -169,7 +174,7 @@ public partial class Home : ComponentBase, IDisposable
             return;
 
         _viewport.FitToSection(_map.Width, _map.Height, _map.Symmetry.IsHorizontal);
-        Render(RenderTrigger.ViewFit);
+        Render();
     }
 
     private void OnChangeEditingMode(EditorMode newMode)
@@ -179,7 +184,7 @@ public partial class Home : ComponentBase, IDisposable
 
     private void OnSettingsChanged()
     {
-        Render(RenderTrigger.SettingsChanged);
+        Render();
     }
 
     private void OnClearMap()
@@ -190,21 +195,21 @@ public partial class Home : ComponentBase, IDisposable
         _map.Graph.Clear();
         _historyStack = new HistoryStack();
 
-        Render(RenderTrigger.MapCleared);
+        Render();
     }
 
     private void OnUndo()
     {
         _historyStack?.Undo();
         _renderContext.SelectedNode = null;
-        Render(RenderTrigger.Undo);
+        Render();
     }
 
     private void OnRedo()
     {
         _historyStack?.Redo();
         _renderContext.SelectedNode = null;
-        Render(RenderTrigger.Redo);
+        Render();
     }
 
     private async Task OnSchematicCreate()
@@ -227,7 +232,7 @@ public partial class Home : ComponentBase, IDisposable
                 );
 
         _historyStack?.ExecuteAction(action);
-        Render(RenderTrigger.NodeRemoved);
+        Render();
     }
 
     private async Task OnMouseDown(MouseEventArgs e)
@@ -287,7 +292,7 @@ public partial class Home : ComponentBase, IDisposable
             Stopwatch.GetElapsedTime(hoverStartedAt).TotalMilliseconds);
 
         if (hoverChanged || moved)
-            Render(RenderTrigger.MouseMove);
+            Render();
     }
 
     /// <summary>Returns whether the hovered node changed.</summary>
@@ -330,7 +335,7 @@ public partial class Home : ComponentBase, IDisposable
         }
 
         if (nodeMoved)
-            Render(RenderTrigger.NodeMoved);
+            Render();
     }
 
     [JSInvokable]
@@ -339,7 +344,7 @@ public partial class Home : ComponentBase, IDisposable
         var cursorPos = new Vector2((float)offsetX, (float)offsetY);
 
         if (_viewport.TryZoom(deltaY, cursorPos, _map.Width, _map.Height))
-            Render(RenderTrigger.Zoom);
+            Render();
     }
 
     private void HandleLeftClick(Vector2 worldPos)
@@ -363,7 +368,7 @@ public partial class Home : ComponentBase, IDisposable
                 );
 
             _historyStack?.ExecuteAction(action);
-            Render(RenderTrigger.NodeAdded);
+            Render();
         }
         // Select node
         else if (_renderContext.HoveredNode != null)
@@ -391,7 +396,7 @@ public partial class Home : ComponentBase, IDisposable
                 _renderContext.SelectedNode = null;
             }
 
-            Render(RenderTrigger.EdgeRemoved);
+            Render();
         }
     }
 
@@ -415,14 +420,14 @@ public partial class Home : ComponentBase, IDisposable
                 _renderContext.SelectedNode = null;
 
             _renderContext.HoveredNode = null;
-            Render(RenderTrigger.NodeRemoved);
+            Render();
         }
         // Deselect node
         else if (_renderContext.SelectedNode != null && closestNode != null
             && Vector2.Distance(worldPos, closestNode.Position) >= threshhold)
         {
             _renderContext.SelectedNode = null;
-            Render(RenderTrigger.NodeDeselected);
+            Render();
         }
     }
 
@@ -447,7 +452,7 @@ public partial class Home : ComponentBase, IDisposable
                 _map.Height = (blocks.Max(b => Math.Abs(b.Z)) * 2) + 64;
 
                 OnFitMap();
-                Render(RenderTrigger.WorldImport);
+                Render();
             }
 
             if (map != null)
