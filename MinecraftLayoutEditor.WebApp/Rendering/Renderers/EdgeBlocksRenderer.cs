@@ -14,6 +14,7 @@ public class EdgeBlocksRenderer : IRenderable, IDisposable
     private readonly BlockGeometry _geometry = new();
     private readonly List<Vector2> _blocks = [];
     private int _blocksBuiltAtRevision = -1;
+    private int _blocksBuiltAtLaneWidth = -1;
 
     public void Render(RenderContext context)
     {
@@ -21,15 +22,23 @@ public class EdgeBlocksRenderer : IRenderable, IDisposable
             return;
 
         var graph = context.Map.Graph;
+        var laneWidth = context.Map.LaneWidth;
 
-        if (_blocksBuiltAtRevision != graph.Revision)
+        // Keyed on the lane width as well as the graph: the width is a map setting the
+        // graph revision knows nothing about, and it changes which cells a lane covers.
+        if (_blocksBuiltAtRevision != graph.Revision || _blocksBuiltAtLaneWidth != laneWidth)
         {
             _blocks.Clear();
             foreach (var edge in graph.Edges)
-                _blocks.AddRange(edge.EdgeBlocks);
+                _blocks.AddRange(edge.BlocksFor(laneWidth));
 
             _blocksBuiltAtRevision = graph.Revision;
+            _blocksBuiltAtLaneWidth = laneWidth;
         }
+
+        // One number that moves whenever either input to the cell set does, so the
+        // tiled geometry notices a lane-width change as well as a graph change.
+        var cellRevision = HashCode.Combine(graph.Revision, laneWidth);
 
         // Cells are filled, not outlined. An outline stroked at one screen pixel is
         // wider than the cell itself once the map is zoomed out, so each cell painted
@@ -41,7 +50,7 @@ public class EdgeBlocksRenderer : IRenderable, IDisposable
             context.Surface!.Canvas,
             blockPaint,
             _blocks,
-            graph.Revision,
+            cellRevision,
             context.Viewport.VisibleWorldRect(),
             context.LimitX,
             context.LimitY);

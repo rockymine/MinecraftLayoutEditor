@@ -408,7 +408,6 @@ public partial class Home : ComponentBase, IDisposable
                     );
 
                 _historyStack?.ExecuteAction(action);
-                _map.CalculateEdgeBlocks();
                 _renderContext.SelectedNode = null;
             }
 
@@ -430,7 +429,6 @@ public partial class Home : ComponentBase, IDisposable
                 );
 
             _historyStack?.ExecuteAction(action);
-            _map.CalculateEdgeBlocks();
 
             if (_renderContext.SelectedNode == _renderContext.HoveredNode)
                 _renderContext.SelectedNode = null;

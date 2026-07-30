@@ -55,19 +55,14 @@ public class Map
         Graph.MarkChanged();
     }
 
+    /// <summary>
+    /// Works out every edge's lane cells up front. Each edge derives and remembers its
+    /// own, so this is a warm-up rather than a requirement - the cells are correct
+    /// whether or not anyone calls it.
+    /// </summary>
     public void CalculateEdgeBlocks()
     {
-        foreach (var n in Graph.Nodes)
-        {
-            foreach (var e in n.Edges)
-            {
-                if (e.EdgeBlocks.Count == 0)
-                {
-                    e.EdgeBlocks = Rectangle.DiscretePointsInsideRect(e.Node1.Position, e.Node2.Position, LaneWidth);
-                }
-            }
-        }
-
-        Graph.MarkChanged();
+        foreach (var edge in Graph.Edges)
+            edge.BlocksFor(LaneWidth);
     }
 }
