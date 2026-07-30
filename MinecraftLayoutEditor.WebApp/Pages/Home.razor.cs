@@ -55,15 +55,19 @@ public partial class Home : ComponentBase, IDisposable
 
         _renderer = new MapRenderer(_renderContext);
 
+        // Registration order is paint order: later renderables draw over earlier ones.
         _renderer.renderables.Add(new BackgroundRenderer());
         _renderer.renderables.Add(new GridRenderer());
         _renderer.renderables.Add(new MirrorAxisRenderer());
-        _renderer.renderables.Add(new NodeRenderer());
-        _renderer.renderables.Add(new EdgeRenderer());
         _renderer.renderables.Add(new MapBlocksRenderer());
         _renderer.renderables.Add(new RegionRenderer());
         _renderer.renderables.Add(new EdgeBoundingBoxRenderer());
         _renderer.renderables.Add(new EdgeBlocksRenderer());
+
+        // The graph is what the editor edits, so it goes on top of everything, and a
+        // node goes on top of the edges meeting at it rather than under them.
+        _renderer.renderables.Add(new EdgeRenderer());
+        _renderer.renderables.Add(new NodeRenderer());
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
