@@ -17,7 +17,7 @@ public class NodeRenderer : IRenderable
 
     private static RenderStyle GetNodeStyle(Node node, RenderContext context)
     {
-        var style = context.Options.GetStyle(node.Type.ToString().ToLower());
+        var style = context.Options.GetNodeStyle(node.Type);
 
         if (node == context.HoveredNode)
         {
@@ -36,15 +36,12 @@ public class NodeRenderer : IRenderable
     {
         var screenPos = position;
 
-        switch (style.Shape.ToLower())
+        switch (style.Shape)
         {
-            case "circle":
-                RenderCircleNode(context, screenPos, style);
-                break;
-            case "square":
+            case NodeShape.Square:
                 RenderSquareNode(context, screenPos, style);
                 break;
-            case "diamond":
+            case NodeShape.Diamond:
                 RenderDiamondNode(context, screenPos, style);
                 break;
             default:

@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+using MinecraftLayoutEditor.Logic;
+using SkiaSharp;
 
 namespace MinecraftLayoutEditor.WebApp.Rendering
 {
@@ -16,9 +17,20 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         public SKColor CellFillStyle { get; init; } = SKColors.Gray;
         public SKColor BoundingBoxLineStroke { get; init; } = SKColors.Purple;
 
-        public Dictionary<string, RenderStyle> RenderStyles { get; set; }
+        /// <summary>
+        /// Styles are keyed on the enum the caller already holds. A lookup by lowercased
+        /// type name allocates two strings per node per frame, which the render path
+        /// cannot afford once a layout has more than a handful of nodes.
+        /// </summary>
+        private readonly Dictionary<Node.NodeType, RenderStyle> _nodeStyles;
+        private readonly Dictionary<Edge.EdgeType, RenderStyle> _edgeStyles;
+        private readonly RenderStyle _fallbackStyle = new();
 
-        public RenderingOptions() 
+        public RenderStyle MirrorPointStyle { get; }
+        public RenderStyle MirrorLineStyle { get; }
+        public RenderStyle GridLineStyle { get; }
+
+        public RenderingOptions()
         {
             // Node styles
             var defaultNodeStyle = new RenderStyle
@@ -26,7 +38,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
                 FillStyle = SKColors.LightGray,
                 StrokeStyle = SKColors.DarkGray,
                 Radius = 0.4f,
-                Shape = "circle",
+                Shape = NodeShape.Circle,
                 LineWidth = 2
             };
 
@@ -35,7 +47,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
                 FillStyle = SKColors.Green,
                 StrokeStyle = SKColors.DarkGray,
                 Radius = 0.4f,
-                Shape = "square",
+                Shape = NodeShape.Square,
                 LineWidth = 2f
             };
 
@@ -44,10 +56,9 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
                 FillStyle = SKColors.Blue,
                 StrokeStyle = SKColors.DarkGray,
                 Radius = 0.4f,
-                Shape = "diamond",
+                Shape = NodeShape.Diamond,
                 LineWidth = 2f
             };
-
 
             // Edge styles
             var walkableEdgeStyle = new RenderStyle
@@ -65,7 +76,7 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
             };
 
             // Other styles
-            var mirrorPointStyle = new RenderStyle
+            MirrorPointStyle = new RenderStyle
             {
                 Radius = 0.4f,
                 FillStyle = SKColors.Red,
@@ -73,34 +84,38 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
                 LineWidth = 2f
             };
 
-            var mirrorLineStyle = new RenderStyle
+            MirrorLineStyle = new RenderStyle
             {
                 LineWidth = 2f,
                 StrokeStyle = SKColors.Red,
                 LineDash = [5]
             };
 
-            var gridLineStyle = new RenderStyle
+            GridLineStyle = new RenderStyle
             {
                 LineWidth = 1f,
                 StrokeStyle = SKColors.Black,
             };
 
-            RenderStyles = new Dictionary<string, RenderStyle>
+            _nodeStyles = new Dictionary<Node.NodeType, RenderStyle>
             {
-                { "undefined", defaultNodeStyle },
-                { "wool", woolNodeStyle },
-                { "spawn", spawnNodeStyle },
-                { "walkable", walkableEdgeStyle },
-                { "bridgeable", bridgeableEdgeStyle },
-                { "mirrorPointStyle", mirrorPointStyle },
-                { "mirrorLineStyle", mirrorLineStyle },
-                { "gridLineStyle", gridLineStyle }
+                { Node.NodeType.Undefined, defaultNodeStyle },
+                { Node.NodeType.Wool, woolNodeStyle },
+                { Node.NodeType.Spawn, spawnNodeStyle }
+            };
+
+            _edgeStyles = new Dictionary<Edge.EdgeType, RenderStyle>
+            {
+                { Edge.EdgeType.Walkable, walkableEdgeStyle },
+                { Edge.EdgeType.Bridgeable, bridgeableEdgeStyle }
             };
         }
 
-        public RenderStyle GetStyle(string type) =>
-            RenderStyles.TryGetValue(type, out var style) ? style : new RenderStyle();
+        public RenderStyle GetNodeStyle(Node.NodeType nodeType) =>
+            _nodeStyles.TryGetValue(nodeType, out var style) ? style : _fallbackStyle;
+
+        public RenderStyle GetEdgeStyle(Edge.EdgeType edgeType) =>
+            _edgeStyles.TryGetValue(edgeType, out var style) ? style : _fallbackStyle;
     }
 
     public enum RenderTrigger

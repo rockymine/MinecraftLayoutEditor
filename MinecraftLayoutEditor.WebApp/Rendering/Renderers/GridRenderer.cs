@@ -8,7 +8,7 @@ public class GridRenderer : IRenderable
     public void Render(RenderContext context)
     {
         // Render grid cells
-        var gridLineStyle = context.Options.GetStyle("gridLineStyle");
+        var gridLineStyle = context.Options.GridLineStyle;
         var paint = context.Cache.GetPaint(gridLineStyle.StrokeStyle, SKPaintStyle.Stroke, gridLineStyle.LineWidth, context.Viewport.Scale);
         using var gridPath = new SKPath();
 

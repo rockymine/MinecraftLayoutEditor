@@ -11,7 +11,7 @@ public class MirrorAxisRenderer : IRenderable
             return;
 
         // Render mirror line
-        var mirrorLineStyle = context.Options.GetStyle("mirrorLineStyle");
+        var mirrorLineStyle = context.Options.MirrorLineStyle;
         var mirrorLinePaint = context.Cache.GetPaint(mirrorLineStyle.StrokeStyle, SKPaintStyle.Stroke, mirrorLineStyle.LineWidth, context.Viewport.Scale);
         var start = context.Map.Symmetry.GetStartPointWorld(context.Map);
         var end = context.Map.Symmetry.GetEndPointWorld(context.Map);
@@ -20,7 +20,7 @@ public class MirrorAxisRenderer : IRenderable
         // Render rotation point
         if (context.Map.Symmetry.RotationDeg == 180)
         {
-            var mirrorPointStyle = context.Options.GetStyle("mirrorPointStyle");
+            var mirrorPointStyle = context.Options.MirrorPointStyle;
             var mirrorPointPaint = context.Cache.GetPaint(mirrorPointStyle.FillStyle, SKPaintStyle.Fill, mirrorPointStyle.LineWidth, context.Viewport.Scale);
             var center = Vector2.Zero;
             var radius = mirrorPointStyle.Radius;
