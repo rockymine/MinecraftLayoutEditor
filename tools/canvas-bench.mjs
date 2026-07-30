@@ -35,7 +35,8 @@ function resolvePlaywright() {
 
 function parseArgs(argv) {
   const options = {
-    url: 'http://localhost:5110', world: null, frames: 120, zoom: 0, headed: false,
+    url: 'http://localhost:5110', world: null, frames: 120, zoom: 0,
+    graph: null, layers: false, headed: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
@@ -43,6 +44,8 @@ function parseArgs(argv) {
     else if (flag === '--world') options.world = argv[++index];
     else if (flag === '--frames') options.frames = Number(argv[++index]);
     else if (flag === '--zoom') options.zoom = Number(argv[++index]);
+    else if (flag === '--graph') options.graph = argv[++index];
+    else if (flag === '--layers') options.layers = true;
     else if (flag === '--headed') options.headed = true;
   }
   return options;
@@ -116,6 +119,24 @@ async function panFrames(frameCount) {
   }
 
   await page.mouse.up({ button: 'middle' });
+}
+
+if (options.graph) {
+  const [columns, rows] = options.graph.split('x').map(Number);
+  const graphStart = Date.now();
+  const nodeCount = await page.evaluate(
+    async ([wide, tall]) => await window.loadBenchmarkGraph(wide, tall),
+    [columns, rows],
+  );
+  console.log(`built a ${columns}x${rows} graph (${nodeCount} nodes) in ${Date.now() - graphStart} ms`);
+}
+
+if (options.layers) {
+  // Both overlays are off by default; they drive the edge-geometry renderers.
+  await page.click('#showBoundingBoxEnabled');
+  await page.click('#showBlocksEnabled');
+  await page.waitForTimeout(500);
+  console.log('enabled the bounding box and block overlays');
 }
 
 if (options.zoom > 0) {

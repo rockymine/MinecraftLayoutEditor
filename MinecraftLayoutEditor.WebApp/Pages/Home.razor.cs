@@ -95,6 +95,25 @@ public partial class Home : ComponentBase, IDisposable
     [JSInvokable]
     public int ImportedBlockCount() => _map.Blocks.Count;
 
+    /// <summary>
+    /// Fills the map with a grid of connected nodes so the node and edge renderers can
+    /// be measured with a realistic graph on the canvas.
+    /// </summary>
+    [JSInvokable]
+    public int LoadBenchmarkGraph(int columns, int rows)
+    {
+        _renderContext.SelectedNode = null;
+        _renderContext.HoveredNode = null;
+        _historyStack = new HistoryStack();
+
+        MapFactory.FillWithGrid(_map, columns, rows);
+
+        OnFitMap();
+        StateHasChanged();
+
+        return _map.Graph.Nodes.Count;
+    }
+
     [JSInvokable]
     public async Task OnBrowserResize()
     {

@@ -23,45 +23,63 @@ namespace MinecraftLayoutEditor.Logic
             return map;
         }
 
-        public static Map Performance(int numEdges = 20, int edgeLength = 200, int laneWidth = 10)
+        /// <summary>
+        /// Replaces the graph of <paramref name="map"/> with a fully connected grid of
+        /// nodes, and resizes the map to hold it. Hand-drawing a layout large enough to
+        /// see the cost of the node and edge renderers takes hundreds of clicks, so this
+        /// produces one directly.
+        /// </summary>
+        public static void FillWithGrid(Map map, int columns, int rows, int spacing = 12)
         {
-            var map = Empty(edgeLength + 10, numEdges * 20 + 10, laneWidth, 10);  // Adjust dimensions to fit
+            map.Graph.Clear();
+            map.Width = (columns + 1) * spacing;
+            map.Height = (rows + 1) * spacing;
 
-            for (int i = 0; i < numEdges; i++)
+            var grid = new Node[columns, rows];
+
+            for (int column = 0; column < columns; column++)
             {
-                // Horizontal long edges, spaced vertically
-                var y = (i - numEdges / 2f) * 20 + 0.5f;  // Centered, spaced by 20 units
-                var n1 = new Node(new Vector2(-edgeLength / 2f + 0.5f, y)) { Type = Node.NodeType.Undefined };
-                var n2 = new Node(new Vector2(edgeLength / 2f - 0.5f, y)) { Type = Node.NodeType.Undefined };
+                for (int row = 0; row < rows; row++)
+                {
+                    var position = new Vector2(
+                        (column - (columns - 1) / 2f) * spacing + 0.5f,
+                        (row - (rows - 1) / 2f) * spacing + 0.5f);
 
-                map.Graph.AddNode(n1);
-                map.Graph.AddNode(n2);
+                    // Spread across the node types that have a style, so every shape the
+                    // node renderer can draw is represented.
+                    var nodeType = ((column + row) % 3) switch
+                    {
+                        0 => Node.NodeType.Undefined,
+                        1 => Node.NodeType.Wool,
+                        _ => Node.NodeType.Spawn
+                    };
 
-                var e = new Edge(n1, n2) { Type = Edge.EdgeType.Walkable };
-                n1.Edges.Add(e);
-                n2.Edges.Add(e);
+                    var node = new Node(position) { Type = nodeType };
+                    grid[column, row] = node;
+                    map.Graph.AddNode(node);
+                }
             }
 
-            // Add some cross-connections for complexity (vertical short edges)
-            var nodes = map.Graph.Nodes.ToList();  // Assuming even numEdges for pairing
-            for (int i = 0; i < numEdges - 1; i += 2)
+            for (int column = 0; column < columns; column++)
             {
-                // Connect left nodes vertically
-                Connect(nodes[i], nodes[i + 1], Edge.EdgeType.Bridgeable);
-                // Connect right nodes vertically
-                Connect(nodes[i + numEdges], nodes[i + numEdges + 1], Edge.EdgeType.Bridgeable);
+                for (int row = 0; row < rows; row++)
+                {
+                    if (column + 1 < columns)
+                        Connect(grid[column, row], grid[column + 1, row], Edge.EdgeType.Walkable);
+
+                    if (row + 1 < rows)
+                        Connect(grid[column, row], grid[column, row + 1], Edge.EdgeType.Bridgeable);
+                }
             }
 
             map.Graph.InvalidateEdges();
-            map.CalculateEdgeBlocks();  // Precompute for perf testing
+            map.CalculateEdgeBlocks();
 
-            return map;
-
-            static void Connect(Node a, Node b, Edge.EdgeType type)
+            static void Connect(Node first, Node second, Edge.EdgeType type)
             {
-                var e = new Edge(a, b) { Type = type };
-                a.Edges.Add(e);
-                b.Edges.Add(e);
+                var edge = new Edge(first, second) { Type = type };
+                first.Edges.Add(edge);
+                second.Edges.Add(edge);
             }
         }
     }
