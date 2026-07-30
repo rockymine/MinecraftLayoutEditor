@@ -4,10 +4,14 @@ namespace MinecraftLayoutEditor.Logic;
 
 public class Graph
 {
+    private const float CellSize = 1f;
+
     private readonly List<Node> _nodes = [];
     private readonly HashSet<Edge> _edges = [];
+    private readonly Dictionary<(int, int), List<Node>> _nodesByCell = [];
     private int _revision;
     private int _edgesBuiltAtRevision = -1;
+    private int _cellsBuiltAtRevision = -1;
 
     public IReadOnlyList<Node> Nodes => _nodes;
 
@@ -36,6 +40,81 @@ public class Graph
         }
     }
 
+    /// <summary>
+    /// The nearest node within <paramref name="radius"/> of <paramref name="position"/>,
+    /// or null when there is none.
+    ///
+    /// Hover detection asks this on every pointer move, so it cannot afford to measure
+    /// every node: the nodes are bucketed into a grid of cells and only the cells the
+    /// search radius touches are examined, which makes the cost independent of how large
+    /// the layout is.
+    /// </summary>
+    public Node? FindNodeWithin(Vector2 position, float radius)
+    {
+        if (_nodes.Count == 0)
+            return null;
+
+        EnsureCellIndex();
+
+        var minCellX = (int)MathF.Floor((position.X - radius) / CellSize);
+        var maxCellX = (int)MathF.Floor((position.X + radius) / CellSize);
+        var minCellY = (int)MathF.Floor((position.Y - radius) / CellSize);
+        var maxCellY = (int)MathF.Floor((position.Y + radius) / CellSize);
+
+        Node? closestNode = null;
+        var closestDistanceSquared = radius * radius;
+
+        for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+        {
+            for (int cellY = minCellY; cellY <= maxCellY; cellY++)
+            {
+                if (!_nodesByCell.TryGetValue((cellX, cellY), out var nodesInCell))
+                    continue;
+
+                foreach (var node in nodesInCell)
+                {
+                    var distanceSquared = Vector2.DistanceSquared(position, node.Position);
+                    if (distanceSquared <= closestDistanceSquared)
+                    {
+                        closestDistanceSquared = distanceSquared;
+                        closestNode = node;
+                    }
+                }
+            }
+        }
+
+        return closestNode;
+    }
+
+    private void EnsureCellIndex()
+    {
+        if (_cellsBuiltAtRevision == _revision)
+            return;
+
+        _nodesByCell.Clear();
+
+        foreach (var node in _nodes)
+        {
+            var cellKey = (
+                (int)MathF.Floor(node.Position.X / CellSize),
+                (int)MathF.Floor(node.Position.Y / CellSize));
+
+            if (!_nodesByCell.TryGetValue(cellKey, out var nodesInCell))
+            {
+                nodesInCell = [];
+                _nodesByCell.Add(cellKey, nodesInCell);
+            }
+
+            nodesInCell.Add(node);
+        }
+
+        _cellsBuiltAtRevision = _revision;
+    }
+
+    /// <summary>
+    /// The nearest node to <paramref name="pos"/> at any distance. Used by the click
+    /// handlers, which run once per click and need no bound on the search.
+    /// </summary>
     public Node? GetClosestNode(Vector2 pos)
     {
         if (_nodes.Count == 0)

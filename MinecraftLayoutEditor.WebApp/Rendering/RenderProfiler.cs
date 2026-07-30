@@ -32,6 +32,23 @@ public class RenderProfiler
 
     public void RecordComponentRender() => ComponentRenders++;
 
+    /// <summary>
+    /// Time spent resolving which node the pointer is over, totalled over the window.
+    /// This happens per pointer move rather than per frame, so it is tracked separately
+    /// from the renderables.
+    /// </summary>
+    public double HoverTotalMilliseconds { get; private set; }
+    public int HoverLookups { get; private set; }
+
+    public double AverageHoverMilliseconds =>
+        HoverLookups == 0 ? 0 : HoverTotalMilliseconds / HoverLookups;
+
+    public void RecordHoverLookup(double milliseconds)
+    {
+        HoverTotalMilliseconds += milliseconds;
+        HoverLookups++;
+    }
+
     public double AverageFrameMilliseconds
     {
         get
@@ -101,6 +118,8 @@ public class RenderProfiler
         _frameMilliseconds.Clear();
         FrameCount = 0;
         ComponentRenders = 0;
+        HoverTotalMilliseconds = 0;
+        HoverLookups = 0;
         LastFrameMilliseconds = 0;
     }
 
@@ -116,6 +135,8 @@ public class RenderProfiler
         json.Append(",\"peakFrameMs\":").Append(Format(PeakFrameMilliseconds));
         json.Append(",\"lastFrameMs\":").Append(Format(LastFrameMilliseconds));
         json.Append(",\"componentRenders\":").Append(ComponentRenders);
+        json.Append(",\"hoverLookups\":").Append(HoverLookups);
+        json.Append(",\"avgHoverMs\":").Append(Format(AverageHoverMilliseconds));
         json.Append(",\"renderers\":{");
 
         var ordered = _perRenderer

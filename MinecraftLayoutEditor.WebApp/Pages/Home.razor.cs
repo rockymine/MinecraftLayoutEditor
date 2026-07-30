@@ -10,6 +10,7 @@ using MinecraftLayoutEditor.WebApp.Rendering;
 using MinecraftLayoutEditor.WebApp.Rendering.Renderers;
 using SkiaSharp;
 using SkiaSharp.Views.Blazor;
+using System.Diagnostics;
 using System.Drawing;
 using System.Numerics;
 
@@ -280,7 +281,12 @@ public partial class Home : ComponentBase, IDisposable
             moved = true;
         }
 
-        if (UpdateHoveredNode(_viewport.ScreenToWorldPos(screenPosition)) || moved)
+        var hoverStartedAt = Stopwatch.GetTimestamp();
+        var hoverChanged = UpdateHoveredNode(_viewport.ScreenToWorldPos(screenPosition));
+        _profiler.RecordHoverLookup(
+            Stopwatch.GetElapsedTime(hoverStartedAt).TotalMilliseconds);
+
+        if (hoverChanged || moved)
             Render(RenderTrigger.MouseMove);
     }
 
@@ -290,13 +296,7 @@ public partial class Home : ComponentBase, IDisposable
         const float hoverRadius = 0.4f;
 
         var previousHovered = _renderContext.HoveredNode;
-        var closestNode = _map.Graph.GetClosestNode(cursorPosition);
-
-        if (closestNode != null)
-        {
-            var distanceToClosestNode = Vector2.Distance(cursorPosition, closestNode.Position);
-            _renderContext.HoveredNode = distanceToClosestNode <= hoverRadius ? closestNode : null;
-        }
+        _renderContext.HoveredNode = _map.Graph.FindNodeWithin(cursorPosition, hoverRadius);
 
         return previousHovered != _renderContext.HoveredNode;
     }
