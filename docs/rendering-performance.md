@@ -15,8 +15,8 @@ away, take these:
    WebAssembly the cost is in *asking*, not in the drawing.
 4. **A loop that runs per node, per frame is a hot loop.** Small waste inside one
    is not small.
-5. **Measure. Then measure again after.** Two of my own guesses on this branch
-   were wrong, and only measuring caught them.
+5. **Measure. Then measure again after.** Three of my own conclusions on this
+   branch were wrong, and only measuring caught them — see sections 7, 9 and 10.
 
 Every number below was measured in a real browser through
 `tools/canvas-bench.mjs`. Two things to know about the numbers up front:
@@ -39,6 +39,12 @@ Every number below was measured in a real browser through
 | Laying out 1,150 edges | 7,314 ms | ~400 ms |
 | Finding the hovered node, 2,400 nodes | 10.06 ms per pointer move | 0.20 ms |
 | Blazor re-renders during a 60-move pan | 64 | 3 |
+| Everything at once, per pointer move | 730 ms | 9.1 ms |
+
+The last row is the one that matters most, because it's the only one measured the way
+a user experiences it: main-thread time per pointer move with a world imported, 600
+nodes on screen and both overlays on. Sections 10 and 11 explain why it was so much
+worse than the per-frame figures suggested.
 
 ## The tool that made this possible
 
@@ -50,9 +56,9 @@ act on. "`MapBlocksRenderer` costs 94.67 ms of a 103.76 ms frame" tells you exac
 which twenty lines to read. Almost all of the work below was *finding* which line
 mattered; the fixes themselves are mostly small.
 
-A caveat I only discovered at the end, discussed in the last section: this profiler
+It has one important blind spot, which I did not discover until section 10: it
 measures the time spent *telling* Skia what to draw, not the time Skia spends
-actually colouring pixels. That distinction turned out to matter.
+actually colouring pixels. That turned out to hide a whole second problem.
 
 ## 1. The block layer: rebuilding 64,000 rectangles every frame
 
@@ -102,8 +108,10 @@ fit-the-whole-map zoom every tile is visible, so culling does nothing and the
 0.49 ms is *entirely* the caching. The drop to 0.25 ms when zoomed in is the
 culling. Neither fix alone would have been enough.
 
-I kept one rectangle per cell rather than merging neighbours, because merging would
-change how the layer looks. The output is pixel-identical — I compared screenshots.
+At this stage I kept one rectangle per cell rather than merging neighbours, on the
+grounds that merging would change how the layer looks. That was true *while the cells
+were outlined*, and section 11 is the story of it becoming false. The output here is
+pixel-identical — I compared screenshots.
 
 ## 2. A debug print in the drawing loop
 
@@ -364,65 +372,135 @@ with behaviour behind it.
 **Not every performance idea survives contact with the source.** Two of mine didn't
 (this one and the wall-clock measurement in §7). Reading the library beats guessing
 about it.
+## 10. My profiler was blind to half the cost
 
-## 10. What is still slow, and the limit of my own profiler
+By this point every renderer looked cheap. Then I ran everything at once — imported
+world, 600-node graph, both overlays, zoomed out — and the profiler reported a
+comfortable 5.24 ms/frame while the browser reported **730 ms of main-thread time
+per mouse move**. Both numbers were correct. They were measuring different things.
 
-Running everything at once — imported world, 600-node graph, both overlays, zoomed
-out — the profiler reported a comfortable 5.24 ms/frame. But the browser reported
-**730 ms of main-thread script time per mouse move.** Those cannot both describe
-the same work.
+Narrowing it down by turning things on and off:
 
-Narrowing it down:
-
-| scene | profiler says | browser says |
+| scene | profiler said | browser said |
 |---|---|---|
 | graph only | 3.20 ms/frame | 6.5 ms per move |
 | graph + overlays, zoomed **out** | 3.37 ms/frame | **344 ms per move** |
 | graph + overlays, zoomed **in** | 2.78 ms/frame | 6.1 ms per move |
 | small graph + overlays | 1.65 ms/frame | 5.4 ms per move |
 
-The same scene is 56× cheaper zoomed in than zoomed out, while the profiler barely
-notices the difference. So the cost tracks **how much screen area gets filled**,
-not how many calls are made.
+The same scene was 56× cheaper zoomed in than zoomed out, and the profiler barely
+noticed. So the cost tracked **how much screen area got filled**, not how many calls
+were made — and my instrument could not see it.
 
-The explanation is a limitation of my own instrument. `RenderProfiler` times how
-long it takes to *tell* Skia what to draw. Skia records those commands quickly and
-colours the actual pixels later, when the frame is flushed to the GL context —
-after the profiler has stopped its timer. So the profiler is blind to fill cost.
+The reason is worth understanding, because it applies to any Skia or canvas work.
+Drawing happens in two stages. When you call `DrawPath`, Skia *records* what you
+asked for and returns quickly. The actual colouring of pixels happens later, when
+the frame is flushed to the GL context — after `RenderProfiler` has already stopped
+its timer. So the profiler measures the cost of *asking*, which was exactly the right
+instrument for sections 1 through 6, and is blind to the cost of *doing*.
 
-What's expensive is genuine overdraw. The block layers draw one outlined rectangle
-per cell — around 214,000 of them for this scene — and neighbouring cells each
-paint over the other's shared edge. When the whole map is on screen a cell is under
-one pixel wide, so all that outlining resolves to a flat grey area that could have
-been filled once.
+**A profiler tells you about the thing it measures, not about everything that is
+slow.** Two instruments disagreeing is a finding, not a glitch. The honest reading
+was that I had a second, independent problem I had not been measuring at all.
 
-**Two important caveats before you read 344 ms as your experience:** this machine
-has no GPU, and SwiftShader does that filling on the CPU, where it is far worse
-than on real hardware. And it only happens with "Show blocks" on while zoomed out.
-The default view after importing a world is milder — about 12 ms per move zoomed
-out versus 4 ms zoomed in.
+## 11. The blocks should have been filled all along
 
-I have **not** fixed this, deliberately, because every fix changes what you see:
+The second problem turned out not to be a performance problem at heart. It was a
+drawing bug that happened to be expensive.
 
-- **Level of detail** — when a cell is smaller than about two screen pixels, draw
-  the merged silhouette as a filled shape instead of per-cell outlines. At that
-  zoom the outlines aren't resolvable anyway, so it should look the same and be
-  dramatically cheaper. This is what I'd do.
-- **Merge runs of adjacent cells** into fewer, larger rectangles. Cheaper at every
-  zoom, but the interior grid lines disappear.
-- **Draw the layer as a bitmap**, one pixel per cell, in a single call. Cheapest of
-  all, and the appearance changes most.
+```csharp
+var blockPaint = context.Cache.GetPaint(
+    context.Options.CellFillStyle,     // "Fill"
+    SKPaintStyle.Stroke,               // ...used to stroke
+    1f, context.Viewport.Scale);
+```
 
-Which one is right depends on what the block layer is *for*, which is your call,
-not mine.
+Every cell was drawn as an *outline* using a colour called `CellFillStyle`. A filled
+cell was the intent; the layer was meant to read as ground and instead read as a
+hatch pattern.
 
-Two smaller things I noticed and left alone, both cosmetic rather than performance:
+That mismatch is also the whole explanation for section 10's mystery. The outline is
+stroked one screen pixel wide, and the stroke straddles the cell's border — half
+inside, half outside. Zoom out until a cell is *smaller* than one screen pixel and
+the outline is now **wider than the thing it outlines**, so every cell paints over
+all of its neighbours. 64,000 cells each smearing over their neighbours is an
+enormous amount of pixel work to produce a flat grey area.
 
-- `NodeRenderer` is registered *before* `EdgeRenderer`, so edges paint over nodes
-  and every node has lines crossing it. Probably not intended, but changing it
-  changes the picture.
-- `RenderStyle.LineDash` is set for bridgeable edges and the mirror line but never
-  used — nothing applies a dash effect, so dashed lines render solid.
+Filling instead of stroking removes that entirely — a filled cell covers exactly its
+own square and nothing else.
+
+And filling unlocks a second saving that outlining had blocked. Earlier I had
+deliberately *not* merged neighbouring cells, and wrote in the code that merging
+"would change how the block layer looks". With outlines that was true: merge two
+outlined cells and the shared border between them disappears. With fills it is no
+longer true — **two filled squares that touch cover exactly the same pixels as one
+rectangle spanning both.** So `BlockGeometry` now merges runs of neighbouring cells
+along each row. The imported world's 64,269 cells collapse to **2,452 rectangles**,
+with identical output.
+
+Merging stops at tile boundaries, which gives up a little merging to keep the
+viewport culling from section 1. Both still apply.
+
+| measured zoomed out, per pointer move | before | after |
+|---|---|---|
+| imported world | 11.91 ms | 5.92 ms |
+| graph + both overlays | 344.64 ms | 6.44 ms |
+| everything at once | 730.24 ms | 9.12 ms |
+
+The profiler and the browser now agree to within a few milliseconds, which is how
+you know the hidden cost is actually gone rather than merely moved.
+
+Filling changed what can be seen *through* the block layer, so the paint order had
+to move with it. Solid ground can't sit on top of the reference overlays or it
+buries them. The order is now: ground (background, blocks), then the overlays that
+are only useful over the ground (chunk grid, mirror axis, regions, lane outlines),
+then the graph.
+
+Two general points from this one:
+
+- **A performance symptom can be a correctness bug in disguise.** I had measured
+  this layer, diagnosed it, cached it, tiled it and culled it — all useful, all
+  real — without noticing that it was drawing the wrong thing. The paint style was
+  right there in the line I edited twice.
+- **"I can't optimise this without changing the output" deserves re-checking when
+  the output changes.** My reason for not merging cells was sound when I wrote it and
+  obsolete the moment the layer became filled.
+
+## 12. Dashes that were never drawn
+
+`RenderStyle.LineDash` was set to `[5]` on the bridgeable edge style and on the
+mirror line style — and nothing anywhere read the property. No dash effect was ever
+created, so both drew solid, and bridgeable edges were indistinguishable from
+walkable ones.
+
+Two details made this more than a one-liner.
+
+The dash has to be **part of the paint cache key**. The walkable and bridgeable edge
+styles are otherwise identical — same colour, same stroke, same width — so they would
+have shared a single cached paint and one dash setting would have leaked onto the
+other.
+
+And dash lengths are screen distances, like stroke widths, so the intervals get
+divided by the zoom. That means the dash effect depends on the zoom and can't be
+built once at startup — which is exactly the trap that made the original
+`PaintCache` leak native memory (section covered under the first commit). So
+`PaintCache` keeps **one effect per pattern** and rebuilds it when the zoom changes,
+releasing the previous one. Bounded, not accumulating.
+
+Measured: dashes are 5px at fit zoom and 4px four zoom steps further in — constant on
+screen, as intended, rather than growing with the map.
+
+## 13. What I did not change
+
+- **Lane cells and terrain cells are the same grey.** With "Show blocks" on over an
+  imported world you cannot tell a lane from the ground. They shared a colour before
+  this work too (both were the same hatch), so nothing regressed — but now that they
+  are solid, giving lanes their own colour would make the overlay much more useful.
+  That is a palette decision, so it is yours.
+- **`RenderStyle.Radius` defaults to 6** while every real style sets 0.4. Since the
+  units are world units — blocks — a fallback node would render 15× too large. Any
+  node type without an explicit style (`WoolEntry`, `Frontline`, `Hub`, `Corridor`
+  and the rest) hits that default.
 
 ## How to check any of this yourself
 
