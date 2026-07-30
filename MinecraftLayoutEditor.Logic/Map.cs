@@ -11,7 +11,19 @@ public class Map
     public int Height { get; set; }
     public int LaneWidth { get; set; }
     public int Thickness { get; set; }
-    public List<Vector2> Blocks { get; set; } = [];
+    public List<Vector2> Blocks { get; private set; } = [];
+
+    /// <summary>
+    /// Bumped whenever <see cref="Blocks"/> is replaced, so cached block geometry can
+    /// tell a new block set from the one it was built from.
+    /// </summary>
+    public int BlocksRevision { get; private set; }
+
+    public void SetBlocks(IEnumerable<Vector2> blocks)
+    {
+        Blocks = [.. blocks];
+        BlocksRevision++;
+    }
 
     public SymmetryAxis? Symmetry { get; set; }
     // TODO: Remove mirrorEnabled as it is the same as symmetry = null

@@ -26,7 +26,9 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
-    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <!-- Startup is explicit (autostart="false" plus the Blazor.start below) so the
+         runtime is only ever started once. -->
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js" autostart="false"></script>
     <script>
         window.init = (instance) => {
             var canvasContainer = document.getElementById('canvasContainer');
@@ -46,17 +48,29 @@
             }
         };
 
-        Blazor.start({
-            configureRuntime: function (runtime) {
-                runtime.configureZlib();
-            }
-        });
+        Blazor.start();
 
         window.getElementClientSize = (element) => {
             return {
                 Width: element.clientWidth,
                 Height: element.clientHeight
             };
+        };
+
+        // Render stats are polled from outside Blazor's render loop, so reading them
+        // never schedules a component re-render and cannot perturb what it measures.
+        window.initRenderStats = (dotnetHelper) => {
+            const overlay = document.createElement('pre');
+            overlay.id = 'renderStats';
+            document.body.appendChild(overlay);
+
+            window.readRenderProfile = () => dotnetHelper.invokeMethodAsync('RenderProfileJson').then(JSON.parse);
+            window.resetRenderProfile = () => dotnetHelper.invokeMethodAsync('ResetRenderProfile');
+            window.readBlockCount = () => dotnetHelper.invokeMethodAsync('ImportedBlockCount');
+
+            setInterval(async () => {
+                overlay.textContent = await dotnetHelper.invokeMethodAsync('RenderProfileText');
+            }, 250);
         };
 
         let resizeObserver = null;

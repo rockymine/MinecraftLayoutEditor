@@ -15,7 +15,7 @@ using System.Numerics;
 
 namespace MinecraftLayoutEditor.WebApp.Pages;
 
-public partial class Home : ComponentBase
+public partial class Home : ComponentBase, IDisposable
 {
     [Inject]
     public required IBlazorDownloadFileService BlazorDownloadFileService { get; init; }
@@ -29,6 +29,7 @@ public partial class Home : ComponentBase
     private RenderContext _renderContext = default!;
     private MapRenderer _renderer = default!;
     private readonly PaintCache _paintCache = new();
+    private readonly RenderProfiler _profiler = new();
     private readonly RenderingOptions _renderingOptions = new();
     private SKGLView _canvas = default!;
 
@@ -48,7 +49,7 @@ public partial class Home : ComponentBase
 
         _renderContext = new RenderContext(
             _map, _renderingOptions,
-            _viewport, _paintCache);
+            _viewport, _paintCache, _profiler);
 
         _renderer = new MapRenderer(_renderContext);
 
@@ -71,9 +72,28 @@ public partial class Home : ComponentBase
         await _canvasContainer.FocusAsync();
         await JSRuntime.InvokeAsync<object>("init", DotNetObjectReference.Create(this));
         await JSRuntime.InvokeVoidAsync("initResizeObserver", DotNetObjectReference.Create(this));
+        await JSRuntime.InvokeVoidAsync("initRenderStats", DotNetObjectReference.Create(this));
 
         Render(RenderTrigger.Initial);
     }
+
+    public void Dispose()
+    {
+        _renderer?.Dispose();
+        _paintCache.Dispose();
+    }
+
+    [JSInvokable]
+    public string RenderProfileJson() => _profiler.ToJson();
+
+    [JSInvokable]
+    public string RenderProfileText() => _profiler.ToText();
+
+    [JSInvokable]
+    public void ResetRenderProfile() => _profiler.Reset();
+
+    [JSInvokable]
+    public int ImportedBlockCount() => _map.Blocks.Count;
 
     [JSInvokable]
     public async Task OnBrowserResize()
@@ -388,11 +408,7 @@ public partial class Home : ComponentBase
             {
                 OnClearMap();
 
-                foreach (var b in blocks)
-                {
-                    var pos = new Vector2(b.X, b.Z);
-                    _map.Blocks.Add(pos);
-                }
+                _map.SetBlocks(blocks.Select(b => new Vector2(b.X, b.Z)));
 
                 _map.Width = (blocks.Max(b => Math.Abs(b.X)) * 2) + 64;
                 _map.Height = (blocks.Max(b => Math.Abs(b.Z)) * 2) + 64;

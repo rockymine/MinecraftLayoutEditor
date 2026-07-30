@@ -52,6 +52,7 @@ namespace MinecraftLayoutEditor.Logic
                 Connect(nodes[i + numEdges], nodes[i + numEdges + 1], Edge.EdgeType.Bridgeable);
             }
 
+            map.Graph.InvalidateEdges();
             map.CalculateEdgeBlocks();  // Precompute for perf testing
 
             return map;

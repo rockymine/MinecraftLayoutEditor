@@ -30,6 +30,8 @@ public class RemoveNodeAction : IHistoryAction
             _graph.AddNode(mirrorRef);
             FixEdges(mirrorRef);
         }
+
+        _graph.InvalidateEdges();
     }
 
     private void FixEdges(Node node)

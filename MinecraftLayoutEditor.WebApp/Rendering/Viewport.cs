@@ -34,6 +34,18 @@ public class Viewport
         return new(worldPosX, worldPosY);
     }
 
+    /// <summary>
+    /// The part of the world currently on screen, in world units. Renderers cull
+    /// against this so off-screen geometry is never submitted to the canvas.
+    /// </summary>
+    public SKRect VisibleWorldRect()
+    {
+        var topLeft = ScreenToWorldPos(Vector2.Zero);
+        var bottomRight = ScreenToWorldPos(new Vector2(CanvasWidth, CanvasHeight));
+
+        return new SKRect(topLeft.X, topLeft.Y, bottomRight.X, bottomRight.Y);
+    }
+
     public float CalculateMinZoom(float width, float height)
     {
         if (width <= 0 || height <= 0) 

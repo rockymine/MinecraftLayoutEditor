@@ -12,7 +12,6 @@ public class RegionRenderer : IRenderable
 
         foreach (var region in context.MapElement.Regions.Items)
         {
-            Console.WriteLine(region.Id);
             RenderRegion(context, region);
         }
     }

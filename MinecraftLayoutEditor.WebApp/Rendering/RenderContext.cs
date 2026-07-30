@@ -14,17 +14,19 @@ public class RenderContext
     public MapElement? MapElement { get; set; }
     public PaintCache Cache { get; }
     public Viewport Viewport { get; set; }
+    public RenderProfiler Profiler { get; }
 
     public int LimitX => (int)(Map.Width / 2f);
     public int LimitY => (int)(Map.Height / 2f);
 
-    public RenderContext(Map map, RenderingOptions options, 
-        Viewport viewport, PaintCache cache )
+    public RenderContext(Map map, RenderingOptions options,
+        Viewport viewport, PaintCache cache, RenderProfiler profiler)
     {
         Map = map;
         Options = options;
         Cache = cache;
         Viewport = viewport;
+        Profiler = profiler;
     }
 
     public void RegisterSurface(SKSurface surface)

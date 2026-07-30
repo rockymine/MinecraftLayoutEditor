@@ -5,8 +5,29 @@ namespace MinecraftLayoutEditor.Logic;
 public class Graph
 {
     private readonly List<Node> _nodes = [];
+    private readonly HashSet<Edge> _edges = [];
+    private bool _edgesStale = true;
+
     public IReadOnlyList<Node> Nodes => _nodes;
-    public HashSet<Edge> Edges => GetUniqueEdges();
+
+    /// <summary>
+    /// The distinct edges of the graph. Rebuilt only after the graph changes: renderers
+    /// read this every frame, so walking every node's edge list per read would put an
+    /// allocation and a full graph traversal on the render path.
+    /// </summary>
+    public IReadOnlyCollection<Edge> Edges
+    {
+        get
+        {
+            if (_edgesStale)
+            {
+                RebuildEdges();
+                _edgesStale = false;
+            }
+
+            return _edges;
+        }
+    }
 
     public Node? GetClosestNode(Vector2 pos)
     {
@@ -29,30 +50,39 @@ public class Graph
         return closestNode;
     }
 
-    private HashSet<Edge> GetUniqueEdges()
+    private void RebuildEdges()
     {
-        var uniqueEdges = new HashSet<Edge>();
+        _edges.Clear();
         foreach (var node in _nodes)
         {
             foreach (var edge in node.Edges)
             {
-                uniqueEdges.Add(edge);
+                _edges.Add(edge);
             }
         }
+    }
 
-        return uniqueEdges;
+    /// <summary>
+    /// Marks the cached edge set for rebuild. Call after mutating a node's edge list
+    /// directly rather than through this class.
+    /// </summary>
+    public void InvalidateEdges()
+    {
+        _edgesStale = true;
     }
 
     public void Clear()
     {
-        _nodes.Clear(); 
+        _nodes.Clear();
+        _edgesStale = true;
     }
 
     public void AddNode(Node node)
     {
-        _nodes.Add(node); 
+        _nodes.Add(node);
+        _edgesStale = true;
     }
-    
+
     public void DeleteNode(Node node, bool isMirror = false)
     {
         if (node.MirrorRef != null && !isMirror)
@@ -73,13 +103,15 @@ public class Graph
             }
         }
 
-        _nodes.Remove(node); 
+        _nodes.Remove(node);
+        _edgesStale = true;
     }
 
     public void DeleteEdge(Edge edge)
     {
         edge.Node1.Edges.Remove(edge);
         edge.Node2.Edges.Remove(edge);
+        _edgesStale = true;
     }
 
     public Edge? AddOrRemoveEdge(Node node1, Node node2, bool isMirror = false)
@@ -124,6 +156,7 @@ public class Graph
         var edge = new Edge(node1, node2);
         node1.Edges.Add(edge);
         node2.Edges.Add(edge);
+        _edgesStale = true;
 
         return edge;
     }

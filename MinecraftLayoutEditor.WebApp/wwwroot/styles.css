@@ -218,3 +218,20 @@ ul {
 h1, h2, h3, h4, h5, h6, p {
     margin: 0;
 }
+
+#renderStats {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    z-index: 1000;
+    margin: 0;
+    padding: 8px 10px;
+    font-family: "Consolas", monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #f0f0f0;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 4px;
+    pointer-events: none;
+    white-space: pre;
+}
