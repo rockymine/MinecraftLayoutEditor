@@ -17,6 +17,12 @@ namespace MinecraftLayoutEditor.WebApp.Rendering
         public SKColor CellFillStyle { get; init; } = SKColors.Gray;
         public SKColor BoundingBoxLineStroke { get; init; } = SKColors.Purple;
 
+        public SKColor RegionOutlineStroke { get; init; } = SKColors.Purple;
+        public SKColor RegionRadialStroke { get; init; } = SKColors.Blue;
+        public SKColor RegionMarkerFill { get; init; } = SKColors.Blue;
+        public SKColor HoveredRegionStroke { get; init; } = SKColors.Orange;
+        public SKColor SelectedRegionStroke { get; init; } = SKColors.Cyan;
+
         /// <summary>
         /// Styles are keyed on the enum the caller already holds. A lookup by lowercased
         /// type name allocates two strings per node per frame, which the render path

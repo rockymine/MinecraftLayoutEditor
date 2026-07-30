@@ -6,6 +6,8 @@ using Microsoft.JSInterop;
 using MinecraftLayoutEditor.Logic;
 using MinecraftLayoutEditor.Logic.History;
 using MinecraftLayoutEditor.Schematics;
+using MinecraftLayoutEditor.XML;
+using MinecraftLayoutEditor.WebApp.Interaction;
 using MinecraftLayoutEditor.WebApp.Rendering;
 using MinecraftLayoutEditor.WebApp.Rendering.Renderers;
 using SkiaSharp;
@@ -39,6 +41,17 @@ public partial class Home : ComponentBase, IDisposable
 
     private EditorMode _currentMode = EditorMode.Layout;
     private Vector2? _panStartPosition;
+    private readonly RegionDrag _regionDrag = new();
+
+    /// <summary>
+    /// How close a click has to be to count as hitting a region, in screen pixels. It is
+    /// divided by the zoom before use, like stroke widths are: a tolerance fixed in world
+    /// units would make a small region unclickable exactly when it is smallest on screen.
+    /// </summary>
+    private const float RegionPickPixels = 4f;
+
+    private RegionsElement? Regions => _renderContext.MapElement?.Regions;
+    private bool EditingRegions => _currentMode == EditorMode.XML && Regions != null;
 
     private float CanvasWidth => _viewport.CanvasWidth;
     private float CanvasHeight => _viewport.CanvasHeight;
@@ -115,6 +128,34 @@ public partial class Home : ComponentBase, IDisposable
     [JSInvokable]
     public int BlockRectangleCount() =>
         _renderer.renderables.OfType<MapBlocksRenderer>().FirstOrDefault()?.MergedRectangles ?? 0;
+
+    /// <summary>
+    /// The selected region's id and where it sits, so a test can confirm that dragging
+    /// actually edited the document rather than only moving pixels.
+    /// </summary>
+    [JSInvokable]
+    public string SelectedRegionState()
+    {
+        var region = _renderContext.SelectedRegion;
+        if (region == null)
+            return "none";
+
+        var where = region switch
+        {
+            RectangleRegion rectangle => $"{rectangle.Min.X},{rectangle.Min.Y}",
+            CircleRegion circle => $"{circle.Center.X},{circle.Center.Y}",
+            CylinderRegion cylinder => $"{cylinder.Base.X},{cylinder.Base.Z}",
+            BlockRegion block => $"{block.Block.X},{block.Block.Z}",
+            PointRegion point => $"{point.Point.X},{point.Point.Z}",
+            _ => "?"
+        };
+
+        return $"{region.Id} @ {where}";
+    }
+
+    [JSInvokable]
+    public void SetEditorMode(string mode) =>
+        OnChangeEditingMode(mode == "XML" ? EditorMode.XML : EditorMode.Layout);
 
     /// <summary>
     /// Fills the map with a grid of connected nodes so the node and edge renderers can
@@ -196,6 +237,15 @@ public partial class Home : ComponentBase, IDisposable
     private void OnChangeEditingMode(EditorMode newMode)
     {
         _currentMode = newMode;
+
+        // Each mode owns its own selection, so leaving one drops what it had picked.
+        _regionDrag.Cancel();
+        _renderContext.HoveredNode = null;
+        _renderContext.HoveredRegion = null;
+        _renderContext.SelectedRegion = null;
+
+        _ = JSRuntime.InvokeVoidAsync("setCanvasCursor", "default");
+        Render();
     }
 
     private void OnSettingsChanged()
@@ -258,7 +308,22 @@ public partial class Home : ComponentBase, IDisposable
         if (e.Button == 1)
         {
             _panStartPosition = new Vector2((float)e.OffsetX, (float)e.OffsetY);
+            return;
         }
+
+        if (e.Button != 0 || !EditingRegions)
+            return;
+
+        var worldPosition = _viewport.ScreenToWorldPos(
+            new Vector2((float)e.OffsetX, (float)e.OffsetY));
+        var region = Regions!.Pick(worldPosition, RegionPickPixels / _viewport.Scale);
+
+        if (region == null)
+            return;
+
+        _renderContext.SelectedRegion = region;
+        _regionDrag.Begin(region, worldPosition);
+        Render();
     }
 
     private void OnMouseUp(MouseEventArgs e)
@@ -266,7 +331,19 @@ public partial class Home : ComponentBase, IDisposable
         Vector2 clickedAt = _viewport.ScreenToWorldPos(new Vector2((float)e.OffsetX,
             (float)e.OffsetY));
 
-        if (e.Button == 0)
+        if (e.Button == 0 && EditingRegions)
+        {
+            // A drag and a click arrive the same way; the drag is whichever one moved.
+            var move = _regionDrag.Commit(Regions!);
+            if (move != null)
+                _historyStack?.ExecuteAction(move);
+            else
+                _renderContext.SelectedRegion = Regions!.Pick(clickedAt,
+                    RegionPickPixels / _viewport.Scale);
+
+            Render();
+        }
+        else if (e.Button == 0)
         {
             HandleLeftClick(clickedAt);
         }
@@ -302,13 +379,45 @@ public partial class Home : ComponentBase, IDisposable
             moved = true;
         }
 
+        var worldPosition = _viewport.ScreenToWorldPos(screenPosition);
+
+        if (_regionDrag.InProgress)
+        {
+            if (_regionDrag.MoveTo(worldPosition, Regions!) || moved)
+                Render();
+
+            return;
+        }
+
         var hoverStartedAt = Stopwatch.GetTimestamp();
-        var hoverChanged = UpdateHoveredNode(_viewport.ScreenToWorldPos(screenPosition));
+        var hoverChanged = EditingRegions
+            ? UpdateHoveredRegion(worldPosition)
+            : UpdateHoveredNode(worldPosition);
         _profiler.RecordHoverLookup(
             Stopwatch.GetElapsedTime(hoverStartedAt).TotalMilliseconds);
 
         if (hoverChanged || moved)
             Render();
+    }
+
+    /// <summary>
+    /// Returns whether the hovered region changed. The cursor is set straight from JS
+    /// rather than through a bound attribute, because a bound attribute would put a
+    /// component re-render back on every pointer move.
+    /// </summary>
+    private bool UpdateHoveredRegion(Vector2 cursorPosition)
+    {
+        var previousHovered = _renderContext.HoveredRegion;
+        _renderContext.HoveredRegion = Regions!.Pick(cursorPosition,
+            RegionPickPixels / _viewport.Scale);
+
+        if (previousHovered == _renderContext.HoveredRegion)
+            return false;
+
+        _ = JSRuntime.InvokeVoidAsync("setCanvasCursor",
+            _renderContext.HoveredRegion != null ? "move" : "default");
+
+        return true;
     }
 
     /// <summary>Returns whether the hovered node changed.</summary>

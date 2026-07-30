@@ -68,12 +68,21 @@
             window.resetRenderProfile = () => dotnetHelper.invokeMethodAsync('ResetRenderProfile');
             window.readBlockCount = () => dotnetHelper.invokeMethodAsync('ImportedBlockCount');
             window.readBlockRectangleCount = () => dotnetHelper.invokeMethodAsync('BlockRectangleCount');
+            window.setEditorModeXml = () => dotnetHelper.invokeMethodAsync('SetEditorMode', 'XML');
+            window.readSelectedRegion = () => dotnetHelper.invokeMethodAsync('SelectedRegionState');
             window.loadBenchmarkGraph = (columns, rows) =>
                 dotnetHelper.invokeMethodAsync('LoadBenchmarkGraph', columns, rows);
 
             setInterval(async () => {
                 overlay.textContent = await dotnetHelper.invokeMethodAsync('RenderProfileText');
             }, 250);
+        };
+
+        // Set from C# on hover changes. Going through a Blazor-bound style attribute
+        // would re-render the component on every pointer move, which is what moving
+        // pointer handling out of Blazor was for.
+        window.setCanvasCursor = (cursor) => {
+            if (window.canvas) window.canvas.style.cursor = cursor;
         };
 
         let resizeObserver = null;

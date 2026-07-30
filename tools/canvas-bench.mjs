@@ -36,7 +36,7 @@ function resolvePlaywright() {
 function parseArgs(argv) {
   const options = {
     url: 'http://localhost:5110', world: null, frames: 120, zoom: 0,
-    graph: null, layers: false, headed: false,
+    graph: null, layers: false, xml: false, headed: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
@@ -46,6 +46,7 @@ function parseArgs(argv) {
     else if (flag === '--zoom') options.zoom = Number(argv[++index]);
     else if (flag === '--graph') options.graph = argv[++index];
     else if (flag === '--layers') options.layers = true;
+    else if (flag === '--xml') options.xml = true;
     else if (flag === '--headed') options.headed = true;
   }
   return options;
@@ -149,6 +150,13 @@ if (options.layers) {
   await page.click('#showBlocksEnabled');
   await page.waitForTimeout(500);
   console.log('enabled the bounding box and block overlays');
+}
+
+if (options.xml) {
+  // XML mode makes the regions interactive, so hover picking runs per pointer move.
+  await page.evaluate(async () => await window.setEditorModeXml());
+  await page.waitForTimeout(300);
+  console.log('switched to XML mode (region picking active)');
 }
 
 if (options.zoom > 0) {

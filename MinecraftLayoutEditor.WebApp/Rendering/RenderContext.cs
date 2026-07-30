@@ -11,6 +11,8 @@ public class RenderContext
     public RenderingOptions Options { get; }
     public Node? SelectedNode { get; set; }
     public Node? HoveredNode { get; set; }
+    public Region? SelectedRegion { get; set; }
+    public Region? HoveredRegion { get; set; }
     public MapElement? MapElement { get; set; }
     public PaintCache Cache { get; }
     public Viewport Viewport { get; set; }
