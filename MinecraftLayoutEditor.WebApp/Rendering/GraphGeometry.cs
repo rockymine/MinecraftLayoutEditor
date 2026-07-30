@@ -36,7 +36,7 @@ public class GraphGeometry : IDisposable
         {
             var style = context.Options.GetEdgeStyle(edgeType);
             var paint = context.Cache.GetPaint(style.StrokeStyle, SKPaintStyle.Stroke,
-                style.LineWidth, context.Viewport.Scale);
+                style.LineWidth, context.Viewport.Scale, style.LineDash);
 
             context.Surface!.Canvas.DrawPath(path, paint);
         }

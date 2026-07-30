@@ -12,7 +12,9 @@ public class MirrorAxisRenderer : IRenderable
 
         // Render mirror line
         var mirrorLineStyle = context.Options.MirrorLineStyle;
-        var mirrorLinePaint = context.Cache.GetPaint(mirrorLineStyle.StrokeStyle, SKPaintStyle.Stroke, mirrorLineStyle.LineWidth, context.Viewport.Scale);
+        var mirrorLinePaint = context.Cache.GetPaint(mirrorLineStyle.StrokeStyle,
+            SKPaintStyle.Stroke, mirrorLineStyle.LineWidth, context.Viewport.Scale,
+            mirrorLineStyle.LineDash);
         var start = context.Map.Symmetry.GetStartPointWorld(context.Map);
         var end = context.Map.Symmetry.GetEndPointWorld(context.Map);
         context.Surface.Canvas.DrawLine(start.X, start.Y, end.X, end.Y, mirrorLinePaint);
