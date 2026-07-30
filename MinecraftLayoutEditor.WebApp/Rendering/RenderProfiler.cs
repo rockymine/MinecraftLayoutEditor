@@ -23,6 +23,15 @@ public class RenderProfiler
     public int FrameCount { get; private set; }
     public double LastFrameMilliseconds { get; private set; }
 
+    /// <summary>
+    /// How many times the Blazor component re-rendered and re-diffed its markup. This
+    /// is separate from painting the canvas: a component render walks the whole sidebar
+    /// and costs nothing visible when none of it changed.
+    /// </summary>
+    public int ComponentRenders { get; private set; }
+
+    public void RecordComponentRender() => ComponentRenders++;
+
     public double AverageFrameMilliseconds
     {
         get
@@ -91,6 +100,7 @@ public class RenderProfiler
         _perRenderer.Clear();
         _frameMilliseconds.Clear();
         FrameCount = 0;
+        ComponentRenders = 0;
         LastFrameMilliseconds = 0;
     }
 
@@ -105,6 +115,7 @@ public class RenderProfiler
         json.Append(",\"avgFrameMs\":").Append(Format(AverageFrameMilliseconds));
         json.Append(",\"peakFrameMs\":").Append(Format(PeakFrameMilliseconds));
         json.Append(",\"lastFrameMs\":").Append(Format(LastFrameMilliseconds));
+        json.Append(",\"componentRenders\":").Append(ComponentRenders);
         json.Append(",\"renderers\":{");
 
         var ordered = _perRenderer
@@ -138,7 +149,8 @@ public class RenderProfiler
         text.Append(Format(average)).Append(" ms/frame (")
             .Append(fps.ToString("F1", CultureInfo.InvariantCulture)).Append(" fps), peak ")
             .Append(Format(PeakFrameMilliseconds)).Append(" ms, ")
-            .Append(FrameCount).Append(" frames");
+            .Append(FrameCount).Append(" frames, ")
+            .Append(ComponentRenders).Append(" component renders");
 
         foreach (var entry in _perRenderer.OrderByDescending(pair => pair.Value.TotalMilliseconds))
         {

@@ -105,6 +105,18 @@ async function readProfile() {
   return page.evaluate(() => (window.readRenderProfile ? window.readRenderProfile() : null));
 }
 
+// Wall-clock time around a driven pan mostly measures the harness: every mouse move
+// is a round trip to the browser, and each repaint waits for an animation frame. The
+// main thread's own script time is the honest figure for what the app costs.
+const cdp = await page.context().newCDPSession(page);
+await cdp.send('Performance.enable');
+
+async function scriptSeconds() {
+  const { metrics } = await cdp.send('Performance.getMetrics');
+  const named = Object.fromEntries(metrics.map(metric => [metric.name, metric.value]));
+  return { script: named.ScriptDuration ?? 0, task: named.TaskDuration ?? 0 };
+}
+
 async function panFrames(frameCount) {
   const box = await page.locator('#canvasContainer').boundingBox();
   const centerX = box.x + box.width / 2;
@@ -151,15 +163,23 @@ if (options.zoom > 0) {
 
 console.log(`panning for ${options.frames} frames...`);
 await resetProfile();
+const before = await scriptSeconds();
 const wallStart = Date.now();
 await panFrames(options.frames);
 await page.waitForTimeout(500);
 const wallMs = Date.now() - wallStart;
+const after = await scriptSeconds();
+
+const scriptMs = (after.script - before.script) * 1000;
+const taskMs = (after.task - before.task) * 1000;
 
 const profile = await readProfile();
 console.log('\n=== render profile ===');
 console.log(JSON.stringify(profile, null, 2));
-console.log(`wall clock for the pan: ${wallMs} ms`);
+console.log(`main-thread script time: ${scriptMs.toFixed(0)} ms `
+  + `(${(scriptMs / options.frames).toFixed(2)} ms per move)`);
+console.log(`main-thread task time:   ${taskMs.toFixed(0)} ms`);
+console.log(`wall clock for the pan:  ${wallMs} ms (includes harness round trips)`);
 
 if (consoleErrors.length) {
   console.log('\n=== console errors ===');
