@@ -39,12 +39,18 @@ Every number below was measured in a real browser through
 | Laying out 1,150 edges | 7,314 ms | ~400 ms |
 | Finding the hovered node, 2,400 nodes | 10.06 ms per pointer move | 0.20 ms |
 | Blazor re-renders during a 60-move pan | 64 | 3 |
-| Everything at once, per pointer move | 730 ms | 9.1 ms |
+| Everything at once, per pointer move | 730 ms | 10.3 ms |
 
 The last row is the one that matters most, because it's the only one measured the way
 a user experiences it: main-thread time per pointer move with a world imported, 600
 nodes on screen and both overlays on. Sections 10 and 11 explain why it was so much
 worse than the per-frame figures suggested.
+
+With lanes, their bounding boxes and their block cells all switched on, a 600-node
+layout now runs at 3.95 ms/frame and 7.10 ms of main-thread time per pointer move at
+fit zoom, 8.08 ms zoomed in. Add an imported world underneath and it is 6.17 ms/frame
+and 10.28 ms per move, of which the two block layers are 0.95 ms and the lane outlines
+0.04 ms.
 
 ## The tool that made this possible
 
@@ -490,7 +496,45 @@ releasing the previous one. Bounded, not accumulating.
 Measured: dashes are 5px at fit zoom and 4px four zoom steps further in — constant on
 screen, as intended, rather than growing with the map.
 
-## 13. What I did not change
+## 13. Two bugs found by screenshotting the overlays
+
+Everything above was measured with both overlays on, but I had only ever
+*screenshotted* them off. Taking the picture found two bugs the timings could never
+have shown.
+
+The first: **editing Lane Width moved the purple outlines and left the filled cells
+behind.** Measured at width 4 and then 12, the outlines grew to span 144px while the
+fill stayed 59px. Nudging a node with the arrow keys did the same thing - the lane
+drew where the node used to be. The cause:
+
+```csharp
+if (e.EdgeBlocks.Count == 0)                     // only ever computed once
+    e.EdgeBlocks = Rectangle.DiscretePointsInsideRect(...);
+```
+
+Once computed, never revisited, so every caller that moved a node or changed the
+width had to remember to ask for a refresh - and two of them did not. Worse, Generate
+Schematic computes its cells fresh from the current width, so the preview was
+showing something the export would not produce.
+
+`Edge.BlocksFor(laneWidth)` now derives them on demand and remembers the result
+against the only things it depends on: the two endpoint positions and the width. A
+change to any of them recomputes that one edge and nothing else. This is the
+cache-invalidation lesson from the rest of the branch pointing the other way - the
+earlier fixes *added* caches keyed on a revision, and this one already existed, keyed
+on nothing at all. An unkeyed cache is just a stale value with extra steps.
+
+The second I have **not** changed, because it would alter generated schematics and
+that is your call. A lane of declared width 4 fills **5 cells**, not 4 - measured as
+59px of fill against a 48px outline. `DiscretePointsInsideRect` keeps a cell when its
+centre is within `width / 2` of the line, inclusive, so at an even width the cells
+exactly `width / 2` away on *both* sides qualify and you get `width + 1`. It has
+always behaved this way and I preserved it exactly; filling the cells is simply the
+first time it became visible, because the fill now visibly overshoots its own
+outline. Whether width 4 should mean 4 cells or 5 is a decision about what the number
+means.
+
+## 14. What I did not change
 
 - **Lane cells and terrain cells are the same grey.** With "Show blocks" on over an
   imported world you cannot tell a lane from the ground. They shared a colour before
