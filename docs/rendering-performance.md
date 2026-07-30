@@ -18,6 +18,9 @@ away, take these:
 5. **Measure. Then measure again after.** Three of my own conclusions on this
    branch were wrong, and only measuring caught them — see sections 7, 9 and 10.
 
+Section 14 is a different subject: how clicking and dragging work when there are no
+elements to click, which is the part of canvas rendering that has no SVG equivalent.
+
 Every number below was measured in a real browser through
 `tools/canvas-bench.mjs`. Two things to know about the numbers up front:
 
@@ -534,7 +537,144 @@ first time it became visible, because the fill now visibly overshoots its own
 outline. Whether width 4 should mean 4 cells or 5 is a decision about what the number
 means.
 
-## 14. What I did not change
+## 14. Making shapes clickable, and moving them
+
+Nothing above this point was about interaction, and interaction is where a canvas
+differs from SVG most sharply. This section works through it on the map.xml regions —
+the rectangles, circles and cylinders — because they started out as pure decoration
+and ended up pickable and draggable.
+
+### There is nothing to attach a handler to
+
+With SVG you write `onclick` on a `<rect>` and the browser tells you which element was
+hit. **A canvas has no elements.** By the time a rectangle is on screen it is pixels;
+the shape is gone. So the browser cannot answer "what did I click?" and something else
+has to.
+
+That something is the data. Each shape answers for itself:
+
+```csharp
+public abstract bool Contains(Vector2 planePoint, float tolerance = 0f);
+```
+
+For a region this is barely a new idea — a region in the game *is* a question about
+whether it contains a block, so `Contains` is what it already meant. A rectangle
+compares against its bounds, a circle against its radius, a compound region asks its
+children. Nodes already worked this way (`FindNodeWithin`), which is why hover worked
+before any of this.
+
+The consequence worth internalising: **on a canvas, hit-testing is a feature you own.**
+It is not free and it is not given to you. The upside is that you control it exactly —
+no `elementFromPoint`, no invisible padding elements, no fighting `pointer-events`.
+
+### Three rules that decide whether it feels right
+
+**Search backwards.** Shapes overlap, and paint order decides what a person sees on
+top. So picking must run in the reverse of paint order, or clicking a small circle
+drawn over a big rectangle selects the rectangle:
+
+```csharp
+for (int index = Items.Count - 1; index >= 0; index--)
+    if (Items[index].Contains(planePoint, tolerance)) return Items[index];
+```
+
+**Tolerance belongs in screen space.** A click never lands exactly on a shape, so it
+needs slack. Express that slack in *world* units and a small region becomes
+unclickable precisely when it is smallest on screen. So it is pixels, divided by the
+zoom:
+
+```csharp
+Regions.Pick(worldPosition, RegionPickPixels / _viewport.Scale);
+```
+
+That is the same division stroke widths already use, and the same reason: the number
+is meaningful to a person's eye and a hand, which live in screen space, not in blocks.
+
+**Picking follows what was drawn, not what the data means.** A *negative* region means
+"everything except these children". Its `Contains` nonetheless reports what the
+children cover — because the children are what got painted, and a click can only
+sensibly land on something visible. Where the drawing and the semantics disagree, the
+drawing wins, because that is what the person is pointing at.
+
+### Dragging: convert once, then think in blocks
+
+The whole gesture lives in world coordinates. The pointer is converted at the
+boundary, and after that nothing in the drag knows about pixels:
+
+```csharp
+var desiredOffset = Round(worldPosition - _startWorldPosition);
+var step = desiredOffset - _appliedOffset;
+if (step == Vector2.Zero) return false;
+_region.Translate(step);
+```
+
+Three things fall out of that for free. The drag behaves identically at any zoom and
+any pan, because the offset is in blocks. **Snapping is just `Round`** — no snap grid,
+no tolerance table, because the world unit *is* the block. And the early return means
+a pointer move that does not change the snapped offset repaints nothing.
+
+Snapping the *offset* rather than the position is deliberate: a region whose corner
+sits at x = 12.5 keeps its half-block when you move it three blocks left. Snapping the
+position would silently straighten coordinates the author chose.
+
+### One undo entry per gesture
+
+A drag produces a hundred pointer moves. Pushing an action per move fills the history
+with a hundred entries for one gesture, and undo becomes useless.
+
+So the region moves live, and how far it has moved is tracked separately. On release
+the live movement is *rewound* and the total handed to the history stack, which
+re-applies it:
+
+```csharp
+region.Translate(-offset);                              // undo the live drag
+return new MoveRegionAction(regions, region, offset);   // ...then let history apply it
+```
+
+That looks redundant and is not. It keeps one meaning of "the history stack owns this
+change", so `Execute` and `Undo` are exact inverses and redo needs no special case.
+Verified in the browser: drag lands `red-spawn` at −124,−93, undo returns −150,−110,
+redo returns −124,−93.
+
+### A moving layer can still be cached
+
+This is where interaction meets everything earlier in this document. `RegionRenderer`
+was the last layer still drawing one shape at a time, at about 1.5 ms per frame for 41
+regions — the per-call cost from section 4, unbatched.
+
+Batching it looks like it should conflict with dragging: a cached path is a snapshot,
+and these shapes move. It does not, because the cache is keyed on a revision the move
+bumps:
+
+```csharp
+public int Revision { get; private set; }
+public void MarkChanged() => Revision++;
+```
+
+Drag a region and the revision moves, the batch rebuilds once, and the old outline
+does not linger. **1.5 → 0.06 ms/frame.** Hovering and selecting do *not* bump it —
+those draw the one highlighted shape again on top of the batch that already contains
+it, the same trick as the hovered node in section 4, so pointing at things never
+invalidates anything.
+
+And the cursor is set by calling out to JS rather than through a Blazor-bound `style`
+attribute, because a bound attribute would put a component re-render back on every
+pointer move — undoing section 7 for a cosmetic detail.
+
+### What this costs, measured
+
+| | |
+|---|---|
+| region picking, 41 regions | 0.02 ms per pointer move |
+| RegionRenderer, batched and cached | 0.06 ms/frame (was 1.5) |
+| script time per move, XML mode vs Layout mode | 4.41 vs 3.99 ms |
+
+Interaction is essentially free here. One honest limitation: `Pick` is a linear scan,
+where node hover uses a grid. At 41 regions the scan is 0.02 ms and a grid would be
+ceremony. At a few thousand it would become section 8 again — and the fix is already
+written, in `Graph.FindNodeWithin`.
+
+## 15. What I did not change
 
 - **Lane cells and terrain cells are the same grey.** With "Show blocks" on over an
   imported world you cannot tell a lane from the ground. They shared a colour before
