@@ -161,6 +161,11 @@ if (options.zoom > 0) {
   console.log(`zoomed in ${options.zoom} step(s)`);
 }
 
+if (options.world) {
+  const rectangles = await page.evaluate(async () => await window.readBlockRectangleCount());
+  console.log(`block cells collapsed to ${rectangles} rectangles`);
+}
+
 console.log(`panning for ${options.frames} frames...`);
 await resetProfile();
 const before = await scriptSeconds();

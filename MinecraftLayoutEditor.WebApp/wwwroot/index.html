@@ -67,6 +67,7 @@
             window.readRenderProfile = () => dotnetHelper.invokeMethodAsync('RenderProfileJson').then(JSON.parse);
             window.resetRenderProfile = () => dotnetHelper.invokeMethodAsync('ResetRenderProfile');
             window.readBlockCount = () => dotnetHelper.invokeMethodAsync('ImportedBlockCount');
+            window.readBlockRectangleCount = () => dotnetHelper.invokeMethodAsync('BlockRectangleCount');
             window.loadBenchmarkGraph = (columns, rows) =>
                 dotnetHelper.invokeMethodAsync('LoadBenchmarkGraph', columns, rows);
 

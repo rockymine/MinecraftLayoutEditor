@@ -56,13 +56,17 @@ public partial class Home : ComponentBase, IDisposable
         _renderer = new MapRenderer(_renderContext);
 
         // Registration order is paint order: later renderables draw over earlier ones.
+        // Solid ground first - the cells are filled, so anything under them is hidden.
         _renderer.renderables.Add(new BackgroundRenderer());
+        _renderer.renderables.Add(new MapBlocksRenderer());
+        _renderer.renderables.Add(new EdgeBlocksRenderer());
+
+        // Then the reference overlays, which are only useful if they can be seen over
+        // the ground.
         _renderer.renderables.Add(new GridRenderer());
         _renderer.renderables.Add(new MirrorAxisRenderer());
-        _renderer.renderables.Add(new MapBlocksRenderer());
         _renderer.renderables.Add(new RegionRenderer());
         _renderer.renderables.Add(new EdgeBoundingBoxRenderer());
-        _renderer.renderables.Add(new EdgeBlocksRenderer());
 
         // The graph is what the editor edits, so it goes on top of everything, and a
         // node goes on top of the edges meeting at it rather than under them.
@@ -103,6 +107,14 @@ public partial class Home : ComponentBase, IDisposable
 
     [JSInvokable]
     public int ImportedBlockCount() => _map.Blocks.Count;
+
+    /// <summary>
+    /// How many rectangles the imported cells collapsed to once neighbours on a row
+    /// were merged. Compared against the cell count, this says whether merging helped.
+    /// </summary>
+    [JSInvokable]
+    public int BlockRectangleCount() =>
+        _renderer.renderables.OfType<MapBlocksRenderer>().FirstOrDefault()?.MergedRectangles ?? 0;
 
     /// <summary>
     /// Fills the map with a grid of connected nodes so the node and edge renderers can

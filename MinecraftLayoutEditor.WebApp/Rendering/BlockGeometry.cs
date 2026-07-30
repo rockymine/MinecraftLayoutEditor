@@ -11,8 +11,10 @@ namespace MinecraftLayoutEditor.WebApp.Rendering;
 /// <see cref="TileSize"/> world units so a frame can draw only the tiles that
 /// intersect the viewport instead of submitting the whole set every time.
 ///
-/// The paths hold one rect per cell, which is what the cell appearance depends on -
-/// merging adjacent cells would change how the block layer looks.
+/// Within a tile, cells that sit side by side on the same row are merged into one
+/// rectangle. Filled cells that touch cover exactly the same pixels as the single
+/// rectangle spanning them, so this changes nothing about the result while cutting
+/// the number of rectangles a solid area needs by a large factor.
 /// </summary>
 public class BlockGeometry : IDisposable
 {
@@ -26,6 +28,9 @@ public class BlockGeometry : IDisposable
 
     /// <summary>Tiles drawn during the most recent <see cref="Draw"/> call.</summary>
     public int DrawnTiles { get; private set; }
+
+    /// <summary>Rectangles across all tiles after merging, for diagnostics.</summary>
+    public int MergedRectangles { get; private set; }
 
     /// <summary>
     /// Rebuilds the cached paths when the block set or the map bounds have changed,
@@ -54,8 +59,9 @@ public class BlockGeometry : IDisposable
             return;
 
         DisposeTiles();
+        MergedRectangles = 0;
 
-        var pathsByTile = new Dictionary<(int, int), SKPath>();
+        var cellsByTile = new Dictionary<(int, int), List<(int X, int Y)>>();
 
         foreach (var block in blocks)
         {
@@ -63,21 +69,27 @@ public class BlockGeometry : IDisposable
             if (Math.Abs(block.X + 0.5f) > limitX || Math.Abs(block.Y + 0.5f) > limitY)
                 continue;
 
-            var tileKey = (
-                (int)MathF.Floor(block.X / TileSize),
-                (int)MathF.Floor(block.Y / TileSize));
+            var cellX = (int)MathF.Floor(block.X);
+            var cellY = (int)MathF.Floor(block.Y);
 
-            if (!pathsByTile.TryGetValue(tileKey, out var path))
+            var tileKey = (
+                (int)MathF.Floor(cellX / TileSize),
+                (int)MathF.Floor(cellY / TileSize));
+
+            if (!cellsByTile.TryGetValue(tileKey, out var cells))
             {
-                path = new SKPath { FillType = SKPathFillType.Winding };
-                pathsByTile.Add(tileKey, path);
+                cells = [];
+                cellsByTile.Add(tileKey, cells);
             }
 
-            path.AddRect(SKRect.Create(block.X, block.Y, 1f, 1f));
+            cells.Add((cellX, cellY));
         }
 
-        foreach (var ((tileX, tileY), path) in pathsByTile)
+        foreach (var ((tileX, tileY), cells) in cellsByTile)
         {
+            var path = new SKPath { FillType = SKPathFillType.Winding };
+            MergedRectangles += AddMergedRows(path, cells);
+
             var bounds = SKRect.Create(tileX * TileSize, tileY * TileSize, TileSize, TileSize);
             _tiles.Add(new Tile(bounds, path));
         }
@@ -86,6 +98,41 @@ public class BlockGeometry : IDisposable
         _sourceCount = blocks.Count;
         _limitX = limitX;
         _limitY = limitY;
+    }
+
+    /// <summary>
+    /// Adds one rectangle per horizontal run of touching cells, and returns how many
+    /// were added. Sorting by row then column puts the cells of a run next to each
+    /// other, so a single pass finds them. Repeated cells - two edges can cover the
+    /// same one - fall inside the run they repeat and add nothing.
+    /// </summary>
+    private static int AddMergedRows(SKPath path, List<(int X, int Y)> cells)
+    {
+        cells.Sort(static (first, second) =>
+            first.Y != second.Y ? first.Y.CompareTo(second.Y) : first.X.CompareTo(second.X));
+
+        var rectangles = 0;
+        var index = 0;
+
+        while (index < cells.Count)
+        {
+            var (runStartX, runY) = cells[index];
+            var runEndX = runStartX;
+            index++;
+
+            while (index < cells.Count
+                && cells[index].Y == runY
+                && cells[index].X <= runEndX + 1)
+            {
+                runEndX = Math.Max(runEndX, cells[index].X);
+                index++;
+            }
+
+            path.AddRect(SKRect.Create(runStartX, runY, runEndX - runStartX + 1, 1f));
+            rectangles++;
+        }
+
+        return rectangles;
     }
 
     private void DisposeTiles()
