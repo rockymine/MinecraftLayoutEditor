@@ -72,7 +72,7 @@ namespace MinecraftLayoutEditor.Logic
                 }
             }
 
-            map.Graph.InvalidateEdges();
+            map.Graph.MarkChanged();
             map.CalculateEdgeBlocks();
 
             static void Connect(Node first, Node second, Edge.EdgeType type)

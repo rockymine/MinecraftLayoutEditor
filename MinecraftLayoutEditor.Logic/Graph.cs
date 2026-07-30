@@ -6,9 +6,16 @@ public class Graph
 {
     private readonly List<Node> _nodes = [];
     private readonly HashSet<Edge> _edges = [];
-    private bool _edgesStale = true;
+    private int _revision;
+    private int _edgesBuiltAtRevision = -1;
 
     public IReadOnlyList<Node> Nodes => _nodes;
+
+    /// <summary>
+    /// Incremented on every change to the graph, including node positions. Cached
+    /// geometry compares against it to know whether what it holds is still current.
+    /// </summary>
+    public int Revision => _revision;
 
     /// <summary>
     /// The distinct edges of the graph. Rebuilt only after the graph changes: renderers
@@ -19,10 +26,10 @@ public class Graph
     {
         get
         {
-            if (_edgesStale)
+            if (_edgesBuiltAtRevision != _revision)
             {
                 RebuildEdges();
-                _edgesStale = false;
+                _edgesBuiltAtRevision = _revision;
             }
 
             return _edges;
@@ -63,24 +70,24 @@ public class Graph
     }
 
     /// <summary>
-    /// Marks the cached edge set for rebuild. Call after mutating a node's edge list
-    /// directly rather than through this class.
+    /// Records that the graph changed. Call after mutating a node's edge list or a node
+    /// position directly rather than through this class.
     /// </summary>
-    public void InvalidateEdges()
+    public void MarkChanged()
     {
-        _edgesStale = true;
+        _revision++;
     }
 
     public void Clear()
     {
         _nodes.Clear();
-        _edgesStale = true;
+        _revision++;
     }
 
     public void AddNode(Node node)
     {
         _nodes.Add(node);
-        _edgesStale = true;
+        _revision++;
     }
 
     public void DeleteNode(Node node, bool isMirror = false)
@@ -104,14 +111,14 @@ public class Graph
         }
 
         _nodes.Remove(node);
-        _edgesStale = true;
+        _revision++;
     }
 
     public void DeleteEdge(Edge edge)
     {
         edge.Node1.Edges.Remove(edge);
         edge.Node2.Edges.Remove(edge);
-        _edgesStale = true;
+        _revision++;
     }
 
     public Edge? AddOrRemoveEdge(Node node1, Node node2, bool isMirror = false)
@@ -156,7 +163,7 @@ public class Graph
         var edge = new Edge(node1, node2);
         node1.Edges.Add(edge);
         node2.Edges.Add(edge);
-        _edgesStale = true;
+        _revision++;
 
         return edge;
     }

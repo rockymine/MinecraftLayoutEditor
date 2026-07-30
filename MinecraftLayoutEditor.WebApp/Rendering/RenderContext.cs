@@ -15,18 +15,21 @@ public class RenderContext
     public PaintCache Cache { get; }
     public Viewport Viewport { get; set; }
     public RenderProfiler Profiler { get; }
+    public GraphGeometry GraphGeometry { get; }
 
     public int LimitX => (int)(Map.Width / 2f);
     public int LimitY => (int)(Map.Height / 2f);
 
     public RenderContext(Map map, RenderingOptions options,
-        Viewport viewport, PaintCache cache, RenderProfiler profiler)
+        Viewport viewport, PaintCache cache, RenderProfiler profiler,
+        GraphGeometry graphGeometry)
     {
         Map = map;
         Options = options;
         Cache = cache;
         Viewport = viewport;
         Profiler = profiler;
+        GraphGeometry = graphGeometry;
     }
 
     public void RegisterSurface(SKSurface surface)

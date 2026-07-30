@@ -30,6 +30,7 @@ public partial class Home : ComponentBase, IDisposable
     private MapRenderer _renderer = default!;
     private readonly PaintCache _paintCache = new();
     private readonly RenderProfiler _profiler = new();
+    private readonly GraphGeometry _graphGeometry = new();
     private readonly RenderingOptions _renderingOptions = new();
     private SKGLView _canvas = default!;
 
@@ -49,7 +50,7 @@ public partial class Home : ComponentBase, IDisposable
 
         _renderContext = new RenderContext(
             _map, _renderingOptions,
-            _viewport, _paintCache, _profiler);
+            _viewport, _paintCache, _profiler, _graphGeometry);
 
         _renderer = new MapRenderer(_renderContext);
 
@@ -81,6 +82,7 @@ public partial class Home : ComponentBase, IDisposable
     {
         _renderer?.Dispose();
         _paintCache.Dispose();
+        _graphGeometry.Dispose();
     }
 
     [JSInvokable]

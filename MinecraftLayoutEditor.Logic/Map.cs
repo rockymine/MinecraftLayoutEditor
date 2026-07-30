@@ -51,6 +51,8 @@ public class Map
             var mirrorRefPosition = Rotation.MirrorPosition(node.Position, Symmetry);
             node.MirrorRef.Position = mirrorRefPosition;
         }
+
+        Graph.MarkChanged();
     }
 
     public void CalculateEdgeBlocks()
